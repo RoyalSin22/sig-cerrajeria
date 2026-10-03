@@ -1,5 +1,6 @@
 package com.cerrajeria.sig.reportes;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.cerrajeria.sig.inventario.ProductoRepository;
 import com.cerrajeria.sig.ventas.DetalleVentaRepository;
 import com.cerrajeria.sig.ventas.VentaRepository;
@@ -18,6 +19,7 @@ public class ReporteService {
     private final DetalleVentaRepository detalleVentaRepository;
     private final ProductoRepository productoRepository;
 
+    @Transactional(readOnly = true)
     public ReporteVentasResponse reporteVentas(LocalDate desde, LocalDate hasta) {
         var desdeDateTime = desde.atStartOfDay();
         var hastaDateTime = hasta.atTime(LocalTime.MAX);
@@ -31,6 +33,7 @@ public class ReporteService {
         return new ReporteVentasResponse(total, cantidad, porMetodo);
     }
 
+    @Transactional(readOnly = true)
     public java.util.List<ProductoMasVendidoResponse> productosMasVendidos(LocalDate desde, LocalDate hasta) {
         var desdeDateTime = desde.atStartOfDay();
         var hastaDateTime = hasta.atTime(LocalTime.MAX);
@@ -41,6 +44,7 @@ public class ReporteService {
     }
 
     /** RF-41: reporte general de inventario con valorización. */
+    @Transactional(readOnly = true)
     public ReporteInventarioResponse reporteInventario() {
         var productos = productoRepository.findAll().stream().filter(p -> Boolean.TRUE.equals(p.getActivo())).toList();
 

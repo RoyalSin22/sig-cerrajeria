@@ -66,10 +66,12 @@ public class OrdenTrabajoService {
         return toResponse(orden);
     }
 
+    @Transactional(readOnly = true)
     public OrdenTrabajoResponse obtener(Long id) {
         return toResponse(buscarPorId(id));
     }
 
+    @Transactional(readOnly = true)
     public List<OrdenTrabajoResponse> listar(String estado) {
         List<OrdenTrabajo> ordenes = (estado == null || estado.isBlank())
             ? ordenTrabajoRepository.findAllByOrderByFechaIngresoDesc()
@@ -81,6 +83,7 @@ public class OrdenTrabajoService {
      * Version paginada, para listados largos fuera del tablero Kanban (que
      * necesita todas las ordenes agrupadas por estado y no se pagina).
      */
+    @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<OrdenTrabajoResponse> listarPaginado(
             String estado, org.springframework.data.domain.Pageable pageable) {
         var pagina = (estado == null || estado.isBlank())
@@ -89,6 +92,7 @@ public class OrdenTrabajoService {
         return pagina.map(this::toResponse);
     }
 
+    @Transactional(readOnly = true)
     public List<OrdenTrabajoResponse> historialPorCliente(Long clienteId) {
         return ordenTrabajoRepository.findByClienteIdOrderByFechaIngresoDesc(clienteId)
             .stream().map(this::toResponse).toList();

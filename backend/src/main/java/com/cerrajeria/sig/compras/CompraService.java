@@ -59,6 +59,7 @@ public class CompraService {
     }
 
     /** Listado paginado de compras. */
+    @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<CompraResponse> listar(org.springframework.data.domain.Pageable pageable) {
         return compraRepository.findAllByOrderByFechaDesc(pageable)
             .map(c -> toResponse(c, c.getProveedor().getNombre(), c.getProducto().getNombre(),

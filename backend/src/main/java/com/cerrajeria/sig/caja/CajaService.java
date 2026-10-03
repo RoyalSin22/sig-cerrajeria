@@ -55,6 +55,7 @@ public class CajaService {
         return cajaMapper.toResponse(caja);
     }
 
+    @Transactional(readOnly = true)
     public CajaDiariaResponse obtenerCajaAbierta() {
         return cajaMapper.toResponse(obtenerCajaAbiertaEntidad());
     }
@@ -125,11 +126,13 @@ public class CajaService {
     }
 
     /** RF-37: historial de todas las sesiones de caja del usuario en sesion. */
+    @Transactional(readOnly = true)
     public List<CajaDiariaResponse> historial() {
         return cajaDiariaRepository.findByUsuarioUsernameOrderByFechaAperturaDesc(usernameActual())
             .stream().map(cajaMapper::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<CajaDiariaResponse> historialPaginado(
             org.springframework.data.domain.Pageable pageable) {
         return cajaDiariaRepository
@@ -137,6 +140,7 @@ public class CajaService {
             .map(cajaMapper::toResponse);
     }
 
+    @Transactional(readOnly = true)
     public List<MovimientoCajaResponse> historialMovimientos(Long cajaId) {
         return cajaMapper.toResponseList(movimientoCajaRepository.findByCajaDiariaIdOrderByFechaHoraDesc(cajaId));
     }

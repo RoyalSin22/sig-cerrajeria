@@ -64,11 +64,13 @@ public class ProductoService {
         return productoMapper.toResponse(producto);
     }
 
+    @Transactional(readOnly = true)
     public ProductoResponse obtener(Long id) {
         return productoMapper.toResponse(buscarPorId(id));
     }
 
     /** Listado paginado del catálogo completo (explorar sin buscar), opcionalmente filtrado por tipo. */
+    @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<ProductoResponse> listar(
             TipoProducto tipoProducto, org.springframework.data.domain.Pageable pageable) {
         var pagina = tipoProducto != null
@@ -77,10 +79,12 @@ public class ProductoService {
         return pagina.map(productoMapper::toResponse);
     }
 
+    @Transactional(readOnly = true)
     public List<ProductoResponse> buscar(String termino) {
         return productoMapper.toResponseList(productoRepository.buscar(termino));
     }
 
+    @Transactional(readOnly = true)
     public List<ProductoResponse> listarStockBajo() {
         return productoMapper.toResponseList(productoRepository.findStockBajo());
     }
@@ -104,6 +108,7 @@ public class ProductoService {
             "Producto", producto.getId());
     }
 
+    @Transactional(readOnly = true)
     public List<MovimientoInventarioResponse> historial(Long id) {
         buscarPorId(id);
         return movimientoInventarioMapper.toResponseList(

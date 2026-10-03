@@ -1,6 +1,6 @@
 # SIG-Cerrajería — Backend
 
-Esqueleto inicial del backend (Fase 8), construido sobre **Spring Boot 4.1.0 / Java 21 / PostgreSQL 16**,
+Esqueleto inicial del backend (Fase 8), construido sobre **Spring Boot 4.1.0 / Java 25 / PostgreSQL 16**,
 según lo validado en las Fases 5 (Arquitectura) y 6 (Base de Datos).
 
 ## Qué incluye este primer paso
@@ -18,7 +18,8 @@ Los módulos de negocio (inventario, ventas, caja, órdenes, etc.) se agregan en
 
 1. **Levantar PostgreSQL** (Docker Desktop debe estar corriendo):
    ```bash
-   docker compose up -d
+   cp .env.example .env          # una sola vez
+   docker compose up -d postgres
    ```
    Verifica que el contenedor esté saludable:
    ```bash
@@ -29,7 +30,7 @@ Los módulos de negocio (inventario, ventas, caja, órdenes, etc.) se agregan en
    ```bash
    ./mvnw spring-boot:run
    ```
-   *(En Windows, usa `mvnw.cmd spring-boot:run` — si no tienes el wrapper aún, ábrelo directamente desde IntelliJ IDEA, que lo genera automáticamente al importar el `pom.xml`.)*
+   *(En Windows, usa `mvnw.cmd spring-boot:run`. El wrapper descarga Maven solo; necesitas JDK 25.)*
 
    Al arrancar, Flyway aplicará automáticamente las migraciones (`V1__init.sql` y `V2__seed_admin.sql`) sobre la base de datos vacía.
 

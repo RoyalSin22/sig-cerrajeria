@@ -1,6 +1,6 @@
 package com.cerrajeria.sig.whatsapp;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -60,12 +60,12 @@ public class WhatsAppWebhookController {
         }
 
         JsonNode primero = mensajes.path(0);
-        if (!"text".equals(primero.path("type").asText())) {
+        if (!"text".equals(primero.path("type").asString())) {
             return java.util.Optional.empty(); // por ahora solo se procesan mensajes de texto
         }
 
-        String telefono = primero.path("from").asText();
-        String texto = primero.path("text").path("body").asText();
+        String telefono = primero.path("from").asString();
+        String texto = primero.path("text").path("body").asString();
         return java.util.Optional.of(new MensajeEntrante(telefono, texto));
     }
 

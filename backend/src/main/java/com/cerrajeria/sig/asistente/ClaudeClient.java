@@ -2,10 +2,10 @@ package com.cerrajeria.sig.asistente;
 
 import com.cerrajeria.sig.asistente.dto.ComandoInterpretado;
 import com.cerrajeria.sig.asistente.dto.TurnoChat;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -94,14 +94,14 @@ public class ClaudeClient {
         String textoLibre = null;
 
         for (JsonNode bloque : content) {
-            String tipo = bloque.path("type").asText();
+            String tipo = bloque.path("type").asString();
             if ("tool_use".equals(tipo)) {
-                String nombreHerramienta = bloque.path("name").asText();
+                String nombreHerramienta = bloque.path("name").asString();
                 JsonNode parametros = bloque.path("input");
                 return new ComandoInterpretado(nombreHerramienta, parametros, null);
             }
             if ("text".equals(tipo)) {
-                textoLibre = bloque.path("text").asText();
+                textoLibre = bloque.path("text").asString();
             }
         }
 

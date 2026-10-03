@@ -24,6 +24,7 @@ public class ProveedorService {
         return toResponse(proveedorRepository.save(proveedor));
     }
 
+    @Transactional(readOnly = true)
     public List<ProveedorResponse> listar() {
         return proveedorRepository.findAll().stream().map(this::toResponse).toList();
     }

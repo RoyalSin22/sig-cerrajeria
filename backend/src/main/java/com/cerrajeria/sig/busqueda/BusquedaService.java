@@ -1,5 +1,6 @@
 package com.cerrajeria.sig.busqueda;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.cerrajeria.sig.clientes.ClienteRepository;
 import com.cerrajeria.sig.clientes.ClienteMapper;
 import com.cerrajeria.sig.inventario.ProductoRepository;
@@ -21,6 +22,7 @@ public class BusquedaService {
     private final ClienteMapper clienteMapper;
     private final OrdenTrabajoRepository ordenTrabajoRepository;
 
+    @Transactional(readOnly = true)
     public ResultadoBusquedaResponse buscar(String termino) {
         var productos = productoMapper.toResponseList(productoRepository.buscar(termino));
         var clientes = clienteMapper.toResponseList(clienteRepository.buscar(termino));
