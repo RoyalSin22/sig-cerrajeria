@@ -16,7 +16,7 @@ import com.cerrajeria.sig.usuarios.Usuario;
 import com.cerrajeria.sig.ventas.VentaService;
 import com.cerrajeria.sig.ventas.dto.ItemVentaRequest;
 import com.cerrajeria.sig.ventas.dto.VentaCreateRequest;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -88,7 +88,7 @@ public class AsistenteIAService {
     }
 
     private String consultarStock(JsonNode params) {
-        String termino = params.path("producto").asText();
+        String termino = params.path("producto").asString();
         List<Producto> encontrados = productoRepository.buscar(termino);
 
         if (encontrados.isEmpty()) {
@@ -110,7 +110,7 @@ public class AsistenteIAService {
         List<String> resumen = new ArrayList<>();
 
         for (JsonNode item : params.path("items")) {
-            String nombreProducto = item.path("producto").asText();
+            String nombreProducto = item.path("producto").asString();
             int cantidad = item.path("cantidad").asInt();
 
             List<Producto> encontrados = productoRepository.buscar(nombreProducto);
@@ -127,7 +127,7 @@ public class AsistenteIAService {
             resumen.add(cantidad + " × " + p.getNombre());
         }
 
-        String metodoPagoTexto = params.path("metodo_pago").asText("EFECTIVO");
+        String metodoPagoTexto = params.path("metodo_pago").asString("EFECTIVO");
         var venta = ventaService.crear(new VentaCreateRequest(null, metodoPagoTexto, items, null));
 
         return "Venta registrada ✅\n" + String.join("\n", resumen) +
@@ -135,7 +135,7 @@ public class AsistenteIAService {
     }
 
     private String agendarServicio(JsonNode params) {
-        String nombreCliente = params.path("cliente").asText();
+        String nombreCliente = params.path("cliente").asString();
         List<Cliente> encontrados = clienteRepository.buscar(nombreCliente);
 
         if (encontrados.isEmpty()) {
@@ -150,11 +150,11 @@ public class AsistenteIAService {
         Cliente cliente = encontrados.get(0);
         var request = new ServicioDomicilioRequest(
             cliente.getId(),
-            params.path("direccion").asText(),
+            params.path("direccion").asString(),
             cliente.getTelefono(),
-            LocalDate.parse(params.path("fecha").asText()),
-            LocalTime.parse(params.path("hora").asText()),
-            params.path("tipo_servicio").asText(),
+            LocalDate.parse(params.path("fecha").asString()),
+            LocalTime.parse(params.path("hora").asString()),
+            params.path("tipo_servicio").asString(),
             "Agendado por el asistente de IA"
         );
 

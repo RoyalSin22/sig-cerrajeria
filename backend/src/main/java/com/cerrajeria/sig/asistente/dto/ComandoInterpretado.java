@@ -1,6 +1,6 @@
 package com.cerrajeria.sig.asistente.dto;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 /** Resultado de pedirle a Claude que interprete un mensaje de WhatsApp. */
 public record ComandoInterpretado(
