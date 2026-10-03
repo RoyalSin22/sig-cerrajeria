@@ -1,0 +1,53 @@
+# CLAUDE.md
+
+Contexto para trabajar en este repo. Lee también `MANUAL_TECNICO.md` si necesitas más profundidad — esto es el resumen rápido.
+
+## Qué es
+
+Sistema de gestión para una cerrajería en Perú (2 usuarios: admin + empleado). Monorepo: `backend/` (API) y `frontend/` (SPA), cada uno con su propio stack y gestor de paquetes.
+
+## Comandos
+
+```bash
+# Backend (desde backend/)
+docker compose up -d              # levanta Postgres (puerto 5433)
+./mvnw spring-boot:run            # corre la app (o botón Run en IntelliJ)
+./mvnw test                       # tests unitarios, rápidos
+./mvnw verify                     # + integración con Testcontainers (necesita Docker)
+
+# Frontend (desde frontend/)
+npm install
+npm run dev                       # http://localhost:5173
+npm run build
+npm run lint
+```
+
+Login de prueba: `admin` / `admin123`.
+
+## Las 3 reglas de negocio (no las rompas sin darte cuenta)
+
+1. **Caja abierta obligatoria**: ninguna operación con dinero (venta, adelanto de orden, compra pagada de caja) se procesa sin que `CajaService.obtenerCajaAbiertaEntidad()` encuentre una caja `ABIERTA` para el usuario en sesión. Si agregas una operación nueva que mueve dinero, llama a este método primero.
+2. **Kárdex obligatorio**: todo cambio de `producto.cantidad_stock` tiene que pasar por `ProductoService.descontarStock()` / `incrementarStock()` / `ajustarStock()` — ninguno de los tres modifica el stock sin insertar también en `movimientos_inventario`. Nunca toques `cantidad_stock` directo desde otro servicio.
+3. **Sin entrega con saldo pendiente**: una orden de trabajo solo pasa a `ENTREGADO` vía `OrdenTrabajoService.entregarConLiquidacion()`, que exige liquidar el saldo en la misma llamada si existe.
+
+Los tests en `backend/src/test/java/.../{caja,inventario,ordenes}` verifican estas tres por separado.
+
+## Convenciones
+
+- **Backend**: paquete por feature (`ventas/`, `ordenes/`, etc.), cada uno con su entidad, repo, servicio, controlador y DTOs juntos — no por capa técnica. MapStruct para mappers. Flyway controla el esquema (`ddl-auto: validate`, Hibernate nunca crea tablas solo). Excepciones de dominio van en `common/exception/`, se capturan en `common/advice/GlobalExceptionHandler.java` como `ProblemDetail`.
+- **Frontend**: una pantalla por archivo en `src/pages/`, un módulo de API por dominio en `src/api/` (funciones tipadas sobre `axiosClient.ts`). Los componentes de UI reutilizables están en `src/components/ui/`.
+- **Moneda**: todo en soles (`S/`), siempre vía `Intl.NumberFormat('es-PE', { currency: 'PEN' })` (`frontend/src/utils/format.ts`). Nunca otra moneda, nunca un número pelado.
+- **Asistente de IA** (`backend/.../asistente/`): el intérprete de lenguaje natural (Claude con tool use) vive separado del canal — `AsistenteIAService` es el cerebro compartido; `whatsapp/` y el endpoint `/api/v1/asistente/mensaje` son canales delgados encima. Si agregas una acción nueva, se declara en `Herramientas.java` y su caso en `AsistenteIAService`.
+
+## Cosas que ya rompieron una vez (no las repitas)
+
+- **`application.yml` solo puede tener UN bloque `spring:`** — un segundo bloque sobreescribe el primero en silencio (datasource, flyway, etc. desaparecen). Si agregas config de Spring, es dentro del bloque existente.
+- **Tailwind CSS 4 no usa `tailwind.config.js`** — los tokens de color/tipografía están en `frontend/src/index.css` con `@theme`. No busques el archivo de configuración clásico, no existe.
+- **El frontend debe abrirse en `http://localhost:5173`, no `127.0.0.1`** — el refresh token va en cookie `Secure`, y solo `localhost` cuenta como origen confiable sin HTTPS.
+- Variables de entorno opcionales (WhatsApp, Anthropic) van con default vacío (`${VAR:}`) en `application.yml`, nunca con `${VAR:?mensaje}` — eso vuelve la variable obligatoria y rompe el arranque (y los tests) si no está seteada.
+
+## Qué NO está hecho (a propósito, no son bugs olvidados)
+
+- Backups automáticos de base de datos (RNF-07)
+- HTTPS en el `docker-compose.yml` de producción (documentado en `DEPLOYMENT.md`)
+- Reportes agregados de servicios/clientes (RF-43/44) — hoy son listados filtrados, no reportes propios

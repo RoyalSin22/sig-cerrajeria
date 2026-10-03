@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+/*
+ * Sistema de diseño "Industry" (Fase 7, adoptado del prototipo Keystock).
+ * Tailwind v4 define los tokens directamente en CSS con @theme, en vez de
+ * tailwind.config.js. Cada variable queda disponible como utilidad:
+ * --color-steel  ->  bg-steel / text-steel / border-steel, etc.
+ */
+@theme {
+  --color-ink: #191b1c;
+  --color-sub: #6f757a;
+  --color-line: #c8ced5;
+  --color-hair: #dfe3e7;
+
+  --color-steel: #5980a6;
+  --color-steel-dark: #2c455d;
+
+  --color-paper: #f6f7f8;
+
+  --color-success: #7d9e86; /* sage */
+  --color-warning: #b0975f; /* brass */
+  --color-danger: #bd8080; /* rose */
+
+  --color-tint-sky: #e2ebf3;
+  --color-tint-mint: #dfeae3;
+  --color-tint-lilac: #e8e4f0;
+  --color-tint-peach: #f3eae2;
+
+  --font-heading: "Barlow Condensed", system-ui, sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
+}
+
+/* Modo oscuro (RNF-06): se activa agregando la clase .dark al <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+.dark {
+  --color-paper: #14181b;
+  --color-ink: #f2f3f4;
+  --color-sub: #9aa1a7;
+  --color-line: #2c3236;
+  --color-hair: #23282c;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: var(--font-heading);
+}
+
+/* Panel "cepillado" (variante B elegida en Fase 7 §3.1.1) */
+.panel-cepillado {
+  background: linear-gradient(180deg, #fbfbfc 0%, #eef0f1 100%);
+  border: 1px solid var(--color-hair);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 1px 3px rgba(25, 27, 28, 0.08);
+}
+.dark .panel-cepillado {
+  background: linear-gradient(180deg, #1c2124 0%, #14181b 100%);
+  border-color: var(--color-line);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Tarjeta "plano tecnico" (variante A, reportes/analitica) */
+.plano-tecnico {
+  background: transparent;
+  border: 1px solid var(--color-hair);
+  position: relative;
+}
+.plano-tecnico::before,
+.plano-tecnico::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--color-steel);
+}
+.plano-tecnico::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.plano-tecnico::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }

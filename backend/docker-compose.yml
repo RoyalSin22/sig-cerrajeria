@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sig-cerrajeria-db
+    environment:
+      POSTGRES_DB: sig_cerrajeria
+      POSTGRES_USER: sig_admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me_local_dev}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sig_admin -d sig_cerrajeria"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sig-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sig-cerrajeria-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sig_cerrajeria
+      SPRING_DATASOURCE_USERNAME: sig_admin
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-change_me_local_dev}
+      JWT_SECRET: ${JWT_SECRET:?Definir JWT_SECRET en .env (minimo 32 caracteres)}
+      # El frontend llama por rutas relativas via el proxy de Nginx, pero el
+      # backend igual valida el origen declarado aqui para el resto de casos.
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8081}
+      UPLOADS_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - "8080:8080"
+    networks:
+      - sig-network
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+    container_name: sig-cerrajeria-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8081:80"
+    networks:
+      - sig-network
+
+volumes:
+  pgdata:
+  uploads:
+
+networks:
+  sig-network:
+    driver: bridge
+
+# Uso (ejecutar siempre desde sig-cerrajeria/backend/):
+#   1. Copiar .env.example a .env y completar JWT_SECRET (32+ caracteres) y DB_PASSWORD.
+#   2. docker compose up -d --build
+#   3. Frontend en http://localhost:8081 · Swagger en http://localhost:8080/swagger-ui.html

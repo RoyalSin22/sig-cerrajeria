@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: sig-cerrajeria-backend
+
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5433/sig_cerrajeria
+    username: sig_admin
+    password: change_me_local_dev
+
+  jpa:
+    hibernate:
+      ddl-auto: validate   # Flyway es dueno del esquema; Hibernate solo valida que coincida
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+server:
+  port: 8080
+
+# Configuracion propia del sistema
+sig:
+  jwt:
+    # En produccion, sobrescribir con la variable de entorno JWT_SECRET (minimo 32 caracteres)
+    secret: ${JWT_SECRET:cambia-este-secreto-en-produccion-minimo-32-caracteres}
+    access-token-minutes: 15
+    refresh-token-days: 7
+  # Origen permitido por CORS (Fase 9). En produccion, sobrescribir con la URL real del frontend.
+  frontend-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  # Almacenamiento LOCAL de imagenes de productos (adecuado para el alcance actual:
+  # despliegue local, 2 usuarios). Al migrar a un servidor real (Fase 14), esto
+  # deberia moverse a almacenamiento de objetos (ej. S3-compatible) - documentado
+  # como riesgo abierto desde la Fase 1.
+  uploads-dir: ${UPLOADS_DIR:uploads}
+  # Fase 11: integracion con WhatsApp Business Cloud API (Meta) + Claude para
+  # interpretar los mensajes. Deliberadamente NO son obligatorias al arrancar
+  # (para no romper el resto de la app, ni los tests, si todavia no se
+  # configuraron) — si faltan, solo falla el envio/interpretacion cuando
+  # realmente llega un mensaje, con un error claro en el log.
+  whatsapp:
+    access-token: ${WHATSAPP_ACCESS_TOKEN:}
+    phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+    verify-token: ${WHATSAPP_VERIFY_TOKEN:sin-configurar}
+    api-version: v21.0
+  anthropic:
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: claude-sonnet-5
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

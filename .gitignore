@@ -1,0 +1,8 @@
+# Cruft de editor/SO que puede aparecer al nivel raiz si se abre el monorepo
+# completo como un solo workspace (ej. IntelliJ). Cada subcarpeta (backend/,
+# frontend/) ademas tiene su propio .gitignore mas especifico.
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
