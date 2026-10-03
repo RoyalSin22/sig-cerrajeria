@@ -118,15 +118,18 @@ public class VentaService {
         }
     }
 
+    @Transactional(readOnly = true)
     public VentaResponse obtener(Long id) {
         return mapearAResponse(buscarPorId(id));
     }
 
     /** Listado paginado de ventas (incluye anuladas, marcadas con el flag correspondiente). */
+    @Transactional(readOnly = true)
     public Page<VentaResponse> listar(Pageable pageable) {
         return ventaRepository.findAllByOrderByFechaHoraDesc(pageable).map(this::mapearAResponse);
     }
 
+    @Transactional(readOnly = true)
     public List<VentaResponse> historialPorCliente(Long clienteId) {
         return ventaRepository.findByClienteIdOrderByFechaHoraDesc(clienteId).stream()
             .map(this::mapearAResponse)

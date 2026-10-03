@@ -1,5 +1,6 @@
 package com.cerrajeria.sig.dashboard;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.cerrajeria.sig.common.audit.AuditLogRepository;
 import com.cerrajeria.sig.inventario.Producto;
 import com.cerrajeria.sig.inventario.ProductoRepository;
@@ -23,6 +24,7 @@ public class DashboardService {
     private final ProductoRepository productoRepository;
     private final AuditLogRepository auditLogRepository;
 
+    @Transactional(readOnly = true)
     public DashboardResponse obtener() {
         LocalDate hoy = LocalDate.now();
         LocalDate inicioMes = hoy.withDayOfMonth(1);

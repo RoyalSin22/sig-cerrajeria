@@ -43,16 +43,19 @@ public class ServicioDomicilioService {
         return mapper.toResponse(servicioDomicilioRepository.save(servicio));
     }
 
+    @Transactional(readOnly = true)
     public ServicioDomicilioResponse obtener(Long id) {
         return mapper.toResponse(buscarPorId(id));
     }
 
     /** Agenda semanal/mensual (RF-26): se define el rango desde el cliente (semana o mes). */
+    @Transactional(readOnly = true)
     public List<ServicioDomicilioResponse> agenda(LocalDate desde, LocalDate hasta) {
         return mapper.toResponseList(
             servicioDomicilioRepository.findByFechaBetweenOrderByFechaAscHoraAsc(desde, hasta));
     }
 
+    @Transactional(readOnly = true)
     public List<ServicioDomicilioResponse> historialPorCliente(Long clienteId) {
         return mapper.toResponseList(servicioDomicilioRepository.findByClienteIdOrderByFechaDesc(clienteId));
     }

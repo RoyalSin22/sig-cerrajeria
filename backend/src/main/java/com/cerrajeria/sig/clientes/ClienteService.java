@@ -23,15 +23,18 @@ public class ClienteService {
         return clienteMapper.toResponse(clienteRepository.save(cliente));
     }
 
+    @Transactional(readOnly = true)
     public ClienteResponse obtener(Long id) {
         return clienteMapper.toResponse(buscarPorId(id));
     }
 
     /** Listado paginado de todos los clientes (RF-19 / requisito de paginación del alcance original). */
+    @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<ClienteResponse> listar(org.springframework.data.domain.Pageable pageable) {
         return clienteRepository.findAll(pageable).map(clienteMapper::toResponse);
     }
 
+    @Transactional(readOnly = true)
     public List<ClienteResponse> buscar(String termino) {
         return clienteMapper.toResponseList(clienteRepository.buscar(termino));
     }

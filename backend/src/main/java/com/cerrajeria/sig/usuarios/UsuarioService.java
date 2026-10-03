@@ -42,6 +42,7 @@ public class UsuarioService {
         return toResponse(usuarioRepository.save(usuario));
     }
 
+    @Transactional(readOnly = true)
     public List<UsuarioResponse> listar() {
         return usuarioRepository.findAll().stream().map(this::toResponse).toList();
     }
