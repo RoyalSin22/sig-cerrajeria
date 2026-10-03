@@ -59,7 +59,7 @@ Clona el repo una vez (`git clone https://github.com/TU-USUARIO/sig-cerrajeria.g
 
 ### Backend
 
-1. Desde `sig-cerrajeria/backend/`: `docker compose up -d` (esto solo levanta Postgres, no el backend — es el mismo `docker-compose.yml` de la Opción A, pero acá lo usamos distinto).
+1. Desde `sig-cerrajeria/backend/`: `cp .env.example .env` (una sola vez; Compose exige `JWT_SECRET` aunque solo levantes Postgres) y luego `docker compose up -d postgres` (esto solo levanta Postgres, no el backend — es el mismo `docker-compose.yml` de la Opción A, pero acá lo usamos distinto).
 
    > Si vienes de la Opción A y ya tienes los 3 contenedores corriendo, bájalos primero con `docker compose down`, porque si no el puerto de Postgres va a chocar.
 

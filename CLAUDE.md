@@ -10,10 +10,11 @@ Sistema de gestión para una cerrajería en Perú (2 usuarios: admin + empleado)
 
 ```bash
 # Backend (desde backend/)
-docker compose up -d              # levanta Postgres (puerto 5433)
+cp .env.example .env              # una sola vez: compose exige JWT_SECRET aunque solo levantes Postgres
+docker compose up -d postgres     # solo Postgres (puerto 5433); sin 'postgres' construye y levanta los 3 servicios
 ./mvnw spring-boot:run            # corre la app (o botón Run en IntelliJ)
 ./mvnw test                       # tests unitarios, rápidos
-./mvnw verify                     # + integración con Testcontainers (necesita Docker)
+./mvnw verify                     # + *IntegrationTest vía failsafe, con Testcontainers (necesita Docker)
 
 # Frontend (desde frontend/)
 npm install
@@ -44,6 +45,8 @@ Los tests en `backend/src/test/java/.../{caja,inventario,ordenes}` verifican est
 - **`application.yml` solo puede tener UN bloque `spring:`** — un segundo bloque sobreescribe el primero en silencio (datasource, flyway, etc. desaparecen). Si agregas config de Spring, es dentro del bloque existente.
 - **Tailwind CSS 4 no usa `tailwind.config.js`** — los tokens de color/tipografía están en `frontend/src/index.css` con `@theme`. No busques el archivo de configuración clásico, no existe.
 - **El frontend debe abrirse en `http://localhost:5173`, no `127.0.0.1`** — el refresh token va en cookie `Secure`, y solo `localhost` cuenta como origen confiable sin HTTPS.
+- **Spring Boot 4 usa Jackson 3** (`tools.jackson.databind`), no Jackson 2 (`com.fasterxml.jackson.databind`). Jackson 2 está en el classpath solo como transitiva de springdoc, pero no hay bean de su `ObjectMapper` y los conversores HTTP no lo entienden: si lo importas, la app no arranca. Solo las anotaciones (`com.fasterxml.jackson.annotation`) se mantienen.
+- **`open-in-view: false`**: los métodos de servicio que devuelven DTOs mapeados desde entidades con relaciones `LAZY` necesitan `@Transactional(readOnly = true)`, o el mapper lanza `LazyInitializationException` (500). No lo pongas a nivel de clase: una escritura sin su propio `@Transactional` quedaría en una transacción de solo lectura y no se guardaría.
 - Variables de entorno opcionales (WhatsApp, Anthropic) van con default vacío (`${VAR:}`) en `application.yml`, nunca con `${VAR:?mensaje}` — eso vuelve la variable obligatoria y rompe el arranque (y los tests) si no está seteada.
 
 ## Qué NO está hecho (a propósito, no son bugs olvidados)
