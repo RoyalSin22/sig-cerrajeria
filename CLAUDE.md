@@ -25,6 +25,8 @@ npm run lint
 
 Login de prueba: `admin` / `admin123`.
 
+CI (`.github/workflows/ci.yml`) corre en cada PR: `./mvnw verify`, `npm ci` + `lint` + `build`, y valida `docker-compose.yml` y `backup.sh`. Si agregas un paso de verificación nuevo, súmalo ahí.
+
 ## Las 3 reglas de negocio (no las rompas sin darte cuenta)
 
 1. **Caja abierta obligatoria**: ninguna operación con dinero (venta, adelanto de orden, compra pagada de caja) se procesa sin que `CajaService.obtenerCajaAbiertaEntidad()` encuentre una caja `ABIERTA` para el usuario en sesión. Si agregas una operación nueva que mueve dinero, llama a este método primero, y registra el ingreso/egreso con su `MetodoPago` (`sumarIngresoACajaActiva(caja, monto, metodo)`): el cierre se cuadra contra `efectivoEsperado()`, que descuenta Yape, Plin y tarjeta porque no están en el cajón. Un pago `MIXTO` se registra línea por línea según su desglose.
