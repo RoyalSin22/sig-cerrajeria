@@ -18,6 +18,33 @@ services:
     networks:
       - sig-network
 
+  # Respaldo automatico (RNF-07): al arrancar, cada 6 h y al detener el sistema.
+  # Los archivos quedan en backend/backups/ (o en BACKUP_DIR, ej. una carpeta
+  # sincronizada con Google Drive para tener copia fuera de esta PC).
+  backup:
+    image: postgres:16-alpine
+    container_name: sig-cerrajeria-backup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGDATABASE: sig_cerrajeria
+      PGUSER: sig_admin
+      PGPASSWORD: ${DB_PASSWORD:-change_me_local_dev}
+      TZ: America/Lima
+      BACKUP_INTERVALO_HORAS: ${BACKUP_INTERVALO_HORAS:-6}
+      BACKUP_DIAS: ${BACKUP_DIAS:-30}
+    volumes:
+      - ${BACKUP_DIR:-./backups}:/backups
+      - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
+    entrypoint: ["sh", "/usr/local/bin/backup.sh"]
+    # Margen para el respaldo de cierre que se hace al recibir SIGTERM
+    stop_grace_period: 2m
+    restart: unless-stopped
+    networks:
+      - sig-network
+
   backend:
     build:
       context: .

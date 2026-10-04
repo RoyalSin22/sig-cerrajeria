@@ -1,0 +1,73 @@
+# Verificacion automatica en cada PR y en cada push a main: los mismos
+# comandos que corre un desarrollador antes de subir (ver CLAUDE.md).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Un push nuevo al mismo PR cancela la corrida anterior, que ya no sirve.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (tests unitarios + integracion)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      # Misma version que backend/Dockerfile (eclipse-temurin:25)
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      # verify = tests unitarios (surefire) + *IntegrationTest (failsafe).
+      # Testcontainers usa el Docker que ya trae el runner.
+      - run: ./mvnw -B verify
+
+  frontend:
+    name: Frontend (lint + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      # Misma version que frontend/Dockerfile (node:24-alpine)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      # build = tsc -b (typecheck) + vite build
+      - run: npm run build
+
+  infra:
+    name: Infra (docker-compose y script de respaldo)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # compose exige JWT_SECRET para interpolar el archivo, aunque aqui no
+      # se levanta nada: solo se valida la sintaxis.
+      - name: Validar docker-compose.yml
+        working-directory: backend
+        env:
+          JWT_SECRET: solo-para-validar-la-sintaxis-del-compose-en-ci
+        run: docker compose config -q
+      # Un error en backup.sh dejaria a la cerrajeria sin respaldos sin que
+      # nadie lo note: se revisa con shellcheck (POSIX sh, como en el contenedor).
+      - name: Revisar backup.sh
+        run: shellcheck -s sh backend/scripts/backup.sh
+      - name: backup.sh con fin de linea LF
+        run: "! grep -q $'\\r' backend/scripts/backup.sh"
