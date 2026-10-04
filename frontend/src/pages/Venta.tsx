@@ -8,8 +8,8 @@ import { SearchInput } from '../components/ui/SearchInput'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Button } from '../components/ui/Button'
 import { Chip } from '../components/ui/Chip'
-import { useCaja } from '../context/CajaContext'
-import { useToast } from '../context/ToastContext'
+import { useCaja } from '../context/useCaja'
+import { useToast } from '../context/useToast'
 import { formatearSoles } from '../utils/format'
 import { ETIQUETA_METODO_PAGO, METODOS_EN_USO, type MetodoPago, type MetodoPagoSimple } from '../types/ventas'
 import type { ProductoResponse } from '../types/productos'
@@ -200,14 +200,17 @@ export function Venta() {
                 <span className="text-xs text-sub">Desglosa el pago por método (debe sumar el total)</span>
                 <div className="grid grid-cols-2 gap-2">
                   {METODOS_EN_USO.map((m) => (
-                    <input
-                      key={m}
-                      type="number" step="0.01" min="0"
-                      value={desglose[m]}
-                      onChange={(e) => setDesglose((d) => ({ ...d, [m]: e.target.value }))}
-                      placeholder={ETIQUETA_METODO_PAGO[m]}
-                      className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel"
-                    />
+                    // Etiqueta visible: el placeholder desaparece al escribir y no se sabria que campo es cual
+                    <label key={m} className="flex flex-col gap-1 text-xs text-sub">
+                      {ETIQUETA_METODO_PAGO[m]} (S/)
+                      <input
+                        type="number" step="0.01" min="0"
+                        value={desglose[m]}
+                        onChange={(e) => setDesglose((d) => ({ ...d, [m]: e.target.value }))}
+                        placeholder="0.00"
+                        className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-steel"
+                      />
+                    </label>
                   ))}
                 </div>
                 <p className={`text-xs ${desgloseValido ? 'text-success' : 'text-danger'}`}>
