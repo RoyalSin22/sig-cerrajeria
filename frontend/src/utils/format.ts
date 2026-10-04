@@ -1,4 +1,5 @@
 import { API_ORIGIN } from '../api/axiosClient'
+import { parsearFechaISO } from './fecha'
 
 const formateadorSoles = new Intl.NumberFormat('es-PE', {
   style: 'currency',
@@ -27,13 +28,9 @@ const formateadorDia = new Intl.DateTimeFormat('es-PE', {
   month: 'short',
 })
 
-/**
- * Fecha sin hora ("2026-10-04"). Se arma como fecha local: new Date('2026-10-04')
- * la tomaria como medianoche UTC, que en Peru (UTC-5) cae el dia anterior.
- */
+/** Fecha sin hora ("2026-10-04"), parseada como fecha local (ver utils/fecha.ts). */
 export function formatearFecha(fechaISO: string): string {
-  const [anio, mes, dia] = fechaISO.split('-').map(Number)
-  return formateadorDia.format(new Date(anio, mes - 1, dia))
+  return formateadorDia.format(parsearFechaISO(fechaISO))
 }
 
 const formateadorHora = new Intl.DateTimeFormat('es-PE', { hour: '2-digit', minute: '2-digit' })
