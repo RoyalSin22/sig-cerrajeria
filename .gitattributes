@@ -1,0 +1,5 @@
+# Los scripts de shell corren dentro de contenedores Linux: con fin de linea
+# CRLF (conversion automatica de Git en Windows) sh falla con "\r: not found".
+*.sh text eol=lf
+# Y los .bat los ejecuta cmd.exe, que espera CRLF.
+*.bat text eol=crlf

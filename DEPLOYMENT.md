@@ -32,7 +32,7 @@ El frontend llama por **rutas relativas** (`/api/v1`, `/uploads`); Nginx las ree
 4. Abrir `http://localhost:8081` (o la IP del servidor en la red local, ej. `http://192.168.1.50:8081`)
 5. Login con `admin` / `admin123` — **cambiar esta contraseña de inmediato** en Ajustes → Usuarios, o directamente en la base de datos.
 
-Las migraciones de Flyway (`V1` a `V5`) se aplican solas al arrancar el backend, igual que en desarrollo local.
+Las migraciones de Flyway (`V1` en adelante) se aplican solas al arrancar el backend, igual que en desarrollo local.
 
 ## ⚠️ Limitación conocida: refresh token, PWA y HTTPS
 
@@ -46,17 +46,38 @@ El mismo límite aplica a la instalación como app (PWA, Fase 9): los navegadore
 
 Para una cerrajería con 2 usuarios en una sola PC, esto puede ser aceptable. Si se necesita acceso e instalación desde varios dispositivos en la red (celular, tablet), la solución correcta es poner HTTPS delante — por ejemplo con Caddy (certificados automáticos, configuración mínima) o un dominio + Let's Encrypt si se migra a un VPS. No se implementa en esta fase por estar fuera del alcance de un despliegue local, pero queda documentado para no repetir la sorpresa que ya tuvimos una vez con la configuración de `application.yml`.
 
-## Backups de la base de datos
+## Backups de la base de datos (automáticos)
 
-El volumen `pgdata` persiste los datos entre reinicios del contenedor. Para un backup manual:
+El servicio `backup` del `docker-compose.yml` respalda la base solo, sin tareas programadas de Windows. Arranca y se detiene junto con el sistema (`iniciar.bat` / `detener.bat`):
+
+- **Al arrancar**, si el último respaldo tiene más de 6 horas.
+- **Cada 6 horas** mientras el sistema está encendido.
+- **Al detener el sistema** (`detener.bat`): el respaldo del cierre del día, después de cuadrar la caja.
+
+No se usa una hora fija (ej. 3 a. m.) porque la PC del mostrador suele apagarse de noche y ese respaldo nunca ocurriría.
+
+Los respaldos quedan en `backend/backups/` como `sig_cerrajeria_AAAAMMDD_HHMMSS.sql.gz` y se conservan 30 días. Cada archivo se verifica antes de darlo por bueno: un corte de luz a mitad de un respaldo no deja un archivo dañado con nombre válido.
+
+### Respaldar ahora / restaurar
+
+- **`respaldar.bat`**: hace un respaldo en el momento (por ejemplo, antes de actualizar el sistema).
+- **`restaurar.bat`**: lista los respaldos, pide el nombre del archivo y confirmación, y reemplaza **todos** los datos actuales por los del respaldo. Antes guarda un respaldo del estado actual, por si te equivocas de archivo. La restauración es una sola transacción: si falla a mitad, la base queda exactamente como estaba.
+
+Desde la línea de comandos (dentro de `backend/`):
 ```bash
-docker exec sig-cerrajeria-db pg_dump -U sig_admin sig_cerrajeria > backup_$(date +%Y%m%d).sql
+docker compose exec backup sh /usr/local/bin/backup.sh ahora
+docker compose stop backend
+docker compose exec backup sh /usr/local/bin/backup.sh restaurar sig_cerrajeria_20261004_181128.sql.gz
+docker compose start backend
 ```
-Restaurar:
-```bash
-docker exec -i sig-cerrajeria-db psql -U sig_admin sig_cerrajeria < backup_20260101.sql
+
+### ⚠️ Copia fuera de esta PC
+
+Un respaldo en el mismo disco **no protege** contra que el disco se dañe o la PC se pierda. Para eso, apunta los respaldos a una carpeta sincronizada con la nube (Google Drive, OneDrive o Dropbox para escritorio) con esta línea en `backend/.env`:
 ```
-Para un negocio real, esto debería automatizarse (cron + rotación de backups) — no está cubierto en el alcance actual del proyecto (RNF-07 lo señala como pendiente).
+BACKUP_DIR=C:/Users/TU_USUARIO/Google Drive/sig-cerrajeria-backups
+```
+También se pueden ajustar `BACKUP_INTERVALO_HORAS` (por defecto `6`) y `BACKUP_DIAS` (por defecto `30`). Después de cambiar `.env`, reinicia con `detener.bat` + `iniciar.bat`.
 
 ## Escalamiento futuro (ya definido en Fase 1, sin cambios de arquitectura)
 

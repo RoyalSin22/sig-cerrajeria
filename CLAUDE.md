@@ -48,10 +48,10 @@ Los tests en `backend/src/test/java/.../{caja,inventario,ordenes}` verifican est
 - **Spring Boot 4 usa Jackson 3** (`tools.jackson.databind`), no Jackson 2 (`com.fasterxml.jackson.databind`). Jackson 2 está en el classpath solo como transitiva de springdoc, pero no hay bean de su `ObjectMapper` y los conversores HTTP no lo entienden: si lo importas, la app no arranca. Solo las anotaciones (`com.fasterxml.jackson.annotation`) se mantienen.
 - **`open-in-view: false`**: los métodos de servicio que devuelven DTOs mapeados desde entidades con relaciones `LAZY` necesitan `@Transactional(readOnly = true)`, o el mapper lanza `LazyInitializationException` (500). No lo pongas a nivel de clase: una escritura sin su propio `@Transactional` quedaría en una transacción de solo lectura y no se guardaría.
 - **Fechas en hora de Perú, no del servidor ni UTC**: el backend fija `America/Lima` en `SigApplication.main()` (en Docker el contenedor corre en UTC y una venta de las 20:00 caía al día siguiente). En el frontend, las fechas de calendario (`"AAAA-MM-DD"`) se manejan con `src/utils/fecha.ts`: nunca `new Date('2026-10-04')` ni `toISOString()`, que corren el día.
+- **`backend/scripts/backup.sh` corre en un contenedor Linux**: debe quedar con fin de línea LF (lo fuerza `.gitattributes`); con CRLF el servicio `backup` no arranca. Respaldos: ver `DEPLOYMENT.md`.
 - Variables de entorno opcionales (WhatsApp, Anthropic) van con default vacío (`${VAR:}`) en `application.yml`, nunca con `${VAR:?mensaje}` — eso vuelve la variable obligatoria y rompe el arranque (y los tests) si no está seteada.
 
 ## Qué NO está hecho (a propósito, no son bugs olvidados)
 
-- Backups automáticos de base de datos (RNF-07)
 - HTTPS en el `docker-compose.yml` de producción (documentado en `DEPLOYMENT.md`)
 - Reportes agregados de servicios/clientes (RF-43/44) — hoy son listados filtrados, no reportes propios
