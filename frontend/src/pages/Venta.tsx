@@ -11,7 +11,7 @@ import { Chip } from '../components/ui/Chip'
 import { useCaja } from '../context/CajaContext'
 import { useToast } from '../context/ToastContext'
 import { formatearSoles } from '../utils/format'
-import { ETIQUETA_METODO_PAGO, METODOS_SIMPLES, type MetodoPago, type MetodoPagoSimple } from '../types/ventas'
+import { ETIQUETA_METODO_PAGO, METODOS_EN_USO, type MetodoPago, type MetodoPagoSimple } from '../types/ventas'
 import type { ProductoResponse } from '../types/productos'
 
 interface ItemCarrito {
@@ -19,7 +19,7 @@ interface ItemCarrito {
   cantidad: number
 }
 
-const METODOS: MetodoPago[] = ['EFECTIVO', 'YAPE', 'PLIN', 'TARJETA', 'MIXTO']
+const METODOS: MetodoPago[] = [...METODOS_EN_USO, 'MIXTO']
 
 export function Venta() {
   const navigate = useNavigate()
@@ -73,7 +73,7 @@ export function Venta() {
 
   const total = carrito.reduce((acc, i) => acc + i.producto.precioVenta * i.cantidad, 0)
 
-  const sumaDesglose = METODOS_SIMPLES.reduce((acc, m) => acc + (Number(desglose[m]) || 0), 0)
+  const sumaDesglose = METODOS_EN_USO.reduce((acc, m) => acc + (Number(desglose[m]) || 0), 0)
   const desgloseValido = Math.abs(sumaDesglose - total) < 0.005 && sumaDesglose > 0
   const puedeCobrar = metodoPago !== 'MIXTO' || desgloseValido
 
@@ -85,7 +85,7 @@ export function Venta() {
         metodoPago,
         items: carrito.map((i) => ({ productoId: i.producto.id, cantidad: i.cantidad })),
         desglosePago: metodoPago === 'MIXTO'
-          ? METODOS_SIMPLES
+          ? METODOS_EN_USO
               .filter((m) => Number(desglose[m]) > 0)
               .map((m) => ({ metodoPago: m, monto: Number(desglose[m]) }))
           : undefined,
@@ -199,7 +199,7 @@ export function Venta() {
               <div className="flex flex-col gap-2 rounded-md border border-line p-3">
                 <span className="text-xs text-sub">Desglosa el pago por método (debe sumar el total)</span>
                 <div className="grid grid-cols-2 gap-2">
-                  {METODOS_SIMPLES.map((m) => (
+                  {METODOS_EN_USO.map((m) => (
                     <input
                       key={m}
                       type="number" step="0.01" min="0"
