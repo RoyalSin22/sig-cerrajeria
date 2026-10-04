@@ -1,5 +1,6 @@
 package com.cerrajeria.sig.caja;
 
+import com.cerrajeria.sig.common.MetodoPago;
 import com.cerrajeria.sig.usuarios.Usuario;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -50,15 +51,55 @@ public class CajaDiaria {
     @Column(nullable = false, length = 15)
     private EstadoCaja estado = EstadoCaja.ABIERTA;
 
+    // Neto por metodo digital (cobros - anulaciones): dinero que NO esta en el cajon.
+    @Column(name = "monto_yape", nullable = false, precision = 12, scale = 2)
+    private BigDecimal montoYape = BigDecimal.ZERO;
+
+    @Column(name = "monto_plin", nullable = false, precision = 12, scale = 2)
+    private BigDecimal montoPlin = BigDecimal.ZERO;
+
+    @Column(name = "monto_tarjeta", nullable = false, precision = 12, scale = 2)
+    private BigDecimal montoTarjeta = BigDecimal.ZERO;
+
+    /** Total de la caja, sumando todos los metodos de pago. */
     public BigDecimal saldoEsperado() {
         return montoApertura.add(montoIngresos).subtract(montoEgresos);
     }
 
+    /** Lo que deberia haber fisicamente en el cajon: contra esto se cuadra el cierre. */
+    public BigDecimal efectivoEsperado() {
+        return saldoEsperado().subtract(montoYape).subtract(montoPlin).subtract(montoTarjeta);
+    }
+
+    /** Ingreso en efectivo (movimientos manuales). */
     public void sumarIngreso(BigDecimal monto) {
+        sumarIngreso(monto, MetodoPago.EFECTIVO);
+    }
+
+    public void sumarIngreso(BigDecimal monto, MetodoPago metodo) {
+        acumularDigital(metodo, monto); // primero: rechaza MIXTO sin tocar los totales
         this.montoIngresos = this.montoIngresos.add(monto);
     }
 
+    /** Egreso en efectivo (movimientos manuales, compras pagadas de caja). */
     public void sumarEgreso(BigDecimal monto) {
+        sumarEgreso(monto, MetodoPago.EFECTIVO);
+    }
+
+    /** Un egreso por un metodo digital es la devolucion de un cobro de ese metodo (anulacion). */
+    public void sumarEgreso(BigDecimal monto, MetodoPago metodo) {
+        acumularDigital(metodo, monto.negate());
         this.montoEgresos = this.montoEgresos.add(monto);
+    }
+
+    private void acumularDigital(MetodoPago metodo, BigDecimal delta) {
+        switch (metodo) {
+            case EFECTIVO -> { }
+            case YAPE -> montoYape = montoYape.add(delta);
+            case PLIN -> montoPlin = montoPlin.add(delta);
+            case TARJETA -> montoTarjeta = montoTarjeta.add(delta);
+            case MIXTO -> throw new IllegalArgumentException(
+                "Un pago MIXTO debe registrarse en caja linea por linea, segun su desglose");
+        }
     }
 }

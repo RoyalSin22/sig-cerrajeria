@@ -1,5 +1,6 @@
 package com.cerrajeria.sig.compras;
 
+import com.cerrajeria.sig.common.MetodoPago;
 import com.cerrajeria.sig.caja.CajaDiaria;
 import com.cerrajeria.sig.caja.CajaService;
 import com.cerrajeria.sig.common.exception.RecursoNoEncontradoException;
@@ -44,7 +45,7 @@ public class CompraService {
             // Regla de negocio 1: si la compra sale de caja, exige caja abierta.
             CajaDiaria caja = cajaService.obtenerCajaAbiertaEntidad();
             compra.setCajaDiaria(caja);
-            cajaService.sumarEgresoACajaActiva(caja, total);
+            cajaService.sumarEgresoACajaActiva(caja, total, MetodoPago.EFECTIVO);
         }
 
         compra = compraRepository.save(compra);

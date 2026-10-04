@@ -12,7 +12,11 @@ public record CajaDiariaResponse(
     BigDecimal montoCierre,
     BigDecimal montoIngresos,
     BigDecimal montoEgresos,
+    BigDecimal montoYape,
+    BigDecimal montoPlin,
+    BigDecimal montoTarjeta,
     BigDecimal saldoEsperado,
+    BigDecimal efectivoEsperado,
     String estado
 ) {
 }

@@ -66,8 +66,9 @@ export function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Ventas de hoy" value={formatearSoles(data.ventasHoy)} tint="sky" />
-        <StatCard label="Ventas del mes" value={formatearSoles(data.ventasMes)} />
+        {/* Los montos ocupan el ancho completo en movil; los contadores van de a dos */}
+        <StatCard label="Ventas de hoy" value={formatearSoles(data.ventasHoy)} tint="sky" className="col-span-2 sm:col-span-1" />
+        <StatCard label="Ventas del mes" value={formatearSoles(data.ventasMes)} className="col-span-2 sm:col-span-1" />
         <StatCard label="Trabajos pendientes" value={data.trabajosPendientes} tint="mint" />
         <StatCard label="Trabajos listos" value={data.trabajosListos} />
         <StatCard label="Servicios próximos" value={data.serviciosDomicilioProximos} tint="peach" />

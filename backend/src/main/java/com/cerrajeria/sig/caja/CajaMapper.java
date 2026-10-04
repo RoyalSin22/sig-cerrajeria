@@ -12,6 +12,7 @@ public interface CajaMapper {
 
     @Mapping(target = "usuario", source = "usuario.nombre")
     @Mapping(target = "saldoEsperado", expression = "java(caja.saldoEsperado())")
+    @Mapping(target = "efectivoEsperado", expression = "java(caja.efectivoEsperado())")
     CajaDiariaResponse toResponse(CajaDiaria caja);
 
     @Mapping(target = "usuario", source = "usuario.nombre")

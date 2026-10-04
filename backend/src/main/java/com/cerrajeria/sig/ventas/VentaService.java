@@ -89,8 +89,15 @@ public class VentaService {
             guardarDesglose(venta, request.desglosePago(), total);
         }
 
-        // Toda venta es un ingreso de caja (regla de negocio 1: queda ligada a la caja activa)
-        cajaService.sumarIngresoACajaActiva(caja, total);
+        // Toda venta es un ingreso de caja (regla de negocio 1: queda ligada a la caja activa),
+        // registrado por metodo para que Yape/Plin/tarjeta no se cuenten como efectivo.
+        if (metodoPago == MetodoPago.MIXTO) {
+            for (DesglosePagoRequest linea : request.desglosePago()) {
+                cajaService.sumarIngresoACajaActiva(caja, linea.monto(), parseMetodoPagoSimple(linea.metodoPago()));
+            }
+        } else {
+            cajaService.sumarIngresoACajaActiva(caja, total, metodoPago);
+        }
 
         return mapearAResponse(venta);
     }
@@ -160,7 +167,14 @@ public class VentaService {
                 detalle.getProducto().getId(), detalle.getCantidad(), ReferenciaTipo.VENTA, venta.getId());
         }
 
-        cajaService.sumarEgresoACajaActiva(venta.getCajaDiaria(), venta.getMontoTotal());
+        // Se devuelve por el mismo metodo con que se cobro.
+        if (venta.getMetodoPago() == MetodoPago.MIXTO) {
+            for (PagoVenta pago : pagoVentaRepository.findByVentaId(venta.getId())) {
+                cajaService.sumarEgresoACajaActiva(venta.getCajaDiaria(), pago.getMonto(), pago.getMetodoPago());
+            }
+        } else {
+            cajaService.sumarEgresoACajaActiva(venta.getCajaDiaria(), venta.getMontoTotal(), venta.getMetodoPago());
+        }
 
         venta.setAnulada(true);
         venta.setFechaAnulacion(LocalDateTime.now());

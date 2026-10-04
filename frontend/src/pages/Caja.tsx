@@ -91,7 +91,13 @@ export function Caja() {
         <div className="flex justify-between"><span className="text-sub">Monto inicial</span><span>{formatearSoles(caja?.montoApertura)}</span></div>
         <div className="flex justify-between"><span className="text-sub">Ingresos</span><span>{formatearSoles(caja?.montoIngresos)}</span></div>
         <div className="flex justify-between"><span className="text-sub">Egresos</span><span>{formatearSoles(caja?.montoEgresos)}</span></div>
-        <div className="flex justify-between border-t border-hair pt-2 font-semibold"><span>Saldo esperado</span><span>{formatearSoles(caja?.saldoEsperado)}</span></div>
+        <div className="flex justify-between"><span className="text-sub">Menos cobros por Yape</span><span>{formatearSoles(caja?.montoYape)}</span></div>
+        <div className="flex justify-between"><span className="text-sub">Menos cobros por Plin</span><span>{formatearSoles(caja?.montoPlin)}</span></div>
+        {!!caja?.montoTarjeta && (
+          <div className="flex justify-between"><span className="text-sub">Menos cobros con tarjeta</span><span>{formatearSoles(caja.montoTarjeta)}</span></div>
+        )}
+        <div className="flex justify-between border-t border-hair pt-2 font-semibold"><span>Efectivo esperado en caja</span><span>{formatearSoles(caja?.efectivoEsperado)}</span></div>
+        <p className="text-xs text-sub">Yape y Plin no están en el cajón: el cierre se cuadra solo contra el efectivo.</p>
       </Card>
 
       {resultadoCierre ? (

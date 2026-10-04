@@ -173,7 +173,7 @@ public class OrdenTrabajoService {
 
         orden.aplicarPago(monto);
         ordenTrabajoRepository.save(orden);
-        cajaService.sumarIngresoACajaActiva(caja, monto);
+        cajaService.sumarIngresoACajaActiva(caja, monto, metodoPago);
     }
 
     private OrdenTrabajoResponse toResponse(OrdenTrabajo orden) {
@@ -207,11 +207,18 @@ public class OrdenTrabajoService {
         if (metodoPago == null || metodoPago.isBlank()) {
             throw new IllegalArgumentException("El método de pago es obligatorio");
         }
+        MetodoPago metodo;
         try {
-            return MetodoPago.valueOf(metodoPago.toUpperCase());
+            metodo = MetodoPago.valueOf(metodoPago.toUpperCase());
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException("Método de pago inválido: " + metodoPago);
         }
+        // Los pagos de orden no guardan desglose: con MIXTO no se sabria cuanto entro al cajon.
+        if (metodo == MetodoPago.MIXTO) {
+            throw new IllegalArgumentException(
+                "Los pagos de orden no admiten pago mixto: registra un pago por cada método");
+        }
+        return metodo;
     }
 
     private OrdenTrabajo buscarPorId(Long id) {
