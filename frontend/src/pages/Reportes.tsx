@@ -1,31 +1,30 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { reportesApi } from '../api/reportes'
 import { extraerMensajeError } from '../api/axiosClient'
 import { Card, StatCard } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { formatearSoles } from '../utils/format'
+import { hoyISO, inicioMesISO } from '../utils/fecha'
 import type { ReporteVentasResponse, ProductoMasVendidoResponse, ReporteInventarioResponse } from '../types/reportes'
 
 const COLORES = ['#5980a6', '#2c455d', '#7d9e86', '#b0975f', '#bd8080']
 
-function hoyISO() {
-  return new Date().toISOString().slice(0, 10)
-}
-function inicioMesISO() {
-  const d = new Date()
-  d.setDate(1)
-  return d.toISOString().slice(0, 10)
-}
 
 export function Reportes() {
-  const [desde, setDesde] = useState(inicioMesISO())
-  const [hasta, setHasta] = useState(hoyISO())
+  const [desde, setDesde] = useState(() => inicioMesISO(hoyISO()))
+  const [hasta, setHasta] = useState(hoyISO)
   const [ventas, setVentas] = useState<ReporteVentasResponse | null>(null)
   const [masVendidos, setMasVendidos] = useState<ProductoMasVendidoResponse[]>([])
   const [inventario, setInventario] = useState<ReporteInventarioResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
+
+  // Al abrir la pantalla se muestra el mes en curso, sin esperar a "Consultar"
+  useEffect(() => {
+    consultar()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function consultar() {
     setError(null)

@@ -9,10 +9,10 @@ import { BottomSheet } from '../components/ui/BottomSheet'
 import { PullToRefreshIndicator } from '../components/ui/PullToRefreshIndicator'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { SearchInput } from '../components/ui/SearchInput'
-import { useToast } from '../context/ToastContext'
+import { useToast } from '../context/useToast'
 import { formatearSoles } from '../utils/format'
 import { ESTADOS_ORDEN, ETIQUETA_ESTADO_ORDEN, type EstadoOrden, type OrdenTrabajoResponse } from '../types/ordenes'
-import { ETIQUETA_METODO_PAGO, METODOS_SIMPLES, type MetodoPago } from '../types/ventas'
+import { ETIQUETA_METODO_PAGO, METODOS_EN_USO, type MetodoPago } from '../types/ventas'
 import type { ClienteResponse } from '../types/clientes'
 
 const TONO_ESTADO: Record<EstadoOrden, 'neutral' | 'steel' | 'warning' | 'success' | 'dark'> = {
@@ -179,7 +179,7 @@ function FormularioOrden({
         {adelanto && (
           <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value as MetodoPago)}
             className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel">
-            {METODOS_SIMPLES.map((m) => <option key={m} value={m}>{ETIQUETA_METODO_PAGO[m]}</option>)}
+            {METODOS_EN_USO.map((m) => <option key={m} value={m}>{ETIQUETA_METODO_PAGO[m]}</option>)}
           </select>
         )}
 
@@ -270,7 +270,7 @@ function FichaOrden({
                 />
                 <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value as MetodoPago)}
                   className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel">
-                  {METODOS_SIMPLES.map((m) => <option key={m} value={m}>{ETIQUETA_METODO_PAGO[m]}</option>)}
+                  {METODOS_EN_USO.map((m) => <option key={m} value={m}>{ETIQUETA_METODO_PAGO[m]}</option>)}
                 </select>
                 <Button disabled={procesando} onClick={entregarConLiquidacion}>Liquidar y entregar</Button>
               </div>

@@ -1,15 +1,7 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { AuthContext } from './useAuth'
 import { axiosClient, setAccessToken } from '../api/axiosClient'
 import type { LoginRequest, LoginResponse, UsuarioAutenticado } from '../types/auth'
-
-interface AuthContextValue {
-  usuario: UsuarioAutenticado | null
-  cargandoSesion: boolean
-  login: (credenciales: LoginRequest) => Promise<void>
-  logout: () => Promise<void>
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<UsuarioAutenticado | null>(null)
@@ -60,10 +52,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) throw new Error('useAuth debe usarse dentro de <AuthProvider>')
-  return context
 }

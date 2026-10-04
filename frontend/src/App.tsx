@@ -1,28 +1,34 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppLayout } from './layouts/AppLayout'
 import { Login } from './pages/Login'
-import { Dashboard } from './pages/Dashboard'
-import { Caja } from './pages/Caja'
-import { HistorialCaja } from './pages/HistorialCaja'
-import { Venta } from './pages/Venta'
-import { HistorialVentas } from './pages/HistorialVentas'
-import { Inventario } from './pages/Inventario'
-import { Clientes } from './pages/Clientes'
-import { Taller } from './pages/Taller'
-import { Domicilio } from './pages/Domicilio'
-import { Compras } from './pages/Compras'
-import { HistorialCompras } from './pages/HistorialCompras'
-import { Proveedores } from './pages/Proveedores'
-import { Reportes } from './pages/Reportes'
-import { Buscar } from './pages/Buscar'
-import { Ajustes } from './pages/Ajustes'
-import { Auditoria } from './pages/Auditoria'
+
+// Cada pantalla se descarga al visitarla (code splitting): el bundle inicial ya no
+// arrastra Recharts ni pantallas que el empleado quiza no abra en el dia.
+const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })))
+const Caja = lazy(() => import('./pages/Caja').then((m) => ({ default: m.Caja })))
+const HistorialCaja = lazy(() => import('./pages/HistorialCaja').then((m) => ({ default: m.HistorialCaja })))
+const Venta = lazy(() => import('./pages/Venta').then((m) => ({ default: m.Venta })))
+const HistorialVentas = lazy(() => import('./pages/HistorialVentas').then((m) => ({ default: m.HistorialVentas })))
+const Inventario = lazy(() => import('./pages/Inventario').then((m) => ({ default: m.Inventario })))
+const Clientes = lazy(() => import('./pages/Clientes').then((m) => ({ default: m.Clientes })))
+const Taller = lazy(() => import('./pages/Taller').then((m) => ({ default: m.Taller })))
+const Domicilio = lazy(() => import('./pages/Domicilio').then((m) => ({ default: m.Domicilio })))
+const Compras = lazy(() => import('./pages/Compras').then((m) => ({ default: m.Compras })))
+const HistorialCompras = lazy(() => import('./pages/HistorialCompras').then((m) => ({ default: m.HistorialCompras })))
+const Proveedores = lazy(() => import('./pages/Proveedores').then((m) => ({ default: m.Proveedores })))
+const Reportes = lazy(() => import('./pages/Reportes').then((m) => ({ default: m.Reportes })))
+const Buscar = lazy(() => import('./pages/Buscar').then((m) => ({ default: m.Buscar })))
+const Ajustes = lazy(() => import('./pages/Ajustes').then((m) => ({ default: m.Ajustes })))
+const Auditoria = lazy(() => import('./pages/Auditoria').then((m) => ({ default: m.Auditoria })))
 
 function ConLayout({ children, soloRol }: { children: React.ReactNode; soloRol?: 'ROLE_ADMIN' }) {
   return (
     <ProtectedRoute soloRol={soloRol}>
-      <AppLayout>{children}</AppLayout>
+      <AppLayout>
+        <Suspense fallback={<p className="py-10 text-center text-sm text-sub">Cargando…</p>}>{children}</Suspense>
+      </AppLayout>
     </ProtectedRoute>
   )
 }

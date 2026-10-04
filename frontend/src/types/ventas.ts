@@ -14,6 +14,13 @@ export const ETIQUETA_METODO_PAGO: Record<MetodoPago, string> = {
 
 export const METODOS_SIMPLES: MetodoPagoSimple[] = ['EFECTIVO', 'YAPE', 'PLIN', 'TARJETA']
 
+/**
+ * Metodos que se ofrecen al cobrar. La cerrajeria no cobra con tarjeta: el
+ * backend lo sigue aceptando (y ETIQUETA_METODO_PAGO lo muestra en ventas
+ * antiguas), pero no aparece en los selectores.
+ */
+export const METODOS_EN_USO: MetodoPagoSimple[] = ['EFECTIVO', 'YAPE', 'PLIN']
+
 export interface ItemVentaRequest {
   productoId: number
   cantidad: number

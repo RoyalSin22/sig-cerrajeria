@@ -1,13 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-
-type Tema = 'claro' | 'oscuro'
-
-interface ThemeContextValue {
-  tema: Tema
-  alternarTema: () => void
-}
-
-const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
+import { useEffect, useState, type ReactNode } from 'react'
+import { ThemeContext, type Tema } from './useTheme'
 
 const CLAVE_STORAGE = 'sig-cerrajeria:tema'
 
@@ -30,10 +22,4 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   return <ThemeContext.Provider value={{ tema, alternarTema }}>{children}</ThemeContext.Provider>
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext)
-  if (!context) throw new Error('useTheme debe usarse dentro de <ThemeProvider>')
-  return context
 }

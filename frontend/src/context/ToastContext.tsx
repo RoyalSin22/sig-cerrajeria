@@ -1,18 +1,11 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
-
-type TipoToast = 'success' | 'error' | 'info'
+import { useCallback, useState, type ReactNode } from 'react'
+import { ToastContext, type TipoToast } from './useToast'
 
 interface ToastItem {
   id: number
   mensaje: string
   tipo: TipoToast
 }
-
-interface ToastContextValue {
-  notificar: (mensaje: string, tipo?: TipoToast) => void
-}
-
-const ToastContext = createContext<ToastContextValue | undefined>(undefined)
 
 const estilosPorTipo: Record<TipoToast, string> = {
   success: 'bg-steel-dark',
@@ -46,10 +39,4 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       </div>
     </ToastContext.Provider>
   )
-}
-
-export function useToast() {
-  const context = useContext(ToastContext)
-  if (!context) throw new Error('useToast debe usarse dentro de <ToastProvider>')
-  return context
 }

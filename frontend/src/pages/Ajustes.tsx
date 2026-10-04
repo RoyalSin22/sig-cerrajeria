@@ -6,9 +6,9 @@ import { extraerMensajeError } from '../api/axiosClient'
 import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
-import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
-import { useToast } from '../context/ToastContext'
+import { useAuth } from '../context/useAuth'
+import { useTheme } from '../context/useTheme'
+import { useToast } from '../context/useToast'
 import type { Rol, UsuarioResponse } from '../types/usuarios'
 
 export function Ajustes() {

@@ -11,42 +11,17 @@ import { Button } from '../components/ui/Button'
 import { BottomSheet } from '../components/ui/BottomSheet'
 import { SearchInput } from '../components/ui/SearchInput'
 import { EmptyState } from '../components/ui/EmptyState'
-import { useToast } from '../context/ToastContext'
+import { useToast } from '../context/useToast'
 import { ETIQUETA_ESTADO_SERVICIO, type EstadoServicio, type ServicioDomicilioResponse } from '../types/domicilio'
 import type { ClienteResponse } from '../types/clientes'
 import { formatearFecha, formatearHora } from '../utils/format'
+import { finMesISO, hoyISO, inicioMesISO, sumarDiasISO, sumarMesesISO } from '../utils/fecha'
 
 const TONO_ESTADO: Record<EstadoServicio, 'neutral' | 'steel' | 'success' | 'warning'> = {
   PROGRAMADO: 'neutral',
   EN_CAMINO: 'steel',
   REALIZADO: 'success',
   CANCELADO: 'warning',
-}
-
-function hoyISO() {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function sumarDiasISO(fechaISO: string, dias: number) {
-  const d = new Date(fechaISO)
-  d.setDate(d.getDate() + dias)
-  return d.toISOString().slice(0, 10)
-}
-
-function sumarMesesISO(fechaISO: string, meses: number) {
-  const d = new Date(fechaISO)
-  d.setMonth(d.getMonth() + meses)
-  return d.toISOString().slice(0, 10)
-}
-
-function inicioMesISO(fechaISO: string) {
-  const d = new Date(fechaISO)
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10)
-}
-
-function finMesISO(fechaISO: string) {
-  const d = new Date(fechaISO)
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10)
 }
 
 type Vista = 'SEMANA' | 'MES'

@@ -4,6 +4,7 @@ import com.cerrajeria.sig.common.exception.CajaNoAbiertaException;
 import com.cerrajeria.sig.common.exception.RecursoNoEncontradoException;
 import com.cerrajeria.sig.common.exception.SaldoPendienteException;
 import com.cerrajeria.sig.common.exception.StockInsuficienteException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
  * respuestas de error usan ProblemDetail (RFC 9457) via
  * ResponseEntityExceptionHandler, sin exponer stacktraces (RNF-02).
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -76,7 +78,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ProblemDetail handleRuntimeException(RuntimeException ex) {
-        // Ultimo recurso: no exponer detalles internos (stack trace) al cliente.
+        // Ultimo recurso: no exponer detalles internos (stack trace) al cliente,
+        // pero si registrarlos: sin esto un 500 no deja rastro para diagnosticarlo.
+        log.error("Error inesperado procesando la solicitud", ex);
         return buildProblem(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error inesperado. Intenta nuevamente.");
     }
 

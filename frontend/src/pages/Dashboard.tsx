@@ -6,7 +6,7 @@ import { StatCard, Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { PullToRefreshIndicator } from '../components/ui/PullToRefreshIndicator'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
-import { useCaja } from '../context/CajaContext'
+import { useCaja } from '../context/useCaja'
 import { formatearSoles, formatearFechaHora } from '../utils/format'
 import type { DashboardResponse } from '../types/dashboard'
 
