@@ -1,16 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { CajaContext } from './useCaja'
 import { axiosClient } from '../api/axiosClient'
-import { useAuth } from './AuthContext'
+import { useAuth } from './useAuth'
 import type { CajaDiariaResponse } from '../types/caja'
-
-interface CajaContextValue {
-  caja: CajaDiariaResponse | null
-  cargando: boolean
-  cajaAbierta: boolean
-  refrescarCaja: () => Promise<void>
-}
-
-const CajaContext = createContext<CajaContextValue | undefined>(undefined)
 
 export function CajaProvider({ children }: { children: ReactNode }) {
   const { usuario } = useAuth()
@@ -43,10 +35,4 @@ export function CajaProvider({ children }: { children: ReactNode }) {
       {children}
     </CajaContext.Provider>
   )
-}
-
-export function useCaja() {
-  const context = useContext(CajaContext)
-  if (!context) throw new Error('useCaja debe usarse dentro de <CajaProvider>')
-  return context
 }

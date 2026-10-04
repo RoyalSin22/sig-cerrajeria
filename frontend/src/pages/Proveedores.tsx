@@ -4,7 +4,7 @@ import { extraerMensajeError } from '../api/axiosClient'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
-import { useToast } from '../context/ToastContext'
+import { useToast } from '../context/useToast'
 import type { ProveedorResponse } from '../types/compras'
 
 export function Proveedores() {

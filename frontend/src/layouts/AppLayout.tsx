@@ -4,8 +4,8 @@ import {
   Menu, X, Search, LayoutGrid, ShoppingCart, Package, Wrench, Truck,
   Users, ShoppingBag, Wallet, BarChart3, Settings, LogOut,
 } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
-import { useCaja } from '../context/CajaContext'
+import { useAuth } from '../context/useAuth'
+import { useCaja } from '../context/useCaja'
 import { AsistenteChat } from '../components/AsistenteChat'
 
 const PESTANAS = [
