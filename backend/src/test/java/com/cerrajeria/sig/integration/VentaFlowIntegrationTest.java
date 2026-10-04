@@ -106,7 +106,24 @@ class VentaFlowIntegrationTest {
         // La caja reflejo el ingreso (regla de negocio 1: venta ligada a la caja activa)
         mockMvc.perform(get("/api/v1/caja/abierta").header("Authorization", auth))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.montoIngresos").value(15.0));
+            .andExpect(jsonPath("$.montoIngresos").value(15.0))
+            .andExpect(jsonPath("$.efectivoEsperado").value(115.0));
+
+        // Un cobro por Yape suma al total de la caja, pero no al efectivo del cajon
+        mockMvc.perform(post("/api/v1/ventas")
+                .header("Authorization", auth)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"metodoPago": "YAPE", "items": [{"productoId": %d, "cantidad": 2}]}
+                    """.formatted(productoId)))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/v1/caja/abierta").header("Authorization", auth))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.montoIngresos").value(25.0))
+            .andExpect(jsonPath("$.montoYape").value(10.0))
+            .andExpect(jsonPath("$.saldoEsperado").value(125.0))
+            .andExpect(jsonPath("$.efectivoEsperado").value(115.0));
     }
 
     @Test

@@ -14,6 +14,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { useToast } from '../context/ToastContext'
 import { ETIQUETA_ESTADO_SERVICIO, type EstadoServicio, type ServicioDomicilioResponse } from '../types/domicilio'
 import type { ClienteResponse } from '../types/clientes'
+import { formatearFecha, formatearHora } from '../utils/format'
 
 const TONO_ESTADO: Record<EstadoServicio, 'neutral' | 'steel' | 'success' | 'warning'> = {
   PROGRAMADO: 'neutral',
@@ -96,7 +97,7 @@ export function Domicilio() {
         >
           ◀ Anterior
         </Button>
-        <span className="text-sm text-sub">{rangoDesde} → {hasta}</span>
+        <span className="text-sm text-sub">{formatearFecha(rangoDesde)} → {formatearFecha(hasta)}</span>
         <Button
           variant="secondary"
           onClick={() => setDesde((d) => (vista === 'SEMANA' ? sumarDiasISO(d, 7) : sumarMesesISO(d, 1)))}
@@ -112,7 +113,7 @@ export function Domicilio() {
           {servicios.map((s) => (
             <Card key={s.id} className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-medium">{s.fecha} · {s.hora}</p>
+                <p className="text-sm font-medium">{formatearFecha(s.fecha)} · {formatearHora(s.hora)}</p>
                 <p className="text-sm">{s.cliente} — {s.tipoServicio}</p>
                 <p className="text-xs text-sub">{s.direccion} · {s.telefono}</p>
               </div>

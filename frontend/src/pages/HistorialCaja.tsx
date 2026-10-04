@@ -54,6 +54,12 @@ export function HistorialCaja() {
                   <span>Cierre: {s.montoCierre !== null ? formatearSoles(s.montoCierre) : '—'}</span>
                   <span>Ingresos: {formatearSoles(s.montoIngresos)}</span>
                   <span>Egresos: {formatearSoles(s.montoEgresos)}</span>
+                  <span>Yape: {formatearSoles(s.montoYape)}</span>
+                  <span>Plin: {formatearSoles(s.montoPlin)}</span>
+                  <span>Efectivo esperado: {formatearSoles(s.efectivoEsperado)}</span>
+                  {s.montoCierre !== null && (
+                    <span>Diferencia: {formatearSoles(s.montoCierre - s.efectivoEsperado)}</span>
+                  )}
                 </div>
               </Card>
             ))}

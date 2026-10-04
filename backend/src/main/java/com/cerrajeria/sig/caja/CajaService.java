@@ -1,5 +1,6 @@
 package com.cerrajeria.sig.caja;
 
+import com.cerrajeria.sig.common.MetodoPago;
 import com.cerrajeria.sig.caja.dto.AperturaCajaRequest;
 import com.cerrajeria.sig.caja.dto.CajaDiariaResponse;
 import com.cerrajeria.sig.caja.dto.CierreCajaRequest;
@@ -97,24 +98,28 @@ public class CajaService {
         return cajaMapper.toResponse(movimientoCajaRepository.save(movimiento));
     }
 
-    /** Usado internamente por VentaService/OrdenTrabajoService al registrar cobros. */
+    /**
+     * Usado internamente por VentaService/OrdenTrabajoService al registrar cobros.
+     * El metodo decide si el dinero entra al cajon (EFECTIVO) o no (Yape, Plin, tarjeta).
+     */
     @Transactional
-    public void sumarIngresoACajaActiva(CajaDiaria caja, BigDecimal monto) {
-        caja.sumarIngreso(monto);
+    public void sumarIngresoACajaActiva(CajaDiaria caja, BigDecimal monto, MetodoPago metodo) {
+        caja.sumarIngreso(monto, metodo);
         cajaDiariaRepository.save(caja);
     }
 
+    /** Egreso con el metodo con que sale el dinero: EFECTIVO, o el del cobro que se devuelve. */
     @Transactional
-    public void sumarEgresoACajaActiva(CajaDiaria caja, BigDecimal monto) {
-        caja.sumarEgreso(monto);
+    public void sumarEgresoACajaActiva(CajaDiaria caja, BigDecimal monto, MetodoPago metodo) {
+        caja.sumarEgreso(monto, metodo);
         cajaDiariaRepository.save(caja);
     }
 
     @Transactional
     public CierreCajaResponse cerrar(CierreCajaRequest request) {
         CajaDiaria caja = obtenerCajaAbiertaEntidad();
-        BigDecimal saldoEsperado = caja.saldoEsperado();
-        BigDecimal diferencia = request.montoContado().subtract(saldoEsperado);
+        // Se cuenta el cajon: Yape, Plin y tarjeta no estan ahi y no entran al cuadre.
+        BigDecimal diferencia = request.montoContado().subtract(caja.efectivoEsperado());
 
         caja.setMontoCierre(request.montoContado());
         caja.setFechaCierre(LocalDateTime.now());
