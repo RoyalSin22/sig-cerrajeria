@@ -1,7 +1,6 @@
 package com.cerrajeria.sig.usuarios;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,14 +18,15 @@ public class CustomUserDetailsService implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByUsername(username)
             .orElseThrow(() -> new UsernameNotFoundException("Usuario o contraseña incorrectos"));
 
-        if (Boolean.FALSE.equals(usuario.getActivo())) {
-            throw new DisabledException("Usuario inactivo");
-        }
-
+        // Se marca como deshabilitado en vez de lanzar DisabledException aqui:
+        // DaoAuthenticationProvider envuelve las excepciones de este metodo y el
+        // login respondia 500. Asi Spring hace su chequeo estandar y lanza
+        // DisabledException, que GlobalExceptionHandler responde como 401.
         return User.builder()
             .username(usuario.getUsername())
             .password(usuario.getPassword())
             .authorities(usuario.getRole().name())
+            .disabled(Boolean.FALSE.equals(usuario.getActivo()))
             .build();
     }
 }

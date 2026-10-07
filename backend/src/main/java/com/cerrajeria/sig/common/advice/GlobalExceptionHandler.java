@@ -10,7 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -53,6 +55,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ProblemDetail handleCredencialesInvalidas(BadCredentialsException ex) {
         // Mensaje generico a proposito: no revelar si el usuario existe o no.
         return buildProblem(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos");
+    }
+
+    // Login de un usuario desactivado: sin esto caia en el handler generico (500)
+    @ExceptionHandler(DisabledException.class)
+    public ProblemDetail handleUsuarioInactivo(DisabledException ex) {
+        return buildProblem(HttpStatus.UNAUTHORIZED, "Usuario inactivo. Consulta con el administrador.");
+    }
+
+    // Un empleado en un endpoint solo-ADMIN (@PreAuthorize): sin esto caia en el
+    // handler generico y respondia 500 en vez de 403.
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccesoDenegado(AccessDeniedException ex) {
+        return buildProblem(HttpStatus.FORBIDDEN, "No tienes permiso para realizar esta acción.");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
