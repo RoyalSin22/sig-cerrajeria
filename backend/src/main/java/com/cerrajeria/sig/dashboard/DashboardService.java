@@ -69,6 +69,7 @@ public class DashboardService {
             case EDITAR -> "Edición de " + sujeto;
             case ELIMINAR -> "Eliminación de " + sujeto;
             case ANULACION -> "Anulación de " + sujeto;
+            case CAMBIO_PASSWORD -> "Cambio de contraseña de " + sujeto;
         };
     }
 }

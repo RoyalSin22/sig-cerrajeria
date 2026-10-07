@@ -1,5 +1,8 @@
 package com.cerrajeria.sig.usuarios;
 
+import org.springframework.security.core.Authentication;
+import com.cerrajeria.sig.usuarios.dto.RestablecerPasswordRequest;
+import com.cerrajeria.sig.usuarios.dto.CambiarPasswordRequest;
 import com.cerrajeria.sig.usuarios.dto.CambiarEstadoUsuarioRequest;
 import com.cerrajeria.sig.usuarios.dto.UsuarioCreateRequest;
 import com.cerrajeria.sig.usuarios.dto.UsuarioResponse;
@@ -38,8 +41,28 @@ public class UsuarioController {
     @PatchMapping("/{id}/estado")
     @Operation(summary = "Activar o desactivar un usuario")
     public ResponseEntity<UsuarioResponse> cambiarEstado(
-            @PathVariable Long id, @Valid @RequestBody CambiarEstadoUsuarioRequest request) {
-        return ResponseEntity.ok(usuarioService.cambiarEstado(id, request));
+            @PathVariable Long id, @Valid @RequestBody CambiarEstadoUsuarioRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(usuarioService.cambiarEstado(id, request, authentication.getName()));
+    }
+
+    /** Cualquier usuario autenticado cambia su propia contrasena (no solo ADMIN). */
+    @PatchMapping("/me/password")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Cambiar la propia contraseña (exige la actual); cierra las demás sesiones")
+    public ResponseEntity<Void> cambiarPasswordPropia(
+            @Valid @RequestBody CambiarPasswordRequest request, Authentication authentication) {
+        usuarioService.cambiarPasswordPropia(authentication.getName(), request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/password")
+    @Operation(summary = "Restablecer la contraseña de un usuario (ej. el empleado la olvidó)")
+    public ResponseEntity<Void> restablecerPassword(
+            @PathVariable Long id, @Valid @RequestBody RestablecerPasswordRequest request,
+            Authentication authentication) {
+        usuarioService.restablecerPassword(id, request, authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/whatsapp")

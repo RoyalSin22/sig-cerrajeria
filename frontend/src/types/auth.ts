@@ -9,11 +9,13 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   accessToken: string
+  username: string
   nombre: string
   role: Rol
 }
 
 export interface UsuarioAutenticado {
+  username: string
   nombre: string
   role: Rol
 }

@@ -13,6 +13,7 @@ const ETIQUETA_ACCION: Record<string, string> = {
   CAMBIO_ESTADO: 'Cambio de estado',
   AJUSTE_INVENTARIO: 'Ajuste de inventario',
   ANULACION: 'Anulación',
+  CAMBIO_PASSWORD: 'Cambio de contraseña',
   APERTURA_CAJA: 'Apertura de caja',
   CIERRE_CAJA: 'Cierre de caja',
 }
