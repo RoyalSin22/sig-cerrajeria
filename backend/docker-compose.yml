@@ -61,6 +61,8 @@ services:
       # El frontend llama por rutas relativas via el proxy de Nginx, pero el
       # backend igual valida el origen declarado aqui para el resto de casos.
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8081}
+      # Acceso desde el celular por Tailscale (celular.bat), ver INSTALACION.md
+      ORIGENES_CELULAR: ${ORIGENES_CELULAR:-https://*.ts.net}
       UPLOADS_DIR: /app/uploads
     volumes:
       - uploads:/app/uploads

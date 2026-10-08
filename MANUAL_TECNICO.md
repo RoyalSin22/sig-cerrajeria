@@ -64,9 +64,8 @@ Un detalle no obvio: Tailwind CSS 4 no usa `tailwind.config.js` — los tokens d
 
 No son bugs olvidados — son decisiones de alcance documentadas en su momento:
 
-- **Backups automáticos de la base de datos** (RNF-07): no implementados. `DEPLOYMENT.md` trae el comando manual de `pg_dump`.
 - **WhatsApp Business API y asistente de IA**: quedaron fuera del alcance del MVP desde la Fase 1. La arquitectura no les cierra el paso — se agregarían como módulos nuevos sin tocar lo existente.
-- **HTTPS en producción**: no viene armado en el `docker-compose.yml` actual. Sin él, el refresh token no se renueve solo fuera de `localhost` (detalle completo en `DEPLOYMENT.md`).
+- **HTTPS en producción**: no viene armado en el `docker-compose.yml`. El acceso desde el celular con HTTPS se resuelve con Tailscale (`backend/celular.bat`); sin HTTPS, fuera de `localhost` ni CORS ni la cookie del refresh token funcionan (detalle en `DEPLOYMENT.md`).
 - **Reportes de servicios realizados / historial agregado de clientes** (RF-43, RF-44): existen como listados filtrados, no como reportes con agregaciones propias.
 
 ## 7. Correr los tests

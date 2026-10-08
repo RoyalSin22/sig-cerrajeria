@@ -36,7 +36,11 @@ import java.util.List;
  * balance aceptable, documentado explicitamente aqui.
  *
  * CORS: se habilita explicitamente para el origen del frontend (Fase 9),
- * con allowCredentials=true porque el refresh token viaja en cookie.
+ * con allowCredentials=true porque el refresh token viaja en cookie. Ademas se
+ * aceptan los origenes del acceso desde el celular (por defecto la direccion
+ * HTTPS que da Tailscale, https://&lt;pc&gt;.&lt;red&gt;.ts.net; ver INSTALACION.md).
+ * Detras de nginx el backend ve el pedido como de otro origen (otro host y
+ * puerto), asi que un origen que no este en esta lista no puede ni iniciar sesion.
  */
 @Configuration
 @EnableMethodSecurity
@@ -44,6 +48,9 @@ public class SecurityConfig {
 
     @Value("${sig.frontend-origin:http://localhost:5173}")
     private String frontendOrigin;
+
+    @Value("${sig.origenes-celular:}")
+    private String origenesCelular;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -72,7 +79,12 @@ public class SecurityConfig {
 
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(frontendOrigin));
+        // Patrones (no origenes exactos) para admitir "https://*.ts.net"
+        config.setAllowedOriginPatterns(java.util.stream.Stream.of(frontendOrigin, origenesCelular)
+            .flatMap(lista -> java.util.Arrays.stream(lista.split(",")))
+            .map(String::trim)
+            .filter(origen -> !origen.isEmpty())
+            .toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setAllowCredentials(true); // necesario para que el navegador envie la cookie refresh_token

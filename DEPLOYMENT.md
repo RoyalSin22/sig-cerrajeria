@@ -34,17 +34,24 @@ El frontend llama por **rutas relativas** (`/api/v1`, `/uploads`); Nginx las ree
 
 Las migraciones de Flyway (`V1` en adelante) se aplican solas al arrancar el backend, igual que en desarrollo local.
 
-## ⚠️ Limitación conocida: refresh token, PWA y HTTPS
+## Acceso desde otros equipos: HTTPS, CORS y Tailscale
 
-El refresh token viaja en una cookie `Secure` (Fase 5, decisión de seguridad). Los navegadores solo envían cookies `Secure` sobre HTTPS — **con una excepción**: tratan `localhost` como origen confiable incluso sobre HTTP simple.
+Tres cosas impiden usar el sistema desde un celular o desde otra PC entrando por `http://192.168.x.x:8081`:
 
-Esto significa:
-- **Accediendo por `http://localhost:8081`**: todo funciona normal, incluido el refresco automático de sesión.
-- **Accediendo por una IP de LAN (`http://192.168.x.x:8081`) o un dominio sin HTTPS**: el login funciona, pero el refresco automático de sesión **no** — cada usuario deberá volver a iniciar sesión cada ~15 minutos (la duración del access token) en vez de que se renueve solo.
+1. **CORS.** nginx reenvía `/api/` al backend, y el backend ve el pedido como de otro origen (otro host y puerto), así que solo acepta los orígenes de `FRONTEND_ORIGIN` y `ORIGENES_CELULAR`. Una IP del wifi no está en la lista: **ni siquiera el login funciona** (403), y lo verifica `AccesoCelularIntegrationTest`.
+2. **Cookie `Secure`.** El refresh token viaja en una cookie `Secure` (Fase 5) y los navegadores solo la envían por HTTPS o `localhost`. Sin HTTPS, la sesión duraría solo los 15 minutos del access token.
+3. **PWA.** Los navegadores solo ofrecen "Instalar aplicación" en un contexto seguro (HTTPS o `localhost`).
 
-El mismo límite aplica a la instalación como app (PWA, Fase 9): los navegadores solo ofrecen "Instalar" / "Agregar a pantalla de inicio" en un contexto seguro (HTTPS o `localhost`). Desde una IP de LAN sin HTTPS, el sistema funciona igual en el navegador, pero no se puede instalar con ícono propio.
+**Solución adoptada: Tailscale** (`backend/celular.bat`, pasos en [INSTALACION.md](./INSTALACION.md)). `tailscale serve --bg 8081` publica el frontend en `https://<pc>.<red>.ts.net` con un certificado válido emitido por Tailscale, solo para los equipos de la red privada de la cerrajería (no es `funnel`: no queda expuesto a internet). `ORIGENES_CELULAR` vale `https://*.ts.net` por defecto, así que no hace falta tocar `.env`. Se eligió frente a las alternativas:
 
-Para una cerrajería con 2 usuarios en una sola PC, esto puede ser aceptable. Si se necesita acceso e instalación desde varios dispositivos en la red (celular, tablet), la solución correcta es poner HTTPS delante — por ejemplo con Caddy (certificados automáticos, configuración mínima) o un dominio + Let's Encrypt si se migra a un VPS. No se implementa en esta fase por estar fuera del alcance de un despliegue local, pero queda documentado para no repetir la sorpresa que ya tuvimos una vez con la configuración de `application.yml`.
+| Opción | Por qué no |
+|---|---|
+| IP del wifi sin HTTPS | No pasa CORS, no mantiene la sesión, no se instala, y no funciona fuera del local |
+| Caddy con certificado propio en la LAN | Hay que instalar el certificado en cada celular, y tampoco funciona fuera del local |
+| Cloudflare Tunnel con dominio propio | Deja el sistema público en internet, protegido solo por el login |
+| VPS | Costo mensual y migrar la base y los respaldos; no hace falta mientras la PC del local quede prendida |
+
+Nota de seguridad: los equipos de la red de Tailscale también alcanzan los otros puertos publicados por Docker en la PC (8080 del backend, 5433 de Postgres, este con contraseña). Son solo los equipos de la propia cerrajería, pero es otra razón para no compartir la cuenta de Tailscale.
 
 ## Backups de la base de datos (automáticos)
 
@@ -81,4 +88,4 @@ También se pueden ajustar `BACKUP_INTERVALO_HORAS` (por defecto `6`) y `BACKUP_
 
 ## Escalamiento futuro (ya definido en Fase 1, sin cambios de arquitectura)
 
-Migrar este mismo `docker-compose.yml` a un VPS (ej. Vultr Santiago, ~US$24/mes) implica solo: copiar el proyecto, ajustar `.env` con secretos de producción, y agregar HTTPS delante (ver arriba). La arquitectura por capas y el empaquetado en contenedores ya están preparados para ese salto.
+Migrar este mismo `docker-compose.yml` a un VPS (ej. Vultr Santiago, ~US$24/mes) implica solo: copiar el proyecto, ajustar `.env` con secretos de producción, y agregar HTTPS delante (por ejemplo Caddy con Let's Encrypt; ver "Acceso desde otros equipos" arriba). La arquitectura por capas y el empaquetado en contenedores ya están preparados para ese salto.

@@ -10,7 +10,9 @@ Vas a ver cinco pestañas arriba: **Inicio, Venta, Inventario, Taller, Domicilio
 
 ### Instalarla en el celular
 
-No hace falta bajar nada de una tienda de aplicaciones. Desde el navegador del celular (Chrome en Android, Safari en iPhone), entra a la dirección del sistema y:
+No hace falta bajar el sistema de una tienda de aplicaciones. Lo que sí necesita el celular es la app **Tailscale** (de Play Store), conectada con la cuenta de la cerrajería: es la que lo une con la PC del local, estés en el local o fuera. La configuración de una sola vez está en [INSTALACION.md](./INSTALACION.md) → "Usar el sistema desde el celular".
+
+Con Tailscale conectado, entra desde el navegador del celular (Chrome en Android, Safari en iPhone) a la dirección del sistema (`https://….ts.net`, te la da quien lo instaló) y:
 
 - **Android (Chrome):** toca los tres puntos → "Instalar aplicación" (o "Agregar a pantalla de inicio"). Aparece el ícono de la llave junto a tus demás apps.
 - **iPhone (Safari):** toca el botón de compartir (el cuadrado con la flecha) → "Agregar a pantalla de inicio".
