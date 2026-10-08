@@ -2,7 +2,7 @@ import { axiosClient } from './axiosClient'
 import type { Pagina } from '../types/pagina'
 import type {
   ProductoResponse, ProductoCreateRequest, ProductoUpdateRequest,
-  AjusteStockRequest, MovimientoInventarioResponse, TipoProducto,
+  AjusteStockRequest, MovimientoInventarioResponse, TipoProducto, ImportacionResultado,
 } from '../types/productos'
 
 export const productosApi = {
@@ -26,6 +26,14 @@ export const productosApi = {
     // No se fija Content-Type a mano: el navegador arma el boundary multipart correcto.
     return axiosClient
       .post<ProductoResponse>(`/productos/${id}/imagen`, formData)
+      .then(r => r.data)
+  },
+  /** Con confirmar=false solo revisa el archivo; con true crea los productos si no hay errores. */
+  importar: (archivo: File, confirmar: boolean) => {
+    const formData = new FormData()
+    formData.append('archivo', archivo)
+    return axiosClient
+      .post<ImportacionResultado>('/productos/importar', formData, { params: { confirmar } })
       .then(r => r.data)
   },
 }

@@ -1,6 +1,7 @@
 package com.cerrajeria.sig.inventario;
 
 import com.cerrajeria.sig.inventario.dto.AjusteStockRequest;
+import com.cerrajeria.sig.inventario.dto.ImportacionResultado;
 import com.cerrajeria.sig.inventario.dto.MovimientoInventarioResponse;
 import com.cerrajeria.sig.inventario.dto.ProductoCreateRequest;
 import com.cerrajeria.sig.inventario.dto.ProductoResponse;
@@ -31,12 +32,22 @@ import java.util.List;
 public class ProductoController {
 
     private final ProductoService productoService;
+    private final ImportacionProductosService importacionProductosService;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Registrar un nuevo producto en el catálogo (RF-11)")
     public ResponseEntity<ProductoResponse> crear(@Valid @RequestBody ProductoCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productoService.crear(request));
+    }
+
+    @PostMapping(value = "/importar", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Importar productos nuevos desde un CSV (revisar con confirmar=false, crear con true)")
+    public ResponseEntity<ImportacionResultado> importar(
+            @RequestParam("archivo") org.springframework.web.multipart.MultipartFile archivo,
+            @RequestParam(defaultValue = "false") boolean confirmar) throws java.io.IOException {
+        return ResponseEntity.ok(importacionProductosService.importar(archivo.getBytes(), confirmar));
     }
 
     @GetMapping

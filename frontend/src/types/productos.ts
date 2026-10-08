@@ -74,3 +74,19 @@ export interface MovimientoInventarioResponse {
   usuario: string
   fechaHora: string
 }
+
+/** Refleja ImportacionResultado: la importacion es todo o nada. */
+export interface ImportacionResultado {
+  filasLeidas: number
+  creados: number
+  productos: {
+    fila: number
+    codigo: string
+    nombre: string
+    tipoProducto: TipoProducto
+    cantidadStock: number
+    precioVenta: number
+  }[]
+  errores: { fila: number; mensaje: string }[]
+  columnasIgnoradas: string[]
+}
