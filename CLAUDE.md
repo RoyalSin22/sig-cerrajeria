@@ -23,7 +23,7 @@ npm run build
 npm run lint
 ```
 
-Login de prueba: `admin` / `admin123`.
+Login de prueba: `admin` / `admin123` (contraseña inicial de V2; en una instalación real se cambia en Ajustes → Contraseña).
 
 CI (`.github/workflows/ci.yml`) corre en cada PR: `./mvnw verify`, `npm ci` + `lint` + `build`, y valida `docker-compose.yml` y `backup.sh`. Si agregas un paso de verificación nuevo, súmalo ahí.
 

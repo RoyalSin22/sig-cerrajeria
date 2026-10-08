@@ -15,7 +15,7 @@ Un solo repo, dos carpetas:
 **Backend:**
 1. `docker compose up -d` (levanta solo Postgres, puerto 5433 — el 5432 suele estar ocupado por un Postgres nativo en Windows)
 2. Abrir el proyecto en IntelliJ, correr `SigApplication`
-3. Flyway aplica las migraciones solo (`V1` a `V5`). Login inicial: `admin` / `admin123`
+3. Flyway aplica las migraciones solo (`V1` en adelante). Login inicial: `admin` / `admin123` (cambiarla en Ajustes → Contraseña)
 4. Swagger: `http://localhost:8080/swagger-ui.html`
 
 **Frontend:**

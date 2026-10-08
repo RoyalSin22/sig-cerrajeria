@@ -65,7 +65,7 @@ En **Compras**, elige un proveedor de la lista (o crea uno nuevo ahí mismo), bu
 
 ## Cerrar caja
 
-Al final del turno, entra a **Caja**. Vas a ver el resumen: monto de apertura, ingresos, egresos, y el saldo que el sistema espera encontrar. Cuenta el efectivo real que tienes y ponlo en "Efectivo contado". El sistema te muestra la diferencia — si sobra, falta, o cuadra exacto.
+Al final del turno, entra a **Caja**. Vas a ver el resumen: monto de apertura, ingresos, egresos, lo cobrado por Yape y por Plin, y el **efectivo esperado en caja**. Yape y Plin no están en el cajón, así que no se cuentan. Cuenta solo el efectivo real que tienes y ponlo en "Efectivo contado". El sistema te muestra la diferencia — si sobra, falta, o cuadra exacto.
 
 ## Reportes
 
@@ -82,6 +82,12 @@ En la esquina inferior derecha hay un botón redondo (ícono de robot). Ábrelo 
 
 Si te pide una acción con dinero (como registrar una venta) y no tienes la caja abierta, te lo va a decir en vez de hacerlo — las mismas reglas que rigen el resto del sistema aplican acá también. Si algo que le pides es ambiguo (dos productos con nombres parecidos, un cliente que no existe), te va a preguntar en vez de adivinar.
 
+## Cambiar tu contraseña
+
+En **Ajustes → Contraseña**, toca **Cambiar**, escribe tu contraseña actual y la nueva dos veces. Al guardarla se cierra tu sesión (y cualquier otra que tuvieras abierta, por ejemplo en el celular): vuelve a entrar con la nueva.
+
+Si un empleado olvida su contraseña, el Administrador entra a **Ajustes → Usuarios**, toca **Restablecer contraseña** junto a su nombre y le pone una temporal. Después el empleado la cambia por una propia.
+
 ## Administrador vs. Empleado
 
-El Administrador puede, además de todo lo anterior: crear y desactivar usuarios, anular ventas, ver el registro de auditoría (quién hizo qué y cuándo), y editar productos. Un Empleado puede vender, atender órdenes, agendar servicios y registrar clientes, pero no ve esas pantallas de administración.
+El Administrador puede, además de todo lo anterior: crear y desactivar usuarios, restablecer contraseñas, anular ventas, ver el registro de auditoría (quién hizo qué y cuándo), y editar productos. Un Empleado puede vender, atender órdenes, agendar servicios y registrar clientes, pero no ve esas pantallas de administración.

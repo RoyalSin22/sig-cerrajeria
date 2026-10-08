@@ -9,5 +9,6 @@ public enum AuditAccion {
     AJUSTE_INVENTARIO,
     ANULACION,
     APERTURA_CAJA,
-    CIERRE_CAJA
+    CIERRE_CAJA,
+    CAMBIO_PASSWORD
 }

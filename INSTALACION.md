@@ -28,7 +28,7 @@ Dos caminos. Si solo quieres **usar** el sistema (no modificar código), ve dire
 
 4. Abre **http://localhost:8081** en el navegador.
 
-5. Entra con usuario `admin` y contraseña `admin123`. **Cámbiala de inmediato** desde Ajustes → Usuarios.
+5. Entra con usuario `admin` y contraseña `admin123`. **Cámbiala de inmediato** desde Ajustes → Contraseña: esa contraseña está publicada en este repositorio.
 
 ### Los tres botones del día a día
 

@@ -14,7 +14,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .post<LoginResponse>('/auth/refresh')
       .then((res) => {
         setAccessToken(res.data.accessToken)
-        setUsuario({ nombre: res.data.nombre, role: res.data.role })
+        setUsuario({ username: res.data.username, nombre: res.data.nombre, role: res.data.role })
       })
       .catch(() => {
         setAccessToken(null)
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(credenciales: LoginRequest) {
     const res = await axiosClient.post<LoginResponse>('/auth/login', credenciales)
     setAccessToken(res.data.accessToken)
-    setUsuario({ nombre: res.data.nombre, role: res.data.role })
+    setUsuario({ username: res.data.username, nombre: res.data.nombre, role: res.data.role })
   }
 
   async function logout() {

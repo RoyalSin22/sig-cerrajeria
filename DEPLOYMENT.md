@@ -30,7 +30,7 @@ El frontend llama por **rutas relativas** (`/api/v1`, `/uploads`); Nginx las ree
    ```
 3. Verificar que los 3 contenedores estén saludables: `docker compose ps`
 4. Abrir `http://localhost:8081` (o la IP del servidor en la red local, ej. `http://192.168.1.50:8081`)
-5. Login con `admin` / `admin123` — **cambiar esta contraseña de inmediato** en Ajustes → Usuarios, o directamente en la base de datos.
+5. Login con `admin` / `admin123` — **cambiar esta contraseña de inmediato** en Ajustes → Contraseña (está publicada en este repositorio). Luego crear el usuario del empleado en Ajustes → Usuarios.
 
 Las migraciones de Flyway (`V1` en adelante) se aplican solas al arrancar el backend, igual que en desarrollo local.
 

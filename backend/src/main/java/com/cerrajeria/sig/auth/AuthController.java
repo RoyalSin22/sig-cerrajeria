@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
+import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -75,6 +76,16 @@ public class AuthController {
         Usuario usuario = usuarioRepository.findByUsername(jwt.getSubject())
             .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
 
+        // El refresh token dura dias y no se guarda en la base: estas dos
+        // verificaciones son las que permiten cortar una sesion abierta.
+        if (Boolean.FALSE.equals(usuario.getActivo())) {
+            throw new BadCredentialsException("Usuario inactivo");
+        }
+        Instant cambioPassword = usuario.getPasswordCambiadoEn();
+        if (cambioPassword != null && jwt.getIssuedAt() != null && jwt.getIssuedAt().isBefore(cambioPassword)) {
+            throw new BadCredentialsException("La contraseña cambió, inicia sesión nuevamente");
+        }
+
         return responseWithTokens(usuario);
     }
 
@@ -107,6 +118,6 @@ public class AuthController {
 
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, cookie.toString())
-            .body(new LoginResponse(accessToken, usuario.getNombre(), usuario.getRole().name()));
+            .body(new LoginResponse(accessToken, usuario.getUsername(), usuario.getNombre(), usuario.getRole().name()));
     }
 }

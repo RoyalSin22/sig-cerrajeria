@@ -13,6 +13,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "usuarios")
 @Getter
@@ -42,4 +44,8 @@ public class Usuario extends BaseAuditable {
 
     @Column(name = "telefono_whatsapp", unique = true, length = 20)
     private String telefonoWhatsapp;
+
+    /** Ultimo cambio de contrasena: los refresh tokens emitidos antes ya no sirven. */
+    @Column(name = "password_cambiado_en")
+    private Instant passwordCambiadoEn;
 }
