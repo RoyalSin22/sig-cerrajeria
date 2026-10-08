@@ -53,6 +53,24 @@ jobs:
       # build = tsc -b (typecheck) + vite build
       - run: npm run build
 
+  lanzador:
+    name: Lanzador Windows (tests + build del .exe)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: launcher
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: launcher/go.mod
+          cache-dependency-path: launcher/go.mod
+      - run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - run: go vet ./...
+      - run: go test ./...
+      # Compila el .exe de Windows desde Linux: si deja de compilar, se ve en el PR
+      - run: GOOS=windows GOARCH=amd64 go build -o SIG-Cerrajeria.exe .
+
   infra:
     name: Infra (docker-compose y script de respaldo)
     runs-on: ubuntu-latest

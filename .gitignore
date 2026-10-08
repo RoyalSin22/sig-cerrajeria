@@ -6,3 +6,6 @@
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Lanzador compilado (se descarga de GitHub Releases, no se versiona)
+/SIG-Cerrajeria.exe

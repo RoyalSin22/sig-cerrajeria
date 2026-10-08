@@ -1,0 +1,51 @@
+# Publica SIG-Cerrajeria.exe en GitHub Releases cada vez que cambia el
+# lanzador en main. El enlace estable para descargar la ultima version es:
+#   https://github.com/RoyalSin22/sig-cerrajeria/releases/latest/download/SIG-Cerrajeria.exe
+name: Publicar lanzador
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'launcher/**'
+      - '.github/workflows/lanzador.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write # crear el release
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: launcher
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: launcher/go.mod
+          cache-dependency-path: launcher/go.mod
+      - run: go test ./...
+      - name: Icono y datos de version
+        run: |
+          go install github.com/tc-hib/go-winres@v0.3.3
+          go-winres make --arch amd64
+      - name: Compilar para Windows
+        run: GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o SIG-Cerrajeria.exe .
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: lanzador-v1.0.${{ github.run_number }}
+          name: SIG-Cerrajería — lanzador para Windows (build ${{ github.run_number }})
+          make_latest: true
+          files: launcher/SIG-Cerrajeria.exe
+          body: |
+            **SIG-Cerrajeria.exe**: abre el sistema con doble clic (requiere Docker Desktop instalado).
+
+            1. Descárgalo y cópialo dentro de la carpeta `sig-cerrajeria` (la que tiene la carpeta `backend`).
+            2. Clic derecho → Enviar a → Escritorio (crear acceso directo).
+            3. La primera vez Windows puede mostrar "Windows protegió su PC": toca **Más información → Ejecutar de todas formas** (el programa no está firmado digitalmente).
+
+            Para apagar el sistema al final del día sigue usando `backend\detener.bat` (hace el respaldo de cierre).
+
+            Commit: ${{ github.sha }}

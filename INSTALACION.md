@@ -30,17 +30,25 @@ Dos caminos. Si solo quieres **usar** el sistema (no modificar código), ve dire
 
 5. Entra con usuario `admin` y contraseña `admin123`. **Cámbiala de inmediato** desde Ajustes → Contraseña: esa contraseña está publicada en este repositorio.
 
-### Los tres botones del día a día
+### Abrir el sistema con doble clic: `SIG-Cerrajeria.exe`
 
-En `sig-cerrajeria/backend/` quedan tres archivos para usar con doble clic, sin tocar la terminal nunca más:
+1. Descarga **SIG-Cerrajeria.exe** desde la página del repositorio en GitHub → **Releases** (o directo: https://github.com/RoyalSin22/sig-cerrajeria/releases/latest/download/SIG-Cerrajeria.exe).
+2. Cópialo dentro de la carpeta `sig-cerrajeria` (la que tiene adentro la carpeta `backend`).
+3. Clic derecho sobre él → *Enviar a* → *Escritorio (crear acceso directo)*.
+
+Desde ahí, abrir el sistema es un doble clic: si Docker Desktop está cerrado lo abre, espera a que todo esté listo y recién entonces abre el navegador. Si algo falla, te dice qué pasó y no cierra la ventana. La primera vez también crea `backend\.env` con una clave de seguridad aleatoria si no existe (el paso 2 de arriba).
+
+La primera vez que lo abras, Windows puede mostrar **"Windows protegió su PC"**, porque el programa no está firmado digitalmente: toca **Más información → Ejecutar de todas formas**. Solo pasa la primera vez.
+
+### Los botones del día a día
 
 | Archivo | Cuándo usarlo |
 |---|---|
-| `iniciar.bat` | Todos los días, al abrir el local |
-| `detener.bat` | Al cerrar (opcional — no pierdes información si no lo corres, pero libera recursos de la PC) |
-| `actualizar.bat` | Solo cuando alguien te entregue una versión nueva del sistema |
-
-**Para que sea aún más cómodo:** clic derecho sobre `iniciar.bat` → *Crear acceso directo*, y arrastra ese acceso directo al escritorio. Le puedes cambiar el ícono (clic derecho → Propiedades → Cambiar ícono) por cualquier imagen que tengas a mano. Desde ahí, abrir el sistema es un doble clic, como cualquier programa instalado.
+| `SIG-Cerrajeria.exe` (o `backend\iniciar.bat`) | Todos los días, al abrir el local |
+| `backend\detener.bat` | Al cerrar el local: además de apagar el sistema, hace el **respaldo de cierre del día** |
+| `backend\respaldar.bat` | Cuando quieras un respaldo en el momento (por ejemplo, antes de actualizar) |
+| `backend\restaurar.bat` | Solo si necesitas volver a un respaldo anterior |
+| `backend\actualizar.bat` | Solo cuando alguien te entregue una versión nueva del sistema |
 
 ---
 
