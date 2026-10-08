@@ -1,0 +1,4 @@
+# Generados al compilar (ver README.md): no se versionan
+*.syso
+*.exe
+/SIG-Cerrajeria

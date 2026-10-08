@@ -25,7 +25,9 @@ npm run lint
 
 Login de prueba: `admin` / `admin123` (contraseña inicial de V2; en una instalación real se cambia en Ajustes → Contraseña).
 
-CI (`.github/workflows/ci.yml`) corre en cada PR: `./mvnw verify`, `npm ci` + `lint` + `build`, y valida `docker-compose.yml` y `backup.sh`. Si agregas un paso de verificación nuevo, súmalo ahí.
+Lanzador de Windows (`launcher/`, Go): `SIG-Cerrajeria.exe`, se publica solo en GitHub Releases al cambiar `launcher/` en main (`.github/workflows/lanzador.yml`). Ver `launcher/README.md`.
+
+CI (`.github/workflows/ci.yml`) corre en cada PR: `./mvnw verify`, `npm ci` + `lint` + `build`, tests y build del lanzador, y valida `docker-compose.yml` y `backup.sh`. Si agregas un paso de verificación nuevo, súmalo ahí.
 
 ## Las 3 reglas de negocio (no las rompas sin darte cuenta)
 
