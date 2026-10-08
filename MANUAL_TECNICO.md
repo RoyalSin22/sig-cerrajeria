@@ -35,6 +35,8 @@ Todo lo demás en el sistema es CRUD normal. Estas tres son las que realmente de
 | 2 — Kárdex obligatorio | Todo cambio de stock (venta, compra, ajuste manual) genera un movimiento de inventario en la misma transacción | `ProductoService.descontarStock()` / `incrementarStock()` / `ajustarStock()` — ninguno de los tres modifica `cantidad_stock` sin insertar también en `movimientos_inventario` |
 | 3 — Sin entrega con saldo pendiente | Una orden de trabajo no puede pasar a `ENTREGADO` si tiene saldo sin cubrir, salvo que el pago que la liquida venga en la misma llamada | `OrdenTrabajoService.entregarConLiquidacion()` |
 
+La importación de inventario desde CSV (`ImportacionProductosService`, `POST /api/v1/productos/importar`) no es una excepción a la regla 2: crea cada producto con `ProductoService.crear()`, así que el stock inicial entra al Kárdex con el motivo "Stock inicial importado desde archivo". Es todo o nada (una transacción, y con un solo error de validación no se crea nada), con `confirmar=false` solo revisa el archivo, y no actualiza productos existentes: un código repetido es un error. El CSV lo lee `LectorCsv`, que tolera lo que produce Excel según la PC (UTF-8 con BOM o Windows-1252, coma o punto y coma, línea `sep=`).
+
 Los tests unitarios en `src/test/java/.../{caja,inventario,ordenes}` verifican estas tres reglas por separado, con mocks — no dependen de una base de datos levantada.
 
 ## 4. Estructura del backend

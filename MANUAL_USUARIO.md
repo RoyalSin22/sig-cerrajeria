@@ -55,6 +55,31 @@ Toca un producto para ver su ficha: ahí puedes subir o cambiar su foto, editar 
 
 Para dar de alta un producto nuevo, toca **Nuevo producto** arriba. Los campos que te pide cambian según el tipo que elijas (una llave virgen pide "perfil", un candado pide "tamaño", etc.).
 
+### Cargar muchos productos de una vez (Importar)
+
+Si tienes tu inventario en Excel, el Administrador puede cargarlo todo junto con el botón **Importar**:
+
+1. Toca **Importar** y descarga la **plantilla**. Ábrela en Excel y llena una fila por producto (puedes borrar los dos ejemplos).
+2. Guárdala con **Archivo → Guardar como → CSV UTF-8** (no como libro de Excel `.xlsx`).
+3. Elige ese archivo. El sistema lo **revisa primero y no guarda nada todavía**: te muestra los productos que leyó, o la lista de problemas con su número de fila (el mismo que ves en Excel).
+4. Si hay problemas, corrígelos en Excel, vuelve a guardar y elige el archivo otra vez. Cuando no hay ninguno, toca **Importar N productos**.
+
+| Columna | ¿Obligatoria? | Ejemplo |
+|---|---|---|
+| `codigo` | Sí — no puede repetirse | `KW1-001` |
+| `nombre` | Sí | `Llave virgen KW1` |
+| `tipo` | Sí | `Llave virgen`, `Llave de color`, `Llave de diseño`, `Chapa`, `Cilindro`, `Candado`, `Llavero`, `Argolla`, `Accesorio` |
+| `precio_compra`, `precio_venta` | Sí | `3.50` o `3,50` (también acepta `S/ 3.50`) |
+| `stock` | No (vacío = 0) | `50` |
+| `stock_minimo` | No (vacío = 5) | `10` |
+| `marca`, `perfil`, `color`, `diseno`, `modelo`, `tamano`, `material` | No | `Kwikset` |
+
+Bueno saber:
+- **Es todo o nada**: si una sola fila tiene un error, no se carga ninguna, así nunca queda una carga a medias.
+- **Solo agrega productos nuevos.** Si un código ya existe, esa fila se marca como problema: para cambiar el stock o el precio de algo que ya está cargado, usa su ficha (el ajuste de stock pide motivo).
+- El stock que cargues queda en el Kárdex de cada producto como "Stock inicial importado desde archivo".
+- Las columnas que el sistema no reconoce (por ejemplo una de "notas") se ignoran y te avisa cuáles fueron.
+
 ## Clientes
 
 En **Clientes**, busca por nombre o teléfono, o explora la lista completa si no buscas nada. Toca **Nuevo cliente** para registrar uno. Dentro de la ficha de cada cliente puedes ver su historial de compras y de órdenes de trabajo, y editar sus datos.
@@ -90,4 +115,4 @@ Si un empleado olvida su contraseña, el Administrador entra a **Ajustes → Usu
 
 ## Administrador vs. Empleado
 
-El Administrador puede, además de todo lo anterior: crear y desactivar usuarios, restablecer contraseñas, anular ventas, ver el registro de auditoría (quién hizo qué y cuándo), y editar productos. Un Empleado puede vender, atender órdenes, agendar servicios y registrar clientes, pero no ve esas pantallas de administración.
+El Administrador puede, además de todo lo anterior: crear y desactivar usuarios, restablecer contraseñas, anular ventas, ver el registro de auditoría (quién hizo qué y cuándo), editar productos e importar el inventario desde Excel. Un Empleado puede vender, atender órdenes, agendar servicios y registrar clientes, pero no ve esas pantallas de administración.

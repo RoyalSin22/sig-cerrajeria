@@ -12,16 +12,19 @@ import { Button } from '../components/ui/Button'
 import { PullToRefreshIndicator } from '../components/ui/PullToRefreshIndicator'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { useToast } from '../context/useToast'
+import { useAuth } from '../context/useAuth'
 import { formatearSoles, formatearFechaHora, urlImagen } from '../utils/format'
 import {
   ETIQUETA_TIPO_PRODUCTO, type ProductoResponse, type MovimientoInventarioResponse,
-  type ProductoCreateRequest, type TipoProducto,
+  type ProductoCreateRequest, type TipoProducto, type ImportacionResultado,
 } from '../types/productos'
 
 type Filtro = 'TODAS' | 'STOCK_BAJO'
 
 export function Inventario() {
   const { notificar } = useToast()
+  const { usuario } = useAuth()
+  const [mostrarImportar, setMostrarImportar] = useState(false)
   const [productos, setProductos] = useState<ProductoResponse[]>([])
   const [termino, setTermino] = useState('')
   const [filtro, setFiltro] = useState<Filtro>('TODAS')
@@ -66,7 +69,12 @@ export function Inventario() {
       <PullToRefreshIndicator distancia={distancia} refrescando={refrescando} umbral={umbral} />
       <div className="flex items-center justify-between">
         <h1 className="font-heading text-2xl font-semibold">Inventario</h1>
-        <Button onClick={() => setMostrarAlta(true)}>Nuevo producto</Button>
+        <div className="flex gap-2">
+          {usuario?.role === 'ROLE_ADMIN' && (
+            <Button variant="secondary" onClick={() => setMostrarImportar(true)}>Importar</Button>
+          )}
+          <Button onClick={() => setMostrarAlta(true)}>Nuevo producto</Button>
+        </div>
       </div>
 
       <SearchInput placeholder="Buscar por nombre o código…" onBuscar={setTermino} />
@@ -122,6 +130,16 @@ export function Inventario() {
           notificar('Producto creado: ' + p.nombre)
           setProductos((prev) => [p, ...prev])
           setMostrarAlta(false)
+        }}
+      />
+
+      <ImportarInventario
+        abierto={mostrarImportar}
+        onCerrar={() => setMostrarImportar(false)}
+        onImportado={(creados) => {
+          notificar(`${creados} productos importados`)
+          setMostrarImportar(false)
+          cargar(0, false)
         }}
       />
 
@@ -461,6 +479,167 @@ function FormularioProducto({
         {error && <p className="text-sm text-danger">{error}</p>}
         <Button type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Crear producto'}</Button>
       </form>
+    </BottomSheet>
+  )
+}
+
+/**
+ * Plantilla para Excel: "sep=;" hace que Excel la abra en columnas sin
+ * importar la configuracion regional de la PC. Sin tildes a proposito: sin BOM
+ * Excel la lee como ANSI, y con BOM ignoraria la linea "sep=". Precios enteros
+ * en el ejemplo: "1.20" en una PC con coma decimal Excel lo toma como fecha.
+ */
+const PLANTILLA_CSV = [
+  'sep=;',
+  'codigo;nombre;tipo;marca;stock;stock_minimo;precio_compra;precio_venta',
+  'KW1-001;Llave virgen KW1;Llave virgen;Kwikset;50;10;2;5',
+  'CAN-40;Candado 40 mm;Candado;Forte;6;2;18;30',
+].join('\r\n') + '\r\n'
+
+function descargarPlantilla() {
+  const url = URL.createObjectURL(new Blob([PLANTILLA_CSV], { type: 'text/csv' }))
+  const enlace = document.createElement('a')
+  enlace.href = url
+  enlace.download = 'plantilla-inventario.csv'
+  enlace.click()
+  URL.revokeObjectURL(url)
+}
+
+function ImportarInventario({
+  abierto, onCerrar, onImportado,
+}: { abierto: boolean; onCerrar: () => void; onImportado: (creados: number) => void }) {
+  const [archivo, setArchivo] = useState<File | null>(null)
+  const [revision, setRevision] = useState<ImportacionResultado | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [trabajando, setTrabajando] = useState(false)
+
+  function cerrar() {
+    setArchivo(null)
+    setRevision(null)
+    setError(null)
+    onCerrar()
+  }
+
+  async function elegirArchivo(e: ChangeEvent<HTMLInputElement>) {
+    const elegido = e.target.files?.[0]
+    e.target.value = '' // permite volver a elegir el mismo archivo tras corregirlo
+    if (!elegido) return
+    setArchivo(elegido)
+    setRevision(null)
+    setError(null)
+    setTrabajando(true)
+    try {
+      setRevision(await productosApi.importar(elegido, false))
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setTrabajando(false)
+    }
+  }
+
+  async function confirmar() {
+    if (!archivo) return
+    setTrabajando(true)
+    setError(null)
+    try {
+      const resultado = await productosApi.importar(archivo, true)
+      if (resultado.errores.length > 0) {
+        setRevision(resultado) // algo cambio desde la revision (ej. otro alta con el mismo codigo)
+      } else {
+        setArchivo(null)
+        setRevision(null)
+        onImportado(resultado.creados)
+      }
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setTrabajando(false)
+    }
+  }
+
+  const listo = revision !== null && revision.errores.length === 0 && revision.productos.length > 0
+
+  return (
+    <BottomSheet abierto={abierto} onCerrar={cerrar} titulo="Importar inventario">
+      <div className="flex flex-col gap-4 text-sm">
+        <ol className="list-decimal space-y-1 pl-5 text-sub">
+          <li>
+            Descarga la{' '}
+            <button type="button" onClick={descargarPlantilla} className="text-steel underline">plantilla</button>{' '}
+            y llénala en Excel (una fila por producto).
+          </li>
+          <li>Guárdala con <b>Archivo → Guardar como → CSV UTF-8</b>.</li>
+          <li>Elige el archivo: primero se revisa, y nada se guarda hasta que confirmes.</li>
+        </ol>
+        <p className="text-xs text-sub">
+          Obligatorias: codigo, nombre, tipo, precio_compra, precio_venta. Opcionales: marca, stock, stock_minimo,
+          perfil, color, diseno, modelo, tamano, material. Solo agrega productos nuevos: si un código ya existe,
+          cambia su stock o precio desde su ficha.
+        </p>
+
+        <label className="cursor-pointer self-start">
+          <span className="inline-flex min-h-11 items-center rounded-md border border-line px-4 py-2.5 font-medium hover:bg-hair">
+            {trabajando && !revision ? 'Revisando…' : archivo ? 'Elegir otro archivo' : 'Elegir archivo CSV'}
+          </span>
+          <input type="file" accept=".csv,text/csv" className="hidden" disabled={trabajando} onChange={elegirArchivo} />
+        </label>
+        {archivo && <p className="text-xs text-sub">{archivo.name}</p>}
+
+        {revision && (
+          <div className="flex flex-col gap-3">
+            {revision.columnasIgnoradas.length > 0 && (
+              <p className="text-xs text-sub">Columnas ignoradas: {revision.columnasIgnoradas.join(', ')}</p>
+            )}
+            {revision.errores.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <p className="font-medium text-danger">
+                  {revision.errores.length === 1 ? 'Hay 1 problema' : `Hay ${revision.errores.length} problemas`}.
+                  Corrígelos en Excel y vuelve a elegir el archivo (no se importó nada):
+                </p>
+                <ul className="max-h-60 overflow-y-auto rounded-md border border-hair">
+                  {revision.errores.slice(0, 100).map((e, i) => (
+                    <li key={i} className="border-b border-hair px-3 py-1.5 last:border-0">
+                      {e.fila > 0 && <span className="font-medium">Fila {e.fila}: </span>}
+                      {e.mensaje}
+                    </li>
+                  ))}
+                </ul>
+                {revision.errores.length > 100 && (
+                  <p className="text-xs text-sub">…y {revision.errores.length - 100} más.</p>
+                )}
+              </div>
+            ) : (
+              revision.productos.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <p className="font-medium">{revision.productos.length} productos listos para importar:</p>
+                  <ul className="max-h-60 overflow-y-auto rounded-md border border-hair">
+                    {revision.productos.slice(0, 50).map((p) => (
+                      <li key={p.fila} className="flex items-center justify-between gap-2 border-b border-hair px-3 py-1.5 last:border-0">
+                        <span className="min-w-0 truncate">
+                          <span className="text-sub">{p.codigo}</span> · {p.nombre}
+                        </span>
+                        <span className="shrink-0 text-xs text-sub">
+                          {ETIQUETA_TIPO_PRODUCTO[p.tipoProducto]} · {p.cantidadStock} und · {formatearSoles(p.precioVenta)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {revision.productos.length > 50 && (
+                    <p className="text-xs text-sub">…y {revision.productos.length - 50} más.</p>
+                  )}
+                </div>
+              )
+            )}
+          </div>
+        )}
+
+        {error && <p className="text-danger">{error}</p>}
+        {listo && (
+          <Button onClick={confirmar} disabled={trabajando}>
+            {trabajando ? 'Importando…' : `Importar ${revision.productos.length} productos`}
+          </Button>
+        )}
+      </div>
     </BottomSheet>
   )
 }

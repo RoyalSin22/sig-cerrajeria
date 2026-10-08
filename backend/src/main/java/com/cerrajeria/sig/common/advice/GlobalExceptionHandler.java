@@ -91,6 +91,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
     }
 
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request
+    ) {
+        // Fotos de producto e importacion de inventario (limite en spring.servlet.multipart)
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+            .body(buildProblem(HttpStatus.PAYLOAD_TOO_LARGE, "El archivo es demasiado grande (máximo 5 MB)."));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ProblemDetail handleRuntimeException(RuntimeException ex) {
         // Ultimo recurso: no exponer detalles internos (stack trace) al cliente,

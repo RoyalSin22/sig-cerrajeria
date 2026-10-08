@@ -13,6 +13,10 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     Optional<Producto> findByCodigo(String codigo);
 
+    /** Codigos de la lista que ya estan en uso, incluso por productos dados de baja (la columna es UNIQUE). */
+    @Query("SELECT p.codigo FROM Producto p WHERE p.codigo IN :codigos")
+    List<String> findCodigosExistentes(@Param("codigos") java.util.Collection<String> codigos);
+
     /** Listado paginado del catálogo completo (sin buscar), usado para explorar por categoría. */
     Page<Producto> findByActivoTrueOrderByNombreAsc(Pageable pageable);
 

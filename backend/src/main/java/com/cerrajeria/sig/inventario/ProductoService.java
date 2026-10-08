@@ -41,6 +41,15 @@ public class ProductoService {
 
     @Transactional
     public ProductoResponse crear(ProductoCreateRequest request) {
+        return crear(request, MOTIVO_STOCK_INICIAL);
+    }
+
+    /**
+     * Alta con un motivo propio para el movimiento de stock inicial en el
+     * Kardex (ej. la importacion desde archivo, para distinguirla del alta manual).
+     */
+    @Transactional
+    public ProductoResponse crear(ProductoCreateRequest request, String motivoStockInicial) {
         productoRepository.findByCodigo(request.codigo()).ifPresent(p -> {
             throw new IllegalArgumentException("Ya existe un producto con el código: " + request.codigo());
         });
@@ -58,7 +67,7 @@ public class ProductoService {
             producto.setCantidadStock(request.cantidadStock());
             productoRepository.save(producto);
             registrarMovimiento(producto, TipoMovimiento.ENTRADA, request.cantidadStock(),
-                0, request.cantidadStock(), ReferenciaTipo.AJUSTE, null, MOTIVO_STOCK_INICIAL);
+                0, request.cantidadStock(), ReferenciaTipo.AJUSTE, null, motivoStockInicial);
         }
 
         return productoMapper.toResponse(producto);
