@@ -37,22 +37,34 @@ Todo lo demás en el sistema es CRUD normal. Estas tres son las que realmente de
 
 La importación de inventario desde CSV (`ImportacionProductosService`, `POST /api/v1/productos/importar`) no es una excepción a la regla 2: crea cada producto con `ProductoService.crear()`, así que el stock inicial entra al Kárdex con el motivo "Stock inicial importado desde archivo". Es todo o nada (una transacción, y con un solo error de validación no se crea nada), con `confirmar=false` solo revisa el archivo, y no actualiza productos existentes: un código repetido es un error. El CSV lo lee `LectorCsv`, que tolera lo que produce Excel según la PC (UTF-8 con BOM o Windows-1252, coma o punto y coma, línea `sep=`).
 
-Los tests unitarios en `src/test/java/.../{caja,inventario,ordenes}` verifican estas tres reglas por separado, con mocks — no dependen de una base de datos levantada.
+Los tests unitarios en `src/test/java/.../{caja,inventario,ordenes}` verifican estas tres reglas por separado, con mocks — no dependen de una base de datos levantada. `ventas/`, `compras/` y `domicilio/` cubren cómo cada módulo las respeta: la anulación de ventas, las compras pagadas de caja y el cobro de servicios a domicilio.
+
+Otras operaciones con dinero, todas con la regla 1:
+- **Servicio a domicilio realizado** (`ServicioDomicilioService.realizar`): cobra en la caja de quien lo realiza; con monto 0 no exige caja. Un servicio realizado es final.
+- **Orden cancelada** (`OrdenTrabajoService.cancelar`): si se devuelve lo cobrado, es un egreso de la caja de quien lo devuelve y queda como `PagoOrden` de tipo `DEVOLUCION`. `ENTREGADO` y `CANCELADO` son estados finales (`EstadoOrden.FINALES`).
 
 ## 4. Estructura del backend
 
 Paquete por feature, no por capa técnica (`inventario/`, `ventas/`, `ordenes/`, etc., cada uno con su entidad, repositorio, servicio, controlador y DTOs juntos). Módulos:
 
-`auth` · `usuarios` · `inventario` · `clientes` · `ventas` · `ordenes` · `domicilio` · `compras` · `caja` · `reportes` · `dashboard` · `busqueda` · `common/audit` · `common/exception`
+`auth` · `usuarios` · `inventario` · `clientes` · `ventas` · `ordenes` · `domicilio` · `compras` · `caja` · `reportes` · `dashboard` · `busqueda` · `asistente` · `whatsapp` · `config` · `common/audit` · `common/exception`
+
+`asistente` es el intérprete de lenguaje natural (Claude con tool use, `AsistenteIAService`); `whatsapp` y el endpoint `/api/v1/asistente/mensaje` son canales delgados encima. Necesitan las claves de Anthropic y de Meta (variables opcionales: sin ellas el resto del sistema funciona igual).
 
 Seguridad: JWT stateless. El access token (15 min) vive en memoria en el frontend; el refresh token (7 días) va en una cookie `httpOnly` + `Secure` + `SameSite=Strict`. `SecurityConfig` traduce el claim `role` del token a una `GrantedAuthority` de Spring, así que `@PreAuthorize("hasRole('ADMIN')")` funciona directo en los controladores.
 
-Base de datos: Flyway controla el esquema (`ddl-auto: validate` — Hibernate nunca crea ni modifica tablas solo). Cinco migraciones:
+Base de datos: Flyway controla el esquema (`ddl-auto: validate` — Hibernate nunca crea ni modifica tablas solo). Nueve migraciones:
 - `V1` — esquema completo
 - `V2` — usuario admin semilla
 - `V3` — secuencia para `numero_orden` (no se puede usar el `id` autogenerado porque la columna es `NOT NULL` y se necesita antes del insert)
 - `V4` — columnas de anulación en `ventas`
 - `V5` — tabla `pagos_venta` (desglose de pago mixto)
+- `V6` — teléfono de WhatsApp en usuarios
+- `V7` — Yape, Plin y tarjeta por separado en `cajas_diarias` (el cierre se cuadra solo contra el efectivo)
+- `V8` — fecha de cambio de contraseña (invalida las sesiones anteriores)
+- `V9` — cobro de servicios a domicilio, estado `CANCELADO` en órdenes y pagos `DEVOLUCION`
+
+Una migración nueva nunca edita una anterior: Flyway valida el checksum de las ya aplicadas y la app no arranca si cambian.
 
 ## 5. Estructura del frontend
 
@@ -64,9 +76,8 @@ Un detalle no obvio: Tailwind CSS 4 no usa `tailwind.config.js` — los tokens d
 
 No son bugs olvidados — son decisiones de alcance documentadas en su momento:
 
-- **Backups automáticos de la base de datos** (RNF-07): no implementados. `DEPLOYMENT.md` trae el comando manual de `pg_dump`.
-- **WhatsApp Business API y asistente de IA**: quedaron fuera del alcance del MVP desde la Fase 1. La arquitectura no les cierra el paso — se agregarían como módulos nuevos sin tocar lo existente.
-- **HTTPS en producción**: no viene armado en el `docker-compose.yml` actual. Sin él, el refresh token no se renueve solo fuera de `localhost` (detalle completo en `DEPLOYMENT.md`).
+- **Asistente de IA y WhatsApp**: están implementados (`asistente/`, `whatsapp/`) pero no se probaron con claves reales de Anthropic y Meta.
+- **HTTPS en producción**: no viene armado en el `docker-compose.yml`. El acceso desde el celular con HTTPS se resuelve con Tailscale (`backend/celular.bat`); sin HTTPS, fuera de `localhost` ni CORS ni la cookie del refresh token funcionan (detalle en `DEPLOYMENT.md`).
 - **Reportes de servicios realizados / historial agregado de clientes** (RF-43, RF-44): existen como listados filtrados, no como reportes con agregaciones propias.
 
 ## 7. Correr los tests
@@ -76,4 +87,4 @@ No son bugs olvidados — son decisiones de alcance documentadas en su momento:
 ./mvnw verify         # incluye la integración con Testcontainers (levanta un Postgres real en un contenedor)
 ```
 
-La integración (`VentaFlowIntegrationTest`) necesita Docker corriendo — Testcontainers levanta y destruye el contenedor de Postgres solo, no hace falta nada manual.
+Los tests de integración (`integration/*IntegrationTest`: venta y Kárdex, contraseñas, importación, acceso desde el celular, ingresos de taller y domicilio) necesitan Docker corriendo — Testcontainers levanta y destruye el contenedor de Postgres solo, no hace falta nada manual.

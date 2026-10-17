@@ -12,6 +12,9 @@ public record ServicioDomicilioResponse(
     LocalTime hora,
     String tipoServicio,
     String observaciones,
-    String estado
+    String estado,
+    java.math.BigDecimal montoCobrado,
+    String metodoPago,
+    String realizadoPor
 ) {
 }

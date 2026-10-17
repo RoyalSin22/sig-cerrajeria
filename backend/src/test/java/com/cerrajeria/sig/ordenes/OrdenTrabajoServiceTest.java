@@ -7,7 +7,12 @@ import com.cerrajeria.sig.common.exception.SaldoPendienteException;
 import com.cerrajeria.sig.usuarios.Role;
 import com.cerrajeria.sig.usuarios.Usuario;
 import com.cerrajeria.sig.usuarios.UsuarioRepository;
+import com.cerrajeria.sig.ordenes.dto.CancelarOrdenRequest;
+import com.cerrajeria.sig.ordenes.dto.CambiarEstadoOrdenRequest;
 import com.cerrajeria.sig.ordenes.dto.RegistrarPagoOrdenRequest;
+import com.cerrajeria.sig.caja.CajaDiaria;
+import com.cerrajeria.sig.common.MetodoPago;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +30,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -143,5 +150,74 @@ class OrdenTrabajoServiceTest {
         caja.setMontoApertura(BigDecimal.ZERO);
         caja.setEstado(com.cerrajeria.sig.caja.EstadoCaja.ABIERTA);
         return caja;
+    }
+
+    // --- Cancelacion (V9) ---
+
+    @Test
+    @DisplayName("Cancelar devolviendo el adelanto: egreso en la caja de quien devuelve y pago DEVOLUCION")
+    void cancelar_devolviendoAdelanto() {
+        OrdenTrabajo orden = ordenConSaldo(new BigDecimal("150.00"), new BigDecimal("50.00"));
+        when(ordenTrabajoRepository.findById(1L)).thenReturn(Optional.of(orden));
+        when(ordenTrabajoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(usuarioRepository.findByUsername("admin")).thenReturn(Optional.of(new Usuario()));
+        CajaDiaria caja = new CajaDiaria();
+        when(cajaService.obtenerCajaAbiertaEntidad()).thenReturn(caja);
+
+        ordenTrabajoService.cancelar(1L, new CancelarOrdenRequest("El cliente se arrepintió", true, "EFECTIVO"));
+
+        verify(cajaService).sumarEgresoACajaActiva(caja, new BigDecimal("50.00"), MetodoPago.EFECTIVO);
+        ArgumentCaptor<PagoOrden> pago = ArgumentCaptor.forClass(PagoOrden.class);
+        verify(pagoOrdenRepository).save(pago.capture());
+        assertThat(pago.getValue().getTipoPago()).isEqualTo(TipoPagoOrden.DEVOLUCION);
+        assertThat(pago.getValue().getMonto()).isEqualByComparingTo("50.00");
+        assertThat(orden.getEstado()).isEqualTo(EstadoOrden.CANCELADO);
+        assertThat(orden.getMontoPagado()).isEqualByComparingTo("0");
+        assertThat(orden.getMotivoCancelacion()).isEqualTo("El cliente se arrepintió");
+    }
+
+    @Test
+    @DisplayName("Cancelar sin devolver (el cliente nunca la recogió): no toca la caja")
+    void cancelar_sinDevolver_noTocaCaja() {
+        OrdenTrabajo orden = ordenConSaldo(new BigDecimal("150.00"), new BigDecimal("50.00"));
+        when(ordenTrabajoRepository.findById(1L)).thenReturn(Optional.of(orden));
+        when(ordenTrabajoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        when(usuarioRepository.findByUsername("admin")).thenReturn(Optional.of(new Usuario()));
+
+        ordenTrabajoService.cancelar(1L, new CancelarOrdenRequest("Abandonada", false, null));
+
+        verify(cajaService, never()).obtenerCajaAbiertaEntidad();
+        verify(pagoOrdenRepository, never()).save(any());
+        assertThat(orden.getEstado()).isEqualTo(EstadoOrden.CANCELADO);
+        assertThat(orden.getMontoPagado()).isEqualByComparingTo("50.00");
+    }
+
+    @Test
+    @DisplayName("No se cancela una orden entregada, ni se cobra o cambia de estado una cancelada")
+    void estadosFinales_bloqueados() {
+        OrdenTrabajo entregada = ordenConSaldo(new BigDecimal("100"), new BigDecimal("100"));
+        entregada.setEstado(EstadoOrden.ENTREGADO);
+        when(ordenTrabajoRepository.findById(1L)).thenReturn(Optional.of(entregada));
+        assertThatThrownBy(() -> ordenTrabajoService.cancelar(1L, new CancelarOrdenRequest("x", true, "EFECTIVO")))
+            .hasMessageContaining("ya fue entregada");
+
+        entregada.setEstado(EstadoOrden.CANCELADO);
+        assertThatThrownBy(() -> ordenTrabajoService.registrarAdelanto(1L,
+                new RegistrarPagoOrdenRequest(BigDecimal.ONE, "EFECTIVO")))
+            .hasMessageContaining("cancelada");
+        assertThatThrownBy(() -> ordenTrabajoService.cambiarEstado(1L, new CambiarEstadoOrdenRequest("LISTO")))
+            .hasMessageContaining("cancelada");
+        verify(cajaService, never()).obtenerCajaAbiertaEntidad();
+    }
+
+    @Test
+    @DisplayName("El cambio de estado simple no permite cancelar sin motivo")
+    void cambiarEstado_noCancela() {
+        OrdenTrabajo orden = ordenConSaldo(new BigDecimal("100"), BigDecimal.ZERO);
+        when(ordenTrabajoRepository.findById(1L)).thenReturn(Optional.of(orden));
+        assertThatThrownBy(() -> ordenTrabajoService.cambiarEstado(1L, new CambiarEstadoOrdenRequest("CANCELADO")))
+            .hasMessageContaining("motivo");
+        assertThat(orden.getEstado()).isEqualTo(EstadoOrden.LISTO);
     }
 }

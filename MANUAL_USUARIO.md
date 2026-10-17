@@ -10,7 +10,9 @@ Vas a ver cinco pestañas arriba: **Inicio, Venta, Inventario, Taller, Domicilio
 
 ### Instalarla en el celular
 
-No hace falta bajar nada de una tienda de aplicaciones. Desde el navegador del celular (Chrome en Android, Safari en iPhone), entra a la dirección del sistema y:
+No hace falta bajar el sistema de una tienda de aplicaciones. Lo que sí necesita el celular es la app **Tailscale** (de Play Store), conectada con la cuenta de la cerrajería: es la que lo une con la PC del local, estés en el local o fuera. La configuración de una sola vez está en [INSTALACION.md](./INSTALACION.md) → "Usar el sistema desde el celular".
+
+Con Tailscale conectado, entra desde el navegador del celular (Chrome en Android, Safari en iPhone) a la dirección del sistema (`https://….ts.net`, te la da quien lo instaló) y:
 
 - **Android (Chrome):** toca los tres puntos → "Instalar aplicación" (o "Agregar a pantalla de inicio"). Aparece el ícono de la llave junto a tus demás apps.
 - **iPhone (Safari):** toca el botón de compartir (el cuadrado con la flecha) → "Agregar a pantalla de inicio".
@@ -41,11 +43,19 @@ Las órdenes se ven organizadas en columnas según su estado: Recibido, En repar
 
 **Importante:** si la orden tiene saldo pendiente, el sistema no te deja marcarla como Entregada sin cobrar ese saldo primero. Cuando el cliente viene a recoger, toca la orden, y si debe algo, te va a pedir el monto y el método de pago antes de dejarte cerrar la entrega. Esto es a propósito: evita que un trabajo salga sin haberse cobrado del todo.
 
+**Cancelar una orden.** Si el cliente se arrepiente o nunca vuelve a recoger su trabajo, abre la orden y toca **Cancelar orden**. Tienes que escribir el motivo y, si dejó adelanto, elegir:
+- **Devolverlo**: sale de **tu** caja (tienes que tenerla abierta) por el método que elijas. Si es en efectivo, descuéntalo del cajón: el cierre ya lo tiene en cuenta.
+- **No devolverlo** (por ejemplo, si nunca la recogió): el adelanto se queda como ingreso.
+
+Una orden cancelada ya no se puede cobrar ni cambiar de estado, y aparece en su propia columna "Cancelado".
+
 ## Agendar un servicio a domicilio
 
 En **Domicilio**, toca **Agendar servicio**. Busca al cliente, pon la dirección, fecha, hora y qué tipo de trabajo es (por ejemplo "Cambio de chapa"). La pantalla tiene vista por semana o por mes — cambia con los botones "Semana" / "Mes" arriba.
 
-Cuando el técnico sale, marca el servicio como "En camino", y al terminar, "Realizado".
+Cuando el técnico sale, marca el servicio como "En camino". Al terminar, toca **Realizado y cobrar** y anota cuánto cobró y cómo (efectivo, Yape o Plin). Ese cobro entra en la caja **de quien lo marca**, así que el técnico tiene que tener su caja abierta, aunque esté fuera del local (lo hace desde el celular). Si el servicio no se cobra (garantía, cortesía), pon 0: no pasa por la caja.
+
+Un servicio realizado ya no se puede cambiar, para no descuadrar la caja de quien lo cobró. Si un servicio no se hace, tócalo en **Cancelar** (y "Volver a programar" si se reprograma).
 
 ## Inventario
 
@@ -94,7 +104,10 @@ Al final del turno, entra a **Caja**. Vas a ver el resumen: monto de apertura, i
 
 ## Reportes
 
-Desde el menú ☰, entra a **Reportes**. Elige un rango de fechas y consulta: total vendido, ventas por método de pago, los productos más vendidos, y el valor total de tu inventario.
+Desde el menú ☰, entra a **Reportes**. Elige un rango de fechas y consulta:
+- **Ingresos totales**, que suman las ventas de mostrador, el taller y los servicios a domicilio.
+- Por separado, cada uno de esos tres. El taller cuenta los adelantos y liquidaciones cobrados en esas fechas, menos las devoluciones de órdenes canceladas. El domicilio cuenta lo cobrado en los servicios realizados en esas fechas.
+- Las ventas por método de pago, los productos más vendidos y el valor total de tu inventario.
 
 ## El asistente
 

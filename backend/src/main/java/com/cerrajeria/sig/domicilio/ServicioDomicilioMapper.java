@@ -10,6 +10,7 @@ import java.util.List;
 public interface ServicioDomicilioMapper {
 
     @Mapping(target = "cliente", source = "cliente.nombre")
+    @Mapping(target = "realizadoPor", source = "realizadoPor.nombre")
     ServicioDomicilioResponse toResponse(ServicioDomicilio servicio);
 
     List<ServicioDomicilioResponse> toResponseList(List<ServicioDomicilio> servicios);

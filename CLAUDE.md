@@ -31,11 +31,11 @@ CI (`.github/workflows/ci.yml`) corre en cada PR: `./mvnw verify`, `npm ci` + `l
 
 ## Las 3 reglas de negocio (no las rompas sin darte cuenta)
 
-1. **Caja abierta obligatoria**: ninguna operación con dinero (venta, adelanto de orden, compra pagada de caja) se procesa sin que `CajaService.obtenerCajaAbiertaEntidad()` encuentre una caja `ABIERTA` para el usuario en sesión. Si agregas una operación nueva que mueve dinero, llama a este método primero, y registra el ingreso/egreso con su `MetodoPago` (`sumarIngresoACajaActiva(caja, monto, metodo)`): el cierre se cuadra contra `efectivoEsperado()`, que descuenta Yape, Plin y tarjeta porque no están en el cajón. Un pago `MIXTO` se registra línea por línea según su desglose.
+1. **Caja abierta obligatoria**: ninguna operación con dinero (venta, adelanto de orden, compra pagada de caja) se procesa sin que `CajaService.obtenerCajaAbiertaEntidad()` encuentre una caja `ABIERTA` para el usuario en sesión. Si agregas una operación nueva que mueve dinero, llama a este método primero, y registra el ingreso/egreso con su `MetodoPago` (`sumarIngresoACajaActiva(caja, monto, metodo)`): el cierre se cuadra contra `efectivoEsperado()`, que descuenta Yape, Plin y tarjeta porque no están en el cajón. Un pago `MIXTO` se registra línea por línea según su desglose. El cobro de un servicio a domicilio (`ServicioDomicilioService.realizar`) va a la caja de quien lo realiza, y la devolución al cancelar una orden sale de la caja de quien la devuelve.
 2. **Kárdex obligatorio**: todo cambio de `producto.cantidad_stock` tiene que pasar por `ProductoService.descontarStock()` / `incrementarStock()` / `ajustarStock()` — ninguno de los tres modifica el stock sin insertar también en `movimientos_inventario`. Nunca toques `cantidad_stock` directo desde otro servicio.
 3. **Sin entrega con saldo pendiente**: una orden de trabajo solo pasa a `ENTREGADO` vía `OrdenTrabajoService.entregarConLiquidacion()`, que exige liquidar el saldo en la misma llamada si existe.
 
-Los tests en `backend/src/test/java/.../{caja,inventario,ordenes}` verifican estas tres por separado.
+Los tests en `backend/src/test/java/.../{caja,inventario,ordenes}` verifican estas tres por separado; `ventas/`, `compras/` y `domicilio/` cubren cómo las respeta cada módulo.
 
 ## Convenciones
 
@@ -53,9 +53,10 @@ Los tests en `backend/src/test/java/.../{caja,inventario,ordenes}` verifican est
 - **`open-in-view: false`**: los métodos de servicio que devuelven DTOs mapeados desde entidades con relaciones `LAZY` necesitan `@Transactional(readOnly = true)`, o el mapper lanza `LazyInitializationException` (500). No lo pongas a nivel de clase: una escritura sin su propio `@Transactional` quedaría en una transacción de solo lectura y no se guardaría.
 - **Fechas en hora de Perú, no del servidor ni UTC**: el backend fija `America/Lima` en `SigApplication.main()` (en Docker el contenedor corre en UTC y una venta de las 20:00 caía al día siguiente). En el frontend, las fechas de calendario (`"AAAA-MM-DD"`) se manejan con `src/utils/fecha.ts`: nunca `new Date('2026-10-04')` ni `toISOString()`, que corren el día.
 - **`backend/scripts/backup.sh` corre en un contenedor Linux**: debe quedar con fin de línea LF (lo fuerza `.gitattributes`); con CRLF el servicio `backup` no arranca. Respaldos: ver `DEPLOYMENT.md`.
+- **Detrás de nginx, el backend ve cada pedido como de otro origen**: solo acepta los de `FRONTEND_ORIGIN` y `ORIGENES_CELULAR` (default `https://*.ts.net`, Tailscale). Una IP del wifi (`http://192.168.x.x:8081`) da 403 hasta en el login.
 - Variables de entorno opcionales (WhatsApp, Anthropic) van con default vacío (`${VAR:}`) en `application.yml`, nunca con `${VAR:?mensaje}` — eso vuelve la variable obligatoria y rompe el arranque (y los tests) si no está seteada.
 
 ## Qué NO está hecho (a propósito, no son bugs olvidados)
 
-- HTTPS en el `docker-compose.yml` de producción (documentado en `DEPLOYMENT.md`)
+- HTTPS en el `docker-compose.yml` de producción: el acceso con HTTPS desde el celular se resuelve con Tailscale (`backend/celular.bat`), no dentro de compose (ver `DEPLOYMENT.md`)
 - Reportes agregados de servicios/clientes (RF-43/44) — hoy son listados filtrados, no reportes propios

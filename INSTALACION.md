@@ -49,6 +49,31 @@ La primera vez que lo abras, Windows puede mostrar **"Windows protegió su PC"**
 | `backend\respaldar.bat` | Cuando quieras un respaldo en el momento (por ejemplo, antes de actualizar) |
 | `backend\restaurar.bat` | Solo si necesitas volver a un respaldo anterior |
 | `backend\actualizar.bat` | Solo cuando alguien te entregue una versión nueva del sistema |
+| `backend\celular.bat` | Una sola vez, para usar el sistema desde el celular (ver abajo) |
+
+### Usar el sistema desde el celular (Tailscale)
+
+El sistema sigue corriendo en la PC del local; el celular se conecta a ella por **Tailscale**, una red privada y cifrada entre tus propios equipos. Funciona en el local (wifi) y fuera de él (datos móviles), con HTTPS, así que la sesión se mantiene sola y la app se puede instalar con ícono. El sistema **no** queda publicado en internet: solo lo alcanzan los equipos conectados a tu cuenta de Tailscale. El plan personal de Tailscale es gratuito.
+
+**Una sola vez, en la PC del local:**
+
+1. Crea una cuenta en https://tailscale.com (recomendado: con un correo de la cerrajería, no uno personal) e instala Tailscale para Windows desde https://tailscale.com/download/windows. Inicia sesión con esa cuenta.
+2. En el ícono de Tailscale junto al reloj → **Preferences** → activa **Run unattended** (sigue conectado aunque se cierre la sesión de Windows).
+3. En https://login.tailscale.com/admin/machines, en la fila de esta PC → menú **⋯** → **Disable key expiry**. Sin esto, cada 180 días Tailscale le pide a la PC volver a iniciar sesión y los celulares dejan de conectarse.
+4. Con el sistema iniciado, doble clic en **`backend\celular.bat`**. La primera vez puede mostrar un enlace para activar HTTPS en tu cuenta: ábrelo y acéptalo. Al final muestra la dirección del sistema, del tipo `https://nombre-pc.tu-red.ts.net`. Anótala.
+
+**En cada celular Android (administrador y empleado):**
+
+1. Instala **Tailscale** desde Play Store e inicia sesión **con la misma cuenta de la cerrajería**. Acepta el permiso de VPN que pide Android.
+2. Abre Chrome y entra a la dirección que mostró `celular.bat`. Inicia sesión en el sistema con tu usuario de siempre (cada uno con el suyo: el permiso de administrador o empleado lo da el usuario del sistema, no Tailscale).
+3. Toca los tres puntos → **Instalar aplicación**. Queda el ícono de la llave en el celular.
+
+Cada vez que uses la app, Tailscale debe estar conectado en el celular (en Android puedes dejarlo siempre activo: Ajustes → Redes e Internet → VPN → engranaje de Tailscale → **VPN siempre activa**; el camino exacto cambia según la marca del celular).
+
+Bueno saber:
+- **La PC del local tiene que estar prendida y con el sistema iniciado.** Si al cerrar ejecutas `detener.bat`, el sistema se apaga y el celular no podrá entrar hasta el día siguiente. Si quieres usarlo fuera de horario, no lo detengas: el respaldo automático igual se hace cada 6 horas.
+- Si un celular se pierde o el empleado deja de trabajar contigo: en https://login.tailscale.com/admin/machines quita ese celular (**⋯ → Remove**) y, en el sistema, desactiva su usuario.
+- Para desactivar el acceso desde el celular en la PC: `tailscale serve reset` en una ventana de comandos.
 
 ---
 

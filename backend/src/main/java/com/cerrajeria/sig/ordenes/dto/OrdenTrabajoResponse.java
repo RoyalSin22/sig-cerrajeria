@@ -17,6 +17,7 @@ public record OrdenTrabajoResponse(
     LocalDateTime fechaIngreso,
     LocalDateTime fechaPrometida,
     LocalDateTime fechaEntrega,
-    String observaciones
+    String observaciones,
+    String motivoCancelacion
 ) {
 }

@@ -36,6 +36,10 @@ sig:
     refresh-token-days: 7
   # Origen permitido por CORS (Fase 9). En produccion, sobrescribir con la URL real del frontend.
   frontend-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  # Acceso desde el celular por Tailscale (celular.bat publica la app en
+  # https://<pc>.<red>.ts.net). Lista separada por comas; admite comodines.
+  # Solo es alcanzable desde los equipos de tu propia red de Tailscale.
+  origenes-celular: ${ORIGENES_CELULAR:https://*.ts.net}
   # Almacenamiento LOCAL de imagenes de productos (adecuado para el alcance actual:
   # despliegue local, 2 usuarios). Al migrar a un servidor real (Fase 14), esto
   # deberia moverse a almacenamiento de objetos (ej. S3-compatible) - documentado

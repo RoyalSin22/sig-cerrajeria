@@ -32,7 +32,7 @@ public class DashboardService {
         var ventasHoy = ventaRepository.totalEntreFechas(hoy.atStartOfDay(), hoy.atTime(LocalTime.MAX));
         var ventasMes = ventaRepository.totalEntreFechas(inicioMes.atStartOfDay(), hoy.atTime(LocalTime.MAX));
 
-        long pendientes = ordenTrabajoRepository.countByEstadoNot(EstadoOrden.ENTREGADO);
+        long pendientes = ordenTrabajoRepository.countByEstadoNotIn(EstadoOrden.FINALES);
         long listos = ordenTrabajoRepository.countByEstado(EstadoOrden.LISTO);
 
         long serviciosProximos = servicioDomicilioRepository

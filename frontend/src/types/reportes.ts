@@ -9,6 +9,12 @@ export interface ReporteVentasResponse {
   totalVentas: number
   cantidadTransacciones: number
   porMetodoPago: VentaPorMetodoPago[]
+  /** Adelantos y liquidaciones del taller, menos devoluciones */
+  ingresosTaller: number
+  ingresosDomicilio: number
+  serviciosDomicilioRealizados: number
+  /** Ventas + taller + domicilio */
+  ingresosTotales: number
 }
 
 export interface ProductoMasVendidoResponse {
