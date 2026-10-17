@@ -31,11 +31,11 @@ CI (`.github/workflows/ci.yml`) corre en cada PR: `./mvnw verify`, `npm ci` + `l
 
 ## Las 3 reglas de negocio (no las rompas sin darte cuenta)
 
-1. **Caja abierta obligatoria**: ninguna operación con dinero (venta, adelanto de orden, compra pagada de caja) se procesa sin que `CajaService.obtenerCajaAbiertaEntidad()` encuentre una caja `ABIERTA` para el usuario en sesión. Si agregas una operación nueva que mueve dinero, llama a este método primero, y registra el ingreso/egreso con su `MetodoPago` (`sumarIngresoACajaActiva(caja, monto, metodo)`): el cierre se cuadra contra `efectivoEsperado()`, que descuenta Yape, Plin y tarjeta porque no están en el cajón. Un pago `MIXTO` se registra línea por línea según su desglose.
+1. **Caja abierta obligatoria**: ninguna operación con dinero (venta, adelanto de orden, compra pagada de caja) se procesa sin que `CajaService.obtenerCajaAbiertaEntidad()` encuentre una caja `ABIERTA` para el usuario en sesión. Si agregas una operación nueva que mueve dinero, llama a este método primero, y registra el ingreso/egreso con su `MetodoPago` (`sumarIngresoACajaActiva(caja, monto, metodo)`): el cierre se cuadra contra `efectivoEsperado()`, que descuenta Yape, Plin y tarjeta porque no están en el cajón. Un pago `MIXTO` se registra línea por línea según su desglose. El cobro de un servicio a domicilio (`ServicioDomicilioService.realizar`) va a la caja de quien lo realiza, y la devolución al cancelar una orden sale de la caja de quien la devuelve.
 2. **Kárdex obligatorio**: todo cambio de `producto.cantidad_stock` tiene que pasar por `ProductoService.descontarStock()` / `incrementarStock()` / `ajustarStock()` — ninguno de los tres modifica el stock sin insertar también en `movimientos_inventario`. Nunca toques `cantidad_stock` directo desde otro servicio.
 3. **Sin entrega con saldo pendiente**: una orden de trabajo solo pasa a `ENTREGADO` vía `OrdenTrabajoService.entregarConLiquidacion()`, que exige liquidar el saldo en la misma llamada si existe.
 
-Los tests en `backend/src/test/java/.../{caja,inventario,ordenes}` verifican estas tres por separado.
+Los tests en `backend/src/test/java/.../{caja,inventario,ordenes}` verifican estas tres por separado; `ventas/`, `compras/` y `domicilio/` cubren cómo las respeta cada módulo.
 
 ## Convenciones
 
