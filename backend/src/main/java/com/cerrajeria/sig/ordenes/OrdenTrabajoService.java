@@ -12,6 +12,7 @@ import com.cerrajeria.sig.common.exception.SaldoPendienteException;
 import com.cerrajeria.sig.usuarios.Usuario;
 import com.cerrajeria.sig.usuarios.UsuarioRepository;
 import com.cerrajeria.sig.ordenes.dto.CambiarEstadoOrdenRequest;
+import com.cerrajeria.sig.ordenes.dto.CancelarOrdenRequest;
 import com.cerrajeria.sig.ordenes.dto.OrdenTrabajoCreateRequest;
 import com.cerrajeria.sig.ordenes.dto.OrdenTrabajoResponse;
 import com.cerrajeria.sig.ordenes.dto.RegistrarPagoOrdenRequest;
@@ -107,6 +108,10 @@ public class OrdenTrabajoService {
     public OrdenTrabajoResponse cambiarEstado(Long id, CambiarEstadoOrdenRequest request) {
         OrdenTrabajo orden = buscarPorId(id);
         EstadoOrden nuevoEstado = parseEstado(request.nuevoEstado());
+        if (nuevoEstado == EstadoOrden.CANCELADO) {
+            throw new IllegalArgumentException("Para cancelar la orden indica el motivo y si se devuelve el adelanto");
+        }
+        exigirNoCancelada(orden);
 
         if (nuevoEstado == EstadoOrden.ENTREGADO && orden.getSaldoPendiente().compareTo(BigDecimal.ZERO) > 0) {
             throw new SaldoPendienteException(
@@ -127,6 +132,7 @@ public class OrdenTrabajoService {
     @Transactional
     public OrdenTrabajoResponse registrarAdelanto(Long id, RegistrarPagoOrdenRequest request) {
         OrdenTrabajo orden = buscarPorId(id);
+        exigirNoFinal(orden);
         if (request.monto().compareTo(orden.getSaldoPendiente()) > 0) {
             throw new IllegalArgumentException("El monto excede el saldo pendiente (" + orden.getSaldoPendiente() + ")");
         }
@@ -141,6 +147,7 @@ public class OrdenTrabajoService {
     @Transactional
     public OrdenTrabajoResponse entregarConLiquidacion(Long id, RegistrarPagoOrdenRequest pagoOpcional) {
         OrdenTrabajo orden = buscarPorId(id);
+        exigirNoFinal(orden);
         BigDecimal saldo = orden.getSaldoPendiente();
 
         if (saldo.compareTo(BigDecimal.ZERO) > 0) {
@@ -156,6 +163,56 @@ public class OrdenTrabajoService {
         orden = ordenTrabajoRepository.save(orden);
         auditLogService.registrar(usuarioActual(), AuditAccion.CAMBIO_ESTADO, "OrdenTrabajo", orden.getId());
         return toResponse(orden);
+    }
+
+    /**
+     * Cancela la orden (el cliente se arrepiente o nunca la recoge). Si se
+     * devuelve el adelanto, sale como egreso de la caja abierta de quien lo
+     * devuelve (regla de negocio 1), con el metodo con que se devuelve, y
+     * queda registrado como pago DEVOLUCION. Si no se devuelve, lo cobrado se
+     * queda como ingreso (ya estaba en la caja del dia en que se cobro).
+     */
+    @Transactional
+    public OrdenTrabajoResponse cancelar(Long id, CancelarOrdenRequest request) {
+        OrdenTrabajo orden = buscarPorId(id);
+        exigirNoFinal(orden);
+
+        BigDecimal pagado = orden.getMontoPagado();
+        if (request.devolverAdelanto() && pagado.signum() > 0) {
+            MetodoPago metodo = parseMetodoPago(request.metodoDevolucion());
+            CajaDiaria caja = cajaService.obtenerCajaAbiertaEntidad();
+
+            PagoOrden devolucion = new PagoOrden();
+            devolucion.setOrdenTrabajo(orden);
+            devolucion.setCajaDiaria(caja);
+            devolucion.setMonto(pagado);
+            devolucion.setTipoPago(TipoPagoOrden.DEVOLUCION);
+            devolucion.setMetodoPago(metodo);
+            devolucion.setUsuario(usuarioActual());
+            pagoOrdenRepository.save(devolucion);
+
+            orden.setMontoPagado(BigDecimal.ZERO); // lo cobrado neto: ya se devolvio todo
+            cajaService.sumarEgresoACajaActiva(caja, pagado, metodo);
+        }
+
+        orden.setEstado(EstadoOrden.CANCELADO);
+        orden.setMotivoCancelacion(request.motivo().trim());
+        orden = ordenTrabajoRepository.save(orden);
+        auditLogService.registrar(usuarioActual(), AuditAccion.CAMBIO_ESTADO, "OrdenTrabajo", orden.getId());
+        return toResponse(orden);
+    }
+
+    private static void exigirNoCancelada(OrdenTrabajo orden) {
+        if (orden.getEstado() == EstadoOrden.CANCELADO) {
+            throw new IllegalArgumentException("La orden " + orden.getNumeroOrden() + " está cancelada");
+        }
+    }
+
+    private static void exigirNoFinal(OrdenTrabajo orden) {
+        exigirNoCancelada(orden);
+        if (orden.getEstado() == EstadoOrden.ENTREGADO) {
+            throw new IllegalArgumentException("La orden " + orden.getNumeroOrden() + " ya fue entregada");
+        }
     }
 
     private void registrarPago(OrdenTrabajo orden, BigDecimal monto, TipoPagoOrden tipoPago, MetodoPago metodoPago) {
@@ -191,7 +248,8 @@ public class OrdenTrabajoService {
             orden.getFechaIngreso(),
             orden.getFechaPrometida(),
             orden.getFechaEntrega(),
-            orden.getObservaciones()
+            orden.getObservaciones(),
+            orden.getMotivoCancelacion()
         );
     }
 

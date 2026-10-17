@@ -18,6 +18,8 @@ public class ReporteService {
     private final VentaRepository ventaRepository;
     private final DetalleVentaRepository detalleVentaRepository;
     private final ProductoRepository productoRepository;
+    private final com.cerrajeria.sig.ordenes.PagoOrdenRepository pagoOrdenRepository;
+    private final com.cerrajeria.sig.domicilio.ServicioDomicilioRepository servicioDomicilioRepository;
 
     @Transactional(readOnly = true)
     public ReporteVentasResponse reporteVentas(LocalDate desde, LocalDate hasta) {
@@ -30,7 +32,13 @@ public class ReporteService {
             .map(p -> new ReporteVentasResponse.VentaPorMetodoPago(p.getMetodoPago().name(), p.getTotal()))
             .toList();
 
-        return new ReporteVentasResponse(total, cantidad, porMetodo);
+        var taller = pagoOrdenRepository.ingresosNetosEntre(desdeDateTime, hastaDateTime);
+        var domicilio = servicioDomicilioRepository.cobradoEntre(desdeDateTime, hastaDateTime);
+        var servicios = servicioDomicilioRepository.countByEstadoAndFechaRealizadoBetween(
+            com.cerrajeria.sig.domicilio.EstadoServicio.REALIZADO, desdeDateTime, hastaDateTime);
+
+        return new ReporteVentasResponse(total, cantidad, porMetodo, taller, domicilio, servicios,
+            total.add(taller).add(domicilio));
     }
 
     @Transactional(readOnly = true)

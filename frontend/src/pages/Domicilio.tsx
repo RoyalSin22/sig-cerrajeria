@@ -14,7 +14,8 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { useToast } from '../context/useToast'
 import { ETIQUETA_ESTADO_SERVICIO, type EstadoServicio, type ServicioDomicilioResponse } from '../types/domicilio'
 import type { ClienteResponse } from '../types/clientes'
-import { formatearFecha, formatearHora } from '../utils/format'
+import { formatearFecha, formatearHora, formatearSoles } from '../utils/format'
+import { ETIQUETA_METODO_PAGO, METODOS_EN_USO, type MetodoPagoSimple } from '../types/ventas'
 import { finMesISO, hoyISO, inicioMesISO, sumarDiasISO, sumarMesesISO } from '../utils/fecha'
 
 const TONO_ESTADO: Record<EstadoServicio, 'neutral' | 'steel' | 'success' | 'warning'> = {
@@ -32,6 +33,7 @@ export function Domicilio() {
   const [desde, setDesde] = useState(hoyISO())
   const [servicios, setServicios] = useState<ServicioDomicilioResponse[]>([])
   const [mostrarAlta, setMostrarAlta] = useState(false)
+  const [aRealizar, setARealizar] = useState<ServicioDomicilioResponse | null>(null)
 
   const hasta = vista === 'SEMANA' ? sumarDiasISO(desde, 6) : finMesISO(desde)
   const rangoDesde = vista === 'SEMANA' ? desde : inicioMesISO(desde)
@@ -47,9 +49,16 @@ export function Domicilio() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [desde, vista])
 
+  function reemplazar(actualizado: ServicioDomicilioResponse) {
+    setServicios((prev) => prev.map((s) => (s.id === actualizado.id ? actualizado : s)))
+  }
+
   async function cambiarEstado(id: number, nuevoEstado: EstadoServicio) {
-    const actualizado = await domicilioApi.cambiarEstado(id, nuevoEstado)
-    setServicios((prev) => prev.map((s) => (s.id === id ? actualizado : s)))
+    try {
+      reemplazar(await domicilioApi.cambiarEstado(id, nuevoEstado))
+    } catch (err) {
+      notificar(extraerMensajeError(err))
+    }
   }
 
   return (
@@ -91,6 +100,14 @@ export function Domicilio() {
                 <p className="text-sm font-medium">{formatearFecha(s.fecha)} · {formatearHora(s.hora)}</p>
                 <p className="text-sm">{s.cliente} — {s.tipoServicio}</p>
                 <p className="text-xs text-sub">{s.direccion} · {s.telefono}</p>
+                {s.estado === 'REALIZADO' && s.montoCobrado !== null && (
+                  <p className="text-xs text-sub">
+                    {s.montoCobrado > 0
+                      ? `Cobrado ${formatearSoles(s.montoCobrado)}${s.metodoPago ? ` · ${ETIQUETA_METODO_PAGO[s.metodoPago as MetodoPagoSimple] ?? s.metodoPago}` : ''}`
+                      : 'Sin cobro'}
+                    {s.realizadoPor && ` · ${s.realizadoPor}`}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col items-end gap-2">
                 <Badge tono={TONO_ESTADO[s.estado]}>{ETIQUETA_ESTADO_SERVICIO[s.estado]}</Badge>
@@ -99,9 +116,19 @@ export function Domicilio() {
                     Marcar en camino
                   </button>
                 )}
-                {s.estado === 'EN_CAMINO' && (
-                  <button onClick={() => cambiarEstado(s.id, 'REALIZADO')} className="text-xs text-steel underline">
-                    Marcar realizado
+                {(s.estado === 'PROGRAMADO' || s.estado === 'EN_CAMINO') && (
+                  <button onClick={() => setARealizar(s)} className="text-xs text-steel underline">
+                    Realizado y cobrar
+                  </button>
+                )}
+                {(s.estado === 'PROGRAMADO' || s.estado === 'EN_CAMINO') && (
+                  <button onClick={() => cambiarEstado(s.id, 'CANCELADO')} className="text-xs text-sub underline">
+                    Cancelar
+                  </button>
+                )}
+                {s.estado === 'CANCELADO' && (
+                  <button onClick={() => cambiarEstado(s.id, 'PROGRAMADO')} className="text-xs text-sub underline">
+                    Volver a programar
                   </button>
                 )}
               </div>
@@ -109,6 +136,18 @@ export function Domicilio() {
           ))}
         </div>
       )}
+
+      <RealizarServicio
+        servicio={aRealizar}
+        onCerrar={() => setARealizar(null)}
+        onRealizado={(s) => {
+          notificar(s.montoCobrado && s.montoCobrado > 0
+            ? `Cobro registrado en tu caja: ${formatearSoles(s.montoCobrado)}`
+            : 'Servicio marcado como realizado')
+          reemplazar(s)
+          setARealizar(null)
+        }}
+      />
 
       <FormularioServicio
         abierto={mostrarAlta}
@@ -207,6 +246,82 @@ function FormularioServicio({
 
         {error && <p className="text-sm text-danger">{error}</p>}
         <Button type="submit" disabled={guardando}>{guardando ? 'Agendando…' : 'Agendar'}</Button>
+      </form>
+    </BottomSheet>
+  )
+}
+
+/**
+ * Realizar un servicio: lo cobra quien lo hizo, en el lugar, y entra en SU
+ * caja (tiene que tenerla abierta). Monto 0 = sin cobro (garantia, cortesia).
+ */
+function RealizarServicio({
+  servicio, onCerrar, onRealizado,
+}: {
+  servicio: ServicioDomicilioResponse | null
+  onCerrar: () => void
+  onRealizado: (s: ServicioDomicilioResponse) => void
+}) {
+  const [monto, setMonto] = useState('')
+  const [metodo, setMetodo] = useState<MetodoPagoSimple>('EFECTIVO')
+  const [error, setError] = useState<string | null>(null)
+  const [guardando, setGuardando] = useState(false)
+
+  useEffect(() => {
+    setMonto('')
+    setMetodo('EFECTIVO')
+    setError(null)
+  }, [servicio])
+
+  if (!servicio) return null
+  const montoNumero = Number(monto)
+  const valido = monto.trim() !== '' && Number.isFinite(montoNumero) && montoNumero >= 0
+
+  async function confirmar(e: FormEvent) {
+    e.preventDefault()
+    if (!valido) return
+    setGuardando(true)
+    setError(null)
+    try {
+      onRealizado(await domicilioApi.realizar(servicio!.id, {
+        monto: montoNumero,
+        metodoPago: montoNumero > 0 ? metodo : undefined,
+      }))
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  return (
+    <BottomSheet abierto onCerrar={onCerrar} titulo="Servicio realizado">
+      <form onSubmit={confirmar} className="flex flex-col gap-3 text-sm">
+        <p className="text-sub">{servicio.cliente} — {servicio.tipoServicio}</p>
+        <label className="flex flex-col gap-1">
+          <span className="font-medium">Monto cobrado (S/)</span>
+          <input
+            required type="number" inputMode="decimal" step="0.01" min="0" value={monto}
+            onChange={(e) => setMonto(e.target.value)} placeholder="0 si no se cobró"
+            className="rounded-md border border-line bg-paper px-3 py-2.5 outline-none focus:border-steel"
+          />
+        </label>
+        {montoNumero > 0 && (
+          <div className="flex gap-2">
+            {METODOS_EN_USO.map((m) => (
+              <Chip key={m} activo={metodo === m} onClick={() => setMetodo(m)}>{ETIQUETA_METODO_PAGO[m]}</Chip>
+            ))}
+          </div>
+        )}
+        <p className="text-xs text-sub">
+          {montoNumero > 0
+            ? 'El cobro entra en tu caja: tienes que tenerla abierta, aunque estés fuera del local.'
+            : 'Sin cobro (garantía o cortesía): no pasa por la caja.'}
+        </p>
+        {error && <p className="text-danger">{error}</p>}
+        <Button type="submit" disabled={!valido || guardando}>
+          {guardando ? 'Guardando…' : montoNumero > 0 ? `Cobrar ${formatearSoles(montoNumero)}` : 'Marcar realizado'}
+        </Button>
       </form>
     </BottomSheet>
   )

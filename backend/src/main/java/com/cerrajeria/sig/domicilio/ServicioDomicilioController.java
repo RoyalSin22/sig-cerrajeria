@@ -42,6 +42,13 @@ public class ServicioDomicilioController {
         return ResponseEntity.ok(servicioDomicilioService.agenda(desde, hasta));
     }
 
+    @PostMapping("/{id}/realizar")
+    @Operation(summary = "Marcar como realizado y cobrar en la caja de quien lo realizó")
+    public ResponseEntity<ServicioDomicilioResponse> realizar(
+            @PathVariable Long id, @Valid @RequestBody com.cerrajeria.sig.domicilio.dto.RealizarServicioRequest request) {
+        return ResponseEntity.ok(servicioDomicilioService.realizar(id, request));
+    }
+
     @PatchMapping("/{id}/estado")
     public ResponseEntity<ServicioDomicilioResponse> cambiarEstado(
             @PathVariable Long id, @Valid @RequestBody CambiarEstadoServicioRequest request) {

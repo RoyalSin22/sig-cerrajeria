@@ -29,4 +29,13 @@ export interface ServicioDomicilioResponse {
   tipoServicio: string
   observaciones: string | null
   estado: EstadoServicio
+  /** Lo cobrado al marcarlo realizado; null mientras no se realiza, 0 = sin cobro. */
+  montoCobrado: number | null
+  metodoPago: string | null
+  realizadoPor: string | null
+}
+
+export interface RealizarServicioRequest {
+  monto: number
+  metodoPago?: string
 }

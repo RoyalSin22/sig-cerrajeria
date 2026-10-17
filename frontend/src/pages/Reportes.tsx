@@ -68,8 +68,14 @@ export function Reportes() {
       {ventas && (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            <StatCard label="Total vendido" value={formatearSoles(ventas.totalVentas)} />
+            <StatCard label="Ingresos totales" value={formatearSoles(ventas.ingresosTotales)} />
+            <StatCard label="Ventas de mostrador" value={formatearSoles(ventas.totalVentas)} />
             <StatCard label="Transacciones" value={ventas.cantidadTransacciones} />
+            <StatCard label="Taller (neto de devoluciones)" value={formatearSoles(ventas.ingresosTaller)} />
+            <StatCard
+              label={`Domicilio (${ventas.serviciosDomicilioRealizados} realizados)`}
+              value={formatearSoles(ventas.ingresosDomicilio)}
+            />
             {inventario && <StatCard label="Valor de inventario" value={formatearSoles(inventario.valorTotalInventario)} />}
           </div>
 

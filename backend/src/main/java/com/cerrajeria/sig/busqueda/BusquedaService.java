@@ -47,6 +47,6 @@ public class BusquedaService {
             o.getId(), o.getNumeroOrden(), o.getCliente().getNombre(), o.getProductoRecibido(),
             o.getProblema(), o.getDiagnostico(), o.getPrecioTotal(), o.getMontoPagado(),
             o.getSaldoPendiente(), o.getEstado().name(), o.getFechaIngreso(), o.getFechaPrometida(),
-            o.getFechaEntrega(), o.getObservaciones());
+            o.getFechaEntrega(), o.getObservaciones(), o.getMotivoCancelacion());
     }
 }

@@ -164,7 +164,7 @@ public class AsistenteIAService {
     }
 
     private String consultarTrabajosPendientes() {
-        long pendientes = ordenTrabajoRepository.countByEstadoNot(EstadoOrden.ENTREGADO);
+        long pendientes = ordenTrabajoRepository.countByEstadoNotIn(EstadoOrden.FINALES);
         long listos = ordenTrabajoRepository.countByEstado(EstadoOrden.LISTO);
         return "Trabajos pendientes: %d\nDe esos, %d ya están listos para entregar.".formatted(pendientes, listos);
     }

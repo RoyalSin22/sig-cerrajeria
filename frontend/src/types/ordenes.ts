@@ -1,7 +1,8 @@
 // Refleja com.cerrajeria.sig.ordenes.dto.* y sus enums
 
-export type EstadoOrden = 'RECIBIDO' | 'EN_REPARACION' | 'ESPERANDO_REPUESTO' | 'LISTO' | 'ENTREGADO'
+export type EstadoOrden = 'RECIBIDO' | 'EN_REPARACION' | 'ESPERANDO_REPUESTO' | 'LISTO' | 'ENTREGADO' | 'CANCELADO'
 
+/** Flujo normal de una orden, en orden. CANCELADO queda fuera: se llega con "Cancelar orden". */
 export const ESTADOS_ORDEN: EstadoOrden[] = ['RECIBIDO', 'EN_REPARACION', 'ESPERANDO_REPUESTO', 'LISTO', 'ENTREGADO']
 
 export const ETIQUETA_ESTADO_ORDEN: Record<EstadoOrden, string> = {
@@ -10,6 +11,7 @@ export const ETIQUETA_ESTADO_ORDEN: Record<EstadoOrden, string> = {
   ESPERANDO_REPUESTO: 'Esperando repuesto',
   LISTO: 'Listo',
   ENTREGADO: 'Entregado',
+  CANCELADO: 'Cancelado',
 }
 
 export interface OrdenTrabajoCreateRequest {
@@ -39,6 +41,13 @@ export interface OrdenTrabajoResponse {
   fechaPrometida: string | null
   fechaEntrega: string | null
   observaciones: string | null
+  motivoCancelacion: string | null
+}
+
+export interface CancelarOrdenRequest {
+  motivo: string
+  devolverAdelanto: boolean
+  metodoDevolucion?: string
 }
 
 export interface CambiarEstadoOrdenRequest {

@@ -1,6 +1,6 @@
 import { axiosClient } from './axiosClient'
 import type {
-  OrdenTrabajoCreateRequest, OrdenTrabajoResponse, CambiarEstadoOrdenRequest, RegistrarPagoOrdenRequest,
+  OrdenTrabajoCreateRequest, OrdenTrabajoResponse, CambiarEstadoOrdenRequest, RegistrarPagoOrdenRequest, CancelarOrdenRequest,
 } from '../types/ordenes'
 
 export const ordenesApi = {
@@ -15,4 +15,6 @@ export const ordenesApi = {
     axiosClient.post<OrdenTrabajoResponse>(`/ordenes/${id}/pagos`, body).then(r => r.data),
   entregar: (id: number, body?: RegistrarPagoOrdenRequest) =>
     axiosClient.post<OrdenTrabajoResponse>(`/ordenes/${id}/entregar`, body).then(r => r.data),
+  cancelar: (id: number, body: CancelarOrdenRequest) =>
+    axiosClient.post<OrdenTrabajoResponse>(`/ordenes/${id}/cancelar`, body).then(r => r.data),
 }

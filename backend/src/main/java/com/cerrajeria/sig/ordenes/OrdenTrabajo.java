@@ -67,6 +67,9 @@ public class OrdenTrabajo {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
+    @Column(name = "motivo_cancelacion", columnDefinition = "TEXT")
+    private String motivoCancelacion;
+
     public BigDecimal getSaldoPendiente() {
         return precioTotal.subtract(montoPagado);
     }

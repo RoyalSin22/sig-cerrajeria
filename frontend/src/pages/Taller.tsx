@@ -21,6 +21,7 @@ const TONO_ESTADO: Record<EstadoOrden, 'neutral' | 'steel' | 'warning' | 'succes
   ESPERANDO_REPUESTO: 'warning',
   LISTO: 'success',
   ENTREGADO: 'dark',
+  CANCELADO: 'neutral',
 }
 
 export function Taller() {
@@ -54,7 +55,7 @@ export function Taller() {
 
       {/* Kanban por estado (Fase 7 §5.6) */}
       <div className="flex gap-3 overflow-x-auto pb-2">
-        {ESTADOS_ORDEN.map((estado) => (
+        {[...ESTADOS_ORDEN, ...(ordenes.some((o) => o.estado === 'CANCELADO') ? ['CANCELADO' as const] : [])].map((estado) => (
           <div key={estado} className="w-64 shrink-0">
             <div className="mb-2 flex items-center gap-2">
               <span className="font-heading text-sm font-semibold">{ETIQUETA_ESTADO_ORDEN[estado]}</span>
@@ -88,7 +89,7 @@ export function Taller() {
         }}
       />
 
-      <FichaOrden orden={seleccionada} onCerrar={() => setSeleccionada(null)} onActualizada={actualizarEnLista} />
+      <FichaOrden key={seleccionada?.id} orden={seleccionada} onCerrar={() => setSeleccionada(null)} onActualizada={actualizarEnLista} />
     </div>
   )
 }
@@ -198,8 +199,36 @@ function FichaOrden({
   const [procesando, setProcesando] = useState(false)
   const [montoLiquidacion, setMontoLiquidacion] = useState('')
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('EFECTIVO')
+  const [cancelando, setCancelando] = useState(false)
+  const [motivo, setMotivo] = useState('')
+  const [devolver, setDevolver] = useState(true)
 
   if (!orden) return null
+
+  async function cancelarOrden() {
+    if (!motivo.trim()) {
+      setError('Escribe el motivo de la cancelación')
+      return
+    }
+    setError(null)
+    setProcesando(true)
+    try {
+      const devuelve = devolver && orden!.montoPagado > 0
+      const actualizada = await ordenesApi.cancelar(orden!.id, {
+        motivo, devolverAdelanto: devuelve, metodoDevolucion: devuelve ? metodoPago : undefined,
+      })
+      notificar(devuelve
+        ? `Orden ${actualizada.numeroOrden} cancelada; devuelto ${formatearSoles(orden!.montoPagado)} desde tu caja`
+        : `Orden ${actualizada.numeroOrden} cancelada`)
+      setCancelando(false)
+      setMotivo('')
+      onActualizada(actualizada)
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setProcesando(false)
+    }
+  }
 
   async function cambiarEstado(nuevoEstado: typeof ESTADOS_ORDEN[number]) {
     setError(null)
@@ -250,9 +279,13 @@ function FichaOrden({
           Saldo pendiente: {formatearSoles(orden.saldoPendiente)}
         </div>
 
+        {orden.estado === 'CANCELADO' && orden.motivoCancelacion && (
+          <div><span className="text-sub">Motivo de la cancelación</span><p>{orden.motivoCancelacion}</p></div>
+        )}
+
         {error && <p className="text-sm text-danger">{error}</p>}
 
-        {orden.estado !== 'ENTREGADO' && (
+        {orden.estado !== 'ENTREGADO' && orden.estado !== 'CANCELADO' && (
           <div className="flex flex-col gap-2 border-t border-hair pt-3">
             {siguienteEstadoSimple && siguienteEstadoSimple !== 'ENTREGADO' && (
               <Button variant="secondary" disabled={procesando} onClick={() => cambiarEstado(siguienteEstadoSimple)}>
@@ -276,6 +309,37 @@ function FichaOrden({
               </div>
             ) : (
               <Button disabled={procesando} onClick={entregarConLiquidacion}>Marcar como entregado</Button>
+            )}
+
+            {!cancelando ? (
+              <Button variant="ghost" disabled={procesando} onClick={() => setCancelando(true)}>Cancelar orden</Button>
+            ) : (
+              <div className="flex flex-col gap-2 rounded-md border border-line p-3">
+                <span className="font-medium">Cancelar la orden</span>
+                <input
+                  value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={500}
+                  placeholder="Motivo (ej. el cliente se arrepintió, nunca la recogió)"
+                  className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel"
+                />
+                {orden.montoPagado > 0 && (
+                  <>
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" checked={devolver} onChange={(e) => setDevolver(e.target.checked)} />
+                      Devolver lo cobrado ({formatearSoles(orden.montoPagado)}) desde mi caja
+                    </label>
+                    {devolver && (
+                      <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value as MetodoPago)}
+                        className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel">
+                        {METODOS_EN_USO.map((m) => <option key={m} value={m}>Devolver por {ETIQUETA_METODO_PAGO[m]}</option>)}
+                      </select>
+                    )}
+                  </>
+                )}
+                <div className="flex gap-2">
+                  <Button variant="danger" disabled={procesando} onClick={cancelarOrden}>Confirmar cancelación</Button>
+                  <Button variant="secondary" disabled={procesando} onClick={() => setCancelando(false)}>Volver</Button>
+                </div>
+              </div>
             )}
           </div>
         )}

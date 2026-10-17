@@ -61,6 +61,13 @@ public class OrdenTrabajoController {
         return ResponseEntity.ok(ordenTrabajoService.registrarAdelanto(id, request));
     }
 
+    @PostMapping("/{id}/cancelar")
+    @Operation(summary = "Cancelar la orden, devolviendo o no el adelanto (egreso de la caja de quien lo devuelve)")
+    public ResponseEntity<OrdenTrabajoResponse> cancelar(
+            @PathVariable Long id, @Valid @RequestBody com.cerrajeria.sig.ordenes.dto.CancelarOrdenRequest request) {
+        return ResponseEntity.ok(ordenTrabajoService.cancelar(id, request));
+    }
+
     @PostMapping("/{id}/entregar")
     @Operation(summary = "Entregar la orden; si hay saldo pendiente, exige liquidarlo en la misma llamada (regla de negocio 3)")
     public ResponseEntity<OrdenTrabajoResponse> entregar(

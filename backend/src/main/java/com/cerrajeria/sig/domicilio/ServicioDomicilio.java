@@ -52,6 +52,25 @@ public class ServicioDomicilio {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
+    /** Cobro al marcar REALIZADO (V9). null mientras no se realiza; 0 = sin cobro. */
+    @Column(name = "monto_cobrado", precision = 12, scale = 2)
+    private java.math.BigDecimal montoCobrado;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "metodo_pago", length = 20)
+    private com.cerrajeria.sig.common.MetodoPago metodoPago;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "caja_diaria_id")
+    private com.cerrajeria.sig.caja.CajaDiaria cajaDiaria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "realizado_por")
+    private Usuario realizadoPor;
+
+    @Column(name = "fecha_realizado")
+    private LocalDateTime fechaRealizado;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }
