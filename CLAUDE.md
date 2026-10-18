@@ -54,6 +54,7 @@ Los tests en `backend/src/test/java/.../{caja,inventario,ordenes}` verifican est
 - **Fechas en hora de Perú, no del servidor ni UTC**: el backend fija `America/Lima` en `SigApplication.main()` (en Docker el contenedor corre en UTC y una venta de las 20:00 caía al día siguiente). En el frontend, las fechas de calendario (`"AAAA-MM-DD"`) se manejan con `src/utils/fecha.ts`: nunca `new Date('2026-10-04')` ni `toISOString()`, que corren el día.
 - **`backend/scripts/backup.sh` corre en un contenedor Linux**: debe quedar con fin de línea LF (lo fuerza `.gitattributes`); con CRLF el servicio `backup` no arranca. Respaldos: ver `DEPLOYMENT.md`.
 - **Detrás de nginx, el backend ve cada pedido como de otro origen**: solo acepta los de `FRONTEND_ORIGIN` y `ORIGENES_CELULAR` (default `https://*.ts.net`, Tailscale). Una IP del wifi (`http://192.168.x.x:8081`) da 403 hasta en el login.
+- **Postgres (5433) y el backend (8080) se publican solo en `127.0.0.1`** en `docker-compose.yml`: no los abras a todas las redes. La contraseña por defecto de la base está en el repo y daría acceso directo a los datos desde el wifi o Tailscale.
 - Variables de entorno opcionales (WhatsApp, Anthropic) van con default vacío (`${VAR:}`) en `application.yml`, nunca con `${VAR:?mensaje}` — eso vuelve la variable obligatoria y rompe el arranque (y los tests) si no está seteada.
 
 ## Qué NO está hecho (a propósito, no son bugs olvidados)

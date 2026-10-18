@@ -6,8 +6,11 @@ services:
       POSTGRES_DB: sig_cerrajeria
       POSTGRES_USER: sig_admin
       POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me_local_dev}
+    # Solo en esta PC (127.0.0.1): la base no tiene que quedar alcanzable desde
+    # el wifi del local ni desde Tailscale. Su contrasena por defecto esta
+    # publicada en el repositorio, y con ella se saltaria el login del sistema.
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -66,8 +69,10 @@ services:
       UPLOADS_DIR: /app/uploads
     volumes:
       - uploads:/app/uploads
+    # Solo en esta PC: el navegador y el celular entran por nginx (8081), que
+    # llega al backend por la red interna de Docker.
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     networks:
       - sig-network
 
