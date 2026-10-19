@@ -108,6 +108,8 @@ Desde el menú ☰, entra a **Reportes**. Elige un rango de fechas y consulta:
 - **Ingresos totales**, que suman las ventas de mostrador, el taller y los servicios a domicilio.
 - Por separado, cada uno de esos tres. El taller cuenta los adelantos y liquidaciones cobrados en esas fechas, menos las devoluciones de órdenes canceladas. El domicilio cuenta lo cobrado en los servicios realizados en esas fechas.
 - Las ventas por método de pago, los productos más vendidos y el valor total de tu inventario.
+- **Servicios realizados**: cuántos domicilios se hicieron y cuánto se cobró, separados por tipo de trabajo y por técnico, más las órdenes del taller recibidas, entregadas y las que siguen abiertas.
+- **Clientes que más dejaron**: un ranking que suma lo que cada cliente gastó en compras, taller y domicilio. Las ventas de mostrador sin cliente no entran, porque no se sabe de quién son.
 
 ## El asistente
 

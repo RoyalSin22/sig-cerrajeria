@@ -34,7 +34,10 @@ Si el backend no está en `http://localhost:8080/api/v1`, copia `.env.example` a
 
 ```bash
 npm run lint
+npm test          # Vitest: fechas en hora de Perú, formato de soles y permisos por rol
 npm run build     # revisa los tipos y genera la versión de producción
 ```
+
+Los tests van junto al código, como `*.test.ts(x)` dentro de `src/`.
 
 Es lo mismo que corre el CI en cada PR. En producción, el frontend lo sirve Nginx dentro de Docker y llama a la API por rutas relativas (`/api/v1`).

@@ -12,6 +12,9 @@ public interface OrdenTrabajoRepository extends JpaRepository<OrdenTrabajo, Long
     /** Ordenes abiertas: las que no estan ENTREGADO ni CANCELADO. */
     long countByEstadoNotIn(java.util.Collection<EstadoOrden> estados);
     long countByEstado(EstadoOrden estado);
+    /** RF-43: ordenes recibidas y entregadas en un rango. */
+    long countByFechaIngresoBetween(java.time.LocalDateTime desde, java.time.LocalDateTime hasta);
+    long countByEstadoAndFechaEntregaBetween(EstadoOrden estado, java.time.LocalDateTime desde, java.time.LocalDateTime hasta);
 
     org.springframework.data.domain.Page<OrdenTrabajo> findByEstadoOrderByFechaIngresoDesc(
         EstadoOrden estado, org.springframework.data.domain.Pageable pageable);

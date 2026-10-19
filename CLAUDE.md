@@ -21,13 +21,14 @@ npm install
 npm run dev                       # http://localhost:5173
 npm run build
 npm run lint
+npm test                          # Vitest (corre en hora de Perú, ver vitest.config.ts)
 ```
 
 Login de prueba: `admin` / `admin123` (contraseña inicial de V2; en una instalación real se cambia en Ajustes → Contraseña).
 
 Lanzador de Windows (`launcher/`, Go): `SIG-Cerrajeria.exe`, se publica solo en GitHub Releases al cambiar `launcher/` en main (`.github/workflows/lanzador.yml`). Ver `launcher/README.md`.
 
-CI (`.github/workflows/ci.yml`) corre en cada PR: `./mvnw verify`, `npm ci` + `lint` + `build`, tests y build del lanzador, y valida `docker-compose.yml` y `backup.sh`. Si agregas un paso de verificación nuevo, súmalo ahí.
+CI (`.github/workflows/ci.yml`) corre en cada PR: `./mvnw verify`, `npm ci` + `lint` + `test` + `build`, tests y build del lanzador, y valida `docker-compose.yml` y `backup.sh`. Si agregas un paso de verificación nuevo, súmalo ahí.
 
 ## Las 3 reglas de negocio (no las rompas sin darte cuenta)
 
@@ -60,4 +61,3 @@ Los tests en `backend/src/test/java/.../{caja,inventario,ordenes}` verifican est
 ## Qué NO está hecho (a propósito, no son bugs olvidados)
 
 - HTTPS en el `docker-compose.yml` de producción: el acceso con HTTPS desde el celular se resuelve con Tailscale (`backend/celular.bat`), no dentro de compose (ver `DEPLOYMENT.md`)
-- Reportes agregados de servicios/clientes (RF-43/44) — hoy son listados filtrados, no reportes propios

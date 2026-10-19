@@ -127,6 +127,31 @@ class IngresosTallerDomicilioIntegrationTest {
         assertThat(reporte.get("ingresosDomicilio").decimalValue()).isEqualByComparingTo("80");
         assertThat(reporte.get("serviciosDomicilioRealizados").asLong()).isEqualTo(1);
         assertThat(reporte.get("ingresosTotales").decimalValue()).isEqualByComparingTo("100");
+
+        String rango = "desde=%s&hasta=%s".formatted(LocalDate.now().minusDays(1), LocalDate.now().plusDays(1));
+
+        // --- RF-43: servicios realizados (las consultas JPQL contra PostgreSQL real) ---
+        JsonNode servicios = llamar("GET", "/api/v1/reportes/servicios?" + rango, null, status().isOk());
+        JsonNode apertura = null;
+        for (JsonNode g : servicios.path("domicilio").path("porTipo")) {
+            if ("Apertura de puerta".equals(g.get("nombre").asString())) apertura = g;
+        }
+        assertThat(apertura).as("agrupado por tipo de servicio").isNotNull();
+        assertThat(apertura.get("cantidad").asLong()).isEqualTo(1);
+        assertThat(apertura.get("total").decimalValue()).isEqualByComparingTo("80");
+        assertThat(servicios.path("domicilio").path("porTecnico")).isNotEmpty();
+        assertThat(servicios.path("taller").get("recibidas").asLong()).isGreaterThanOrEqualTo(2);
+        assertThat(servicios.path("taller").get("ingresosNetos").decimalValue()).isEqualByComparingTo("20");
+
+        // --- RF-44: ranking de clientes (taller neto de la devolución + domicilio) ---
+        JsonNode clientes = llamar("GET", "/api/v1/reportes/clientes?" + rango, null, status().isOk());
+        JsonNode primero = clientes.path("ranking").get(0);
+        assertThat(primero.get("nombre").asString()).isEqualTo("Rosa Quispe");
+        assertThat(primero.path("taller").get("cantidad").asLong()).as("dos órdenes con pagos").isEqualTo(2);
+        assertThat(primero.path("taller").get("total").decimalValue()).isEqualByComparingTo("20");
+        assertThat(primero.path("domicilio").get("total").decimalValue()).isEqualByComparingTo("80");
+        assertThat(primero.path("ventas").get("cantidad").asLong()).isZero();
+        assertThat(primero.get("total").decimalValue()).isEqualByComparingTo("100");
     }
 
     @Test
