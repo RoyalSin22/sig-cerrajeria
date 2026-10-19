@@ -7,24 +7,31 @@
  * --color-steel  ->  bg-steel / text-steel / border-steel, etc.
  */
 @theme {
-  --color-ink: #191b1c;
-  --color-sub: #6f757a;
-  --color-line: #c8ced5;
-  --color-hair: #dfe3e7;
+  /*
+   * Paleta accesible: todo texto pasa el contraste WCAG AA (4.5:1) sobre el
+   * fondo, y los estados se distinguen por tono azul / naranja / verde
+   * azulado (paleta Okabe-Ito), que se ven distintos con los daltonismos
+   * comunes (deuteranopia, protanopia). Igual, ningun estado depende solo
+   * del color: van con texto o icono.
+   */
+  --color-ink: #14171a;
+  --color-sub: #4f565d;
+  --color-line: #b9c2cc;
+  --color-hair: #dde2e8;
 
-  --color-steel: #5980a6;
-  --color-steel-dark: #2c455d;
+  --color-steel: #0b5cad;
+  --color-steel-dark: #0a3d73;
 
-  --color-paper: #f6f7f8;
+  --color-paper: #f7f8fa;
 
-  --color-success: #7d9e86; /* sage */
-  --color-warning: #b0975f; /* brass */
-  --color-danger: #bd8080; /* rose */
+  --color-success: #00745a; /* verde azulado */
+  --color-warning: #9a4a00; /* naranja */
+  --color-danger: #b42318; /* rojo */
 
-  --color-tint-sky: #e2ebf3;
-  --color-tint-mint: #dfeae3;
-  --color-tint-lilac: #e8e4f0;
-  --color-tint-peach: #f3eae2;
+  --color-tint-sky: #d9eafb;
+  --color-tint-mint: #d4f1e6;
+  --color-tint-lilac: #e9e2f6;
+  --color-tint-peach: #ffe7c7;
 
   --font-heading: "Barlow Condensed", system-ui, sans-serif;
   --font-body: "Barlow", system-ui, sans-serif;
@@ -34,11 +41,32 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 .dark {
-  --color-paper: #14181b;
-  --color-ink: #f2f3f4;
-  --color-sub: #9aa1a7;
+  --color-paper: #121518;
+  --color-ink: #f2f4f6;
+  --color-sub: #a9b1b8;
   --color-line: #2c3236;
   --color-hair: #23282c;
+
+  /* Versiones claras de los estados para que se lean sobre fondo oscuro */
+  --color-steel: #5aa9f0;
+  --color-success: #3ccf9e;
+  --color-warning: #f2a33a;
+  --color-danger: #ff7b6b;
+
+  --color-tint-sky: #12324f;
+  --color-tint-mint: #0e3a2e;
+  --color-tint-lilac: #2c2342;
+  --color-tint-peach: #45290a;
+}
+
+/* steel-dark es fondo de botones (con texto blanco) y tambien color de
+   texto para precios y totales: sobre fondo oscuro, ese texto pasa al azul
+   claro. Va fuera de las capas de Tailwind para ganarle a la utilidad. */
+.dark .text-steel-dark {
+  color: var(--color-steel);
+}
+.dark .bg-tint-sky.text-steel-dark {
+  color: #cfe5fb;
 }
 
 body {
@@ -83,3 +111,10 @@ h1, h2, h3, h4, .font-heading {
 }
 .plano-tecnico::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
 .plano-tecnico::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+/* En modo oscuro los estados son claros: el texto blanco encima no se leeria
+   (avisos de error, boton de peligro, aviso informativo). */
+.dark .text-white.bg-danger,
+.dark .text-white.bg-ink {
+  color: #121518;
+}

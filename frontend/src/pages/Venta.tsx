@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Minus, Plus, Trash2 } from 'lucide-react'
+import { KeyRound, Minus, Plus, Trash2 } from 'lucide-react'
 import { productosApi } from '../api/productos'
 import { ventasApi } from '../api/ventas'
 import { extraerMensajeError } from '../api/axiosClient'
@@ -8,6 +8,7 @@ import { SearchInput } from '../components/ui/SearchInput'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Button } from '../components/ui/Button'
 import { Chip } from '../components/ui/Chip'
+import { BottomSheet } from '../components/ui/BottomSheet'
 import { useCaja } from '../context/useCaja'
 import { useToast } from '../context/useToast'
 import { formatearSoles } from '../utils/format'
@@ -34,6 +35,7 @@ export function Venta() {
   })
   const [procesando, setProcesando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [mostrarDuplicado, setMostrarDuplicado] = useState(false)
 
   async function handleBuscar(termino: string) {
     if (termino.trim().length < 2) {
@@ -47,16 +49,23 @@ export function Venta() {
     }
   }
 
-  function agregarAlCarrito(producto: ProductoResponse) {
+  function agregarAlCarrito(producto: ProductoResponse, cantidad = 1) {
     setCarrito((prev) => {
       const existente = prev.find((i) => i.producto.id === producto.id)
       if (existente) {
         return prev.map((i) =>
-          i.producto.id === producto.id ? { ...i, cantidad: i.cantidad + 1 } : i,
+          i.producto.id === producto.id ? { ...i, cantidad: i.cantidad + cantidad } : i,
         )
       }
-      return [...prev, { producto, cantidad: 1 }]
+      return [...prev, { producto, cantidad }]
     })
+  }
+
+  /** Cantidad escrita a mano en el carrito (vacio o 0 no quita el item: para eso esta el tacho). */
+  function fijarCantidad(productoId: number, texto: string) {
+    const n = Number.parseInt(texto, 10)
+    if (Number.isNaN(n) || n < 1) return
+    setCarrito((prev) => prev.map((i) => (i.producto.id === productoId ? { ...i, cantidad: n } : i)))
   }
 
   function cambiarCantidad(productoId: number, delta: number) {
@@ -119,6 +128,10 @@ export function Venta() {
           Ver historial de ventas
         </button>
       </div>
+      <Button variant="secondary" onClick={() => setMostrarDuplicado(true)} className="flex items-center justify-center gap-2">
+        <KeyRound size={18} aria-hidden /> Duplicado de llave
+      </Button>
+
       <SearchInput placeholder="Buscar producto por nombre o código…" onBuscar={handleBuscar} autoFocus />
 
       {resultados.length > 0 && (
@@ -158,7 +171,16 @@ export function Venta() {
                 >
                   <Minus size={16} />
                 </button>
-                <span className="w-6 text-center text-sm font-medium">{item.cantidad}</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  step="1"
+                  aria-label={`Cantidad de ${item.producto.nombre}`}
+                  value={item.cantidad}
+                  onChange={(e) => fijarCantidad(item.producto.id, e.target.value)}
+                  className="w-14 rounded-md border border-line bg-paper px-1 py-1.5 text-center text-sm font-medium outline-none focus:border-steel"
+                />
                 <button
                   onClick={() => cambiarCantidad(item.producto.id, 1)}
                   className="flex h-9 w-9 items-center justify-center rounded-md border border-line hover:bg-hair"
@@ -226,6 +248,120 @@ export function Venta() {
           </div>
         </div>
       )}
+
+      <DuplicadoLlave
+        abierto={mostrarDuplicado}
+        onCerrar={() => setMostrarDuplicado(false)}
+        onAgregar={(producto, cantidad) => {
+          agregarAlCarrito(producto, cantidad)
+          setMostrarDuplicado(false)
+          notificar(`${cantidad} duplicado(s) de ${producto.nombre} al carrito`)
+        }}
+      />
     </div>
   )
 }
+
+/**
+ * Duplicado de llave: se elige la llave virgen y la cantidad, y va al carrito
+ * como cualquier venta (descuenta stock por el Kardex y entra a la caja). No
+ * pide cliente: un duplicado se hace y se cobra en el momento.
+ */
+function DuplicadoLlave({
+  abierto, onCerrar, onAgregar,
+}: {
+  abierto: boolean
+  onCerrar: () => void
+  onAgregar: (producto: ProductoResponse, cantidad: number) => void
+}) {
+  const [llaves, setLlaves] = useState<ProductoResponse[]>([])
+  const [termino, setTermino] = useState('')
+  const [elegida, setElegida] = useState<ProductoResponse | null>(null)
+  const [cantidad, setCantidad] = useState('1')
+
+  useEffect(() => {
+    if (!abierto) return
+    setElegida(null)
+    setCantidad('1')
+    setTermino('')
+    productosApi.listar(0, 'LLAVE_VIRGEN').then((r) => setLlaves(r.content)).catch(() => setLlaves([]))
+  }, [abierto])
+
+  async function buscar(texto: string) {
+    setTermino(texto)
+    try {
+      if (texto.trim().length >= 2) {
+        const r = await productosApi.buscar(texto.trim())
+        setLlaves(r.filter((p) => p.tipoProducto === 'LLAVE_VIRGEN'))
+      } else {
+        setLlaves((await productosApi.listar(0, 'LLAVE_VIRGEN')).content)
+      }
+    } catch {
+      setLlaves([])
+    }
+  }
+
+  const n = Number.parseInt(cantidad, 10)
+  const cantidadValida = Number.isInteger(n) && n >= 1
+  const sinStock = elegida !== null && cantidadValida && n > elegida.cantidadStock
+
+  return (
+    <BottomSheet abierto={abierto} onCerrar={onCerrar} titulo="Duplicado de llave">
+      {!elegida ? (
+        <div className="flex flex-col gap-3">
+          <SearchInput placeholder="Buscar llave virgen (ej. KW1, Yale)…" onBuscar={buscar} />
+          {llaves.length === 0 ? (
+            <p className="text-sm text-sub">
+              {termino ? 'No hay llaves vírgenes con ese nombre.' : 'No hay llaves vírgenes en el inventario.'}
+            </p>
+          ) : (
+            <div className="flex max-h-80 flex-col gap-2 overflow-y-auto">
+              {llaves.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setElegida(p)}
+                  className="panel-cepillado flex items-center justify-between rounded-lg p-3 text-left"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{p.nombre}</p>
+                    <p className="text-xs text-sub">{p.codigo} · Stock: {p.cantidadStock}</p>
+                  </div>
+                  <span className="font-heading font-semibold text-steel-dark">{formatearSoles(p.precioVenta)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-medium">{elegida.nombre}</span>
+            <button onClick={() => setElegida(null)} className="text-xs text-steel underline">Cambiar</button>
+          </div>
+          <label className="flex flex-col gap-1">
+            <span className="font-medium">¿Cuántas copias?</span>
+            <input
+              type="number" inputMode="numeric" min="1" step="1" value={cantidad}
+              onChange={(e) => setCantidad(e.target.value)}
+              className="rounded-md border border-line bg-paper px-3 py-2.5 text-lg outline-none focus:border-steel"
+            />
+          </label>
+          <div className="flex gap-2">
+            {[1, 2, 3, 5].map((c) => (
+              <Chip key={c} activo={cantidad === String(c)} onClick={() => setCantidad(String(c))}>{c}</Chip>
+            ))}
+          </div>
+          <p className="text-sub">
+            {formatearSoles(elegida.precioVenta)} c/u
+            {cantidadValida && <> · total <span className="font-semibold text-ink">{formatearSoles(elegida.precioVenta * n)}</span></>}
+          </p>
+          {sinStock && <p className="text-danger">Solo quedan {elegida.cantidadStock} en stock.</p>}
+          <Button disabled={!cantidadValida || sinStock} onClick={() => onAgregar(elegida, n)}>
+            Agregar al carrito
+          </Button>
+        </div>
+      )}
+    </BottomSheet>
+  )
+}
+

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
-import { Minus, Plus } from 'lucide-react'
+import { AlertTriangle, Minus, Plus } from 'lucide-react'
 import { productosApi } from '../api/productos'
 import { extraerMensajeError } from '../api/axiosClient'
 import { SearchInput } from '../components/ui/SearchInput'
@@ -108,7 +108,11 @@ export function Inventario() {
                   <div className="mt-auto flex items-center justify-between pt-2">
                     <span className="font-heading font-semibold text-steel-dark">{formatearSoles(p.precioVenta)}</span>
                     {p.stockBajo ? (
-                      <Badge tono="warning">{p.cantidadStock} und</Badge>
+                      // Texto e icono, no solo color: se distingue igual con daltonismo
+                      <Badge tono="warning">
+                        <AlertTriangle size={12} className="mr-1" aria-hidden />
+                        {p.cantidadStock} und · bajo
+                      </Badge>
                     ) : (
                       <Badge tono="success">{p.cantidadStock} und</Badge>
                     )}
@@ -332,23 +336,47 @@ function FichaProducto({
         {esAdmin ? (
         <div className="panel-cepillado flex flex-col gap-3 rounded-lg p-4">
           <span className="text-sm font-medium">Ajustar stock actual: {producto.cantidadStock} unidades</span>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => setCantidadAjuste((c) => c - 1)}
+              aria-label="Restar uno"
               className="flex h-11 w-11 items-center justify-center rounded-md border border-line hover:bg-hair"
             >
               <Minus size={18} />
             </button>
-            <span className="w-16 text-center font-heading text-2xl font-bold">
-              {cantidadAjuste > 0 ? `+${cantidadAjuste}` : cantidadAjuste}
-            </span>
+            {/* Se puede escribir la cantidad: las llaves se compran por cientos o millares */}
+            <input
+              type="number"
+              inputMode="numeric"
+              step="1"
+              aria-label="Cantidad a sumar o restar"
+              value={cantidadAjuste === 0 ? '' : cantidadAjuste}
+              placeholder="0"
+              onChange={(e) => {
+                const n = Number.parseInt(e.target.value, 10)
+                setCantidadAjuste(Number.isNaN(n) ? 0 : n)
+              }}
+              className="w-28 rounded-md border border-line bg-paper px-2 py-2 text-center font-heading text-2xl font-bold outline-none focus:border-steel"
+            />
             <button
               onClick={() => setCantidadAjuste((c) => c + 1)}
+              aria-label="Sumar uno"
               className="flex h-11 w-11 items-center justify-center rounded-md border border-line hover:bg-hair"
             >
               <Plus size={18} />
             </button>
           </div>
+          <div className="flex flex-wrap justify-center gap-2">
+            {[100, 500, 1000].map((n) => (
+              <Chip key={n} onClick={() => setCantidadAjuste((c) => c + n)}>+{n}</Chip>
+            ))}
+          </div>
+          {cantidadAjuste !== 0 && (
+            <p className="text-center text-sm text-sub">
+              {cantidadAjuste > 0 ? 'Entran' : 'Salen'} {Math.abs(cantidadAjuste)} unidades · el stock queda en{' '}
+              <span className="font-semibold text-ink">{producto.cantidadStock + cantidadAjuste}</span>
+            </p>
+          )}
           {cantidadAjuste !== 0 && (
             <>
               <input

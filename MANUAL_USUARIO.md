@@ -27,7 +27,11 @@ Entra a **Caja** (desde el menú ☰), pon el monto con el que arrancas el día 
 
 ## Vender
 
-Ve a la pestaña **Venta**. Busca el producto por nombre o código (por ejemplo "KW1" o "chapa yale") y tócalo para agregarlo. Puedes sumar o restar cantidad con los botones `+` y `−`, o quitar el producto del todo con el ícono de basura.
+Ve a la pestaña **Venta**. Busca el producto por nombre o código (por ejemplo "KW1" o "chapa yale") y tócalo para agregarlo. Puedes sumar o restar cantidad con los botones `+` y `−` o escribirla directamente (por ejemplo `25`), o quitar el producto del todo con el ícono de basura.
+
+### Duplicado de llave (sin datos del cliente)
+
+Para un duplicado no hace falta registrar a nadie. Toca **Duplicado de llave** (arriba del buscador), elige la llave virgen (puedes buscarla por nombre o código), pon cuántas copias son y toca **Agregar al carrito**. Se cobra como cualquier venta y el stock de esa llave virgen baja solo. El precio que se cobra es el precio de venta de la llave virgen, así que configúralo con el precio del duplicado ya hecho.
 
 Abajo aparece el total. Elige cómo te pagan (Efectivo, Yape, Plin, Tarjeta, o Mixto si es una combinación) y toca **Cobrar**.
 
@@ -61,7 +65,7 @@ Un servicio realizado ya no se puede cambiar, para no descuadrar la caja de quie
 
 En **Inventario** puedes explorar todo el catálogo sin buscar nada (se muestra por página, con "Cargar más" abajo), o escribir para buscar un producto puntual. El chip "Stock bajo" te muestra solo lo que se está por acabar.
 
-Toca un producto para ver su ficha: ahí puedes subir o cambiar su foto, editar el precio o la marca, y ajustar el stock con los botones `+`/`−` — el sistema te va a pedir un motivo (por ejemplo "conteo físico" o "producto dañado") antes de guardar el ajuste, para que quede registrado por qué cambió.
+Toca un producto para ver su ficha: ahí puedes subir o cambiar su foto, editar el precio o la marca, y ajustar el stock con los botones `+`/`−`, escribiendo la cantidad (por ejemplo `1000` si llegó un millar de llaves) o con los atajos **+100**, **+500** y **+1000**. Antes de guardar ves cuánto queda el stock. El sistema te va a pedir un motivo (por ejemplo "conteo físico" o "producto dañado") antes de guardar el ajuste, para que quede registrado por qué cambió.
 
 Para dar de alta un producto nuevo, toca **Nuevo producto** arriba. Los campos que te pide cambian según el tipo que elijas (una llave virgen pide "perfil", un candado pide "tamaño", etc.).
 
@@ -89,6 +93,10 @@ Bueno saber:
 - **Solo agrega productos nuevos.** Si un código ya existe, esa fila se marca como problema: para cambiar el stock o el precio de algo que ya está cargado, usa su ficha (el ajuste de stock pide motivo).
 - El stock que cargues queda en el Kárdex de cada producto como "Stock inicial importado desde archivo".
 - Las columnas que el sistema no reconoce (por ejemplo una de "notas") se ignoran y te avisa cuáles fueron.
+
+### Colores
+
+Los colores de la app están elegidos para leerse bien también con daltonismo (paleta Okabe-Ito en los gráficos y contraste alto en textos y avisos). Los avisos no dependen solo del color: el stock bajo, por ejemplo, lleva un ícono de alerta y la palabra "bajo".
 
 ## Clientes
 
