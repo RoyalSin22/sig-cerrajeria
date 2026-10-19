@@ -51,7 +51,7 @@ Tres cosas impiden usar el sistema desde un celular o desde otra PC entrando por
 | Cloudflare Tunnel con dominio propio | Deja el sistema público en internet, protegido solo por el login |
 | VPS | Costo mensual y migrar la base y los respaldos; no hace falta mientras la PC del local quede prendida |
 
-Nota de seguridad: los equipos de la red de Tailscale también alcanzan los otros puertos publicados por Docker en la PC (8080 del backend, 5433 de Postgres, este con contraseña). Son solo los equipos de la propia cerrajería, pero es otra razón para no compartir la cuenta de Tailscale.
+Nota de seguridad: `docker-compose.yml` publica Postgres (5433) y el backend (8080) solo en `127.0.0.1`, así que ni el wifi del local ni la red de Tailscale los alcanzan; desde otros equipos solo se llega al frontend (8081), que exige iniciar sesión. Antes se publicaban en todas las redes, y la contraseña por defecto de la base (`change_me_local_dev`) está en el repositorio: con ella cualquiera en el wifi podía leer o borrar la base sin pasar por el login. Si alguna vez necesitas abrir la base desde otra PC (por ejemplo con DBeaver), hazlo por un túnel SSH o cambia temporalmente el puerto, nunca dejándola abierta.
 
 ## Backups de la base de datos (automáticos)
 

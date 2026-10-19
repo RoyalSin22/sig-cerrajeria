@@ -78,7 +78,6 @@ No son bugs olvidados — son decisiones de alcance documentadas en su momento:
 
 - **Asistente de IA y WhatsApp**: están implementados (`asistente/`, `whatsapp/`) pero no se probaron con claves reales de Anthropic y Meta.
 - **HTTPS en producción**: no viene armado en el `docker-compose.yml`. El acceso desde el celular con HTTPS se resuelve con Tailscale (`backend/celular.bat`); sin HTTPS, fuera de `localhost` ni CORS ni la cookie del refresh token funcionan (detalle en `DEPLOYMENT.md`).
-- **Reportes de servicios realizados / historial agregado de clientes** (RF-43, RF-44): existen como listados filtrados, no como reportes con agregaciones propias.
 
 ## 7. Correr los tests
 
@@ -86,5 +85,7 @@ No son bugs olvidados — son decisiones de alcance documentadas en su momento:
 ./mvnw test          # unitarios (rápidos, sin Docker)
 ./mvnw verify         # incluye la integración con Testcontainers (levanta un Postgres real en un contenedor)
 ```
+
+En el frontend, `npm test` corre Vitest con Testing Library: las utilidades de fechas (en hora de Perú, que `vitest.config.ts` fija con `TZ=America/Lima`), el formato de soles y los permisos por rol en pantallas (el empleado no ve lo que el backend le rechaza). Los tests van junto al código (`*.test.ts(x)` en `src/`) y el CI los corre en cada PR.
 
 Los tests de integración (`integration/*IntegrationTest`: venta y Kárdex, contraseñas, importación, acceso desde el celular, ingresos de taller y domicilio) necesitan Docker corriendo — Testcontainers levanta y destruye el contenedor de Postgres solo, no hace falta nada manual.

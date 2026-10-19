@@ -6,7 +6,10 @@ import { Card, StatCard } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { formatearSoles } from '../utils/format'
 import { hoyISO, inicioMesISO } from '../utils/fecha'
-import type { ReporteVentasResponse, ProductoMasVendidoResponse, ReporteInventarioResponse } from '../types/reportes'
+import type {
+  ReporteVentasResponse, ProductoMasVendidoResponse, ReporteInventarioResponse,
+  ReporteServiciosResponse, ReporteClientesResponse, GrupoServicios,
+} from '../types/reportes'
 
 const COLORES = ['#5980a6', '#2c455d', '#7d9e86', '#b0975f', '#bd8080']
 
@@ -17,6 +20,8 @@ export function Reportes() {
   const [ventas, setVentas] = useState<ReporteVentasResponse | null>(null)
   const [masVendidos, setMasVendidos] = useState<ProductoMasVendidoResponse[]>([])
   const [inventario, setInventario] = useState<ReporteInventarioResponse | null>(null)
+  const [servicios, setServicios] = useState<ReporteServiciosResponse | null>(null)
+  const [clientes, setClientes] = useState<ReporteClientesResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
 
@@ -30,14 +35,18 @@ export function Reportes() {
     setError(null)
     setCargando(true)
     try {
-      const [v, mv, inv] = await Promise.all([
+      const [v, mv, inv, serv, cli] = await Promise.all([
         reportesApi.ventas(desde, hasta),
         reportesApi.productosMasVendidos(desde, hasta),
         reportesApi.inventario(),
+        reportesApi.servicios(desde, hasta),
+        reportesApi.clientes(desde, hasta),
       ])
       setVentas(v)
       setMasVendidos(mv)
       setInventario(inv)
+      setServicios(serv)
+      setClientes(cli)
     } catch (err) {
       setError(extraerMensajeError(err))
     } finally {
@@ -109,6 +118,64 @@ export function Reportes() {
         </Card>
       )}
 
+      {servicios && (
+        <Card>
+          <span className="font-heading mb-3 block text-lg font-semibold">Servicios realizados</span>
+          <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <StatCard label="Domicilios realizados" value={servicios.domicilio.realizados} />
+            <StatCard label="Cobrado en domicilios" value={formatearSoles(servicios.domicilio.cobrado)} />
+            <StatCard label="Órdenes entregadas" value={servicios.taller.entregadas} />
+            <StatCard label="Órdenes abiertas hoy" value={servicios.taller.abiertas} />
+          </div>
+          <p className="mb-3 text-xs text-sub">
+            Taller: {servicios.taller.recibidas} órdenes recibidas, {formatearSoles(servicios.taller.ingresosNetos)} cobrados
+            (neto de devoluciones). Domicilio: {servicios.domicilio.cancelados} servicios cancelados.
+          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <TablaGrupos titulo="Domicilio por tipo de trabajo" grupos={servicios.domicilio.porTipo} />
+            <TablaGrupos titulo="Domicilio por técnico" grupos={servicios.domicilio.porTecnico} />
+          </div>
+        </Card>
+      )}
+
+      {clientes && (
+        <Card>
+          <span className="font-heading mb-1 block text-lg font-semibold">Clientes que más dejaron</span>
+          <p className="mb-3 text-xs text-sub">
+            Suma compras, taller y domicilio. {clientes.clientesConMovimiento} clientes con movimiento;
+            las ventas sin cliente ({formatearSoles(clientes.ventasSinCliente)}) no se pueden atribuir a nadie.
+          </p>
+          {clientes.ranking.length === 0 ? (
+            <p className="text-sm text-sub">Sin movimientos de clientes en estas fechas.</p>
+          ) : (
+            <div className="max-h-80 overflow-x-auto overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-xs text-sub">
+                  <tr>
+                    <th className="pb-2">Cliente</th>
+                    <th className="pb-2 text-right">Compras</th>
+                    <th className="pb-2 text-right">Taller</th>
+                    <th className="pb-2 text-right">Domicilio</th>
+                    <th className="pb-2 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-hair">
+                  {clientes.ranking.map((c) => (
+                    <tr key={c.clienteId}>
+                      <td className="py-1.5">{c.nombre}</td>
+                      <td className="py-1.5 text-right">{formatearSoles(c.ventas.total)}</td>
+                      <td className="py-1.5 text-right">{formatearSoles(c.taller.total)}</td>
+                      <td className="py-1.5 text-right">{formatearSoles(c.domicilio.total)}</td>
+                      <td className="py-1.5 text-right font-medium">{formatearSoles(c.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
+
       {inventario && (
         <Card>
           <span className="font-heading mb-3 block text-lg font-semibold">Inventario general</span>
@@ -132,6 +199,29 @@ export function Reportes() {
             </table>
           </div>
         </Card>
+      )}
+    </div>
+  )
+}
+
+function TablaGrupos({ titulo, grupos }: { titulo: string; grupos: GrupoServicios[] }) {
+  return (
+    <div>
+      <span className="mb-2 block text-sm font-medium">{titulo}</span>
+      {grupos.length === 0 ? (
+        <p className="text-sm text-sub">Ninguno en estas fechas.</p>
+      ) : (
+        <table className="w-full text-sm">
+          <tbody className="divide-y divide-hair">
+            {grupos.map((g) => (
+              <tr key={g.nombre}>
+                <td className="py-1.5">{g.nombre}</td>
+                <td className="py-1.5 text-right text-sub">{g.cantidad}</td>
+                <td className="py-1.5 text-right">{formatearSoles(g.total)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   )

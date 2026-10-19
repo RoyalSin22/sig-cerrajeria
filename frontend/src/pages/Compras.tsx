@@ -8,11 +8,13 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { useToast } from '../context/useToast'
 import { useCaja } from '../context/useCaja'
+import { useAuth } from '../context/useAuth'
 import { formatearSoles } from '../utils/format'
 import type { ProveedorResponse } from '../types/compras'
 import type { ProductoResponse } from '../types/productos'
 
 export function Compras() {
+  const { usuario } = useAuth()
   const navigate = useNavigate()
   const { notificar } = useToast()
   const { cajaAbierta, refrescarCaja } = useCaja()
@@ -87,6 +89,12 @@ export function Compras() {
         </div>
       </div>
 
+      {usuario?.role !== 'ROLE_ADMIN' ? (
+        // El backend solo acepta compras del administrador (POST /compras)
+        <Card className="text-sm text-sub">
+          Solo el administrador registra compras. Puedes ver las anteriores en el historial.
+        </Card>
+      ) : (
       <form onSubmit={handleSubmit} className="panel-cepillado flex flex-col gap-4 rounded-lg p-5">
         <div>
           <label className="mb-1 block text-sm font-medium">Proveedor</label>
@@ -165,6 +173,7 @@ export function Compras() {
         {error && <p className="text-sm text-danger">{error}</p>}
         <Button type="submit" disabled={guardando}>{guardando ? 'Registrando…' : 'Registrar compra'}</Button>
       </form>
+      )}
     </div>
   )
 }

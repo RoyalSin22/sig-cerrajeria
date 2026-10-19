@@ -1,47 +1,43 @@
-# SIG-Cerrajería — Frontend
+# SIG-Cerrajería: frontend
 
-Esqueleto inicial del frontend (Fase 9): **React 19 + Vite 8 + TypeScript + Tailwind CSS v4 + React Router 7 + Axios**, construido sobre el sistema de diseño "Industry" definido en la Fase 7 (azul acero, `Barlow Condensed`, paneles cepillados).
+La app web del sistema, hecha con React 19, TypeScript, Vite 8 y Tailwind CSS 4, con React Router y Axios. Está pensada primero para el celular y se puede instalar como app (PWA).
 
-## Qué incluye este primer paso
+## Cómo está organizado
 
-- Login funcional, con el mismo flujo de JWT que ya probamos en el backend (access token en memoria + refresh por cookie httpOnly).
-- Layout completo: barra superior con estado de caja siempre visible, pestañas (`Inicio · Venta · Inventario · Taller · Domicilio`), menú lateral.
-- **Dashboard** funcionando de punta a punta contra `GET /api/v1/dashboard`.
-- **Caja** funcionando de punta a punta (abrir/cerrar), para poder probar el resto del sistema.
-- El resto de las pantallas (Venta, Inventario, Taller, Domicilio, Clientes, Compras, Reportes) están como placeholders — se completan en los siguientes pasos, igual que hicimos módulo por módulo en el backend.
+| Carpeta | Qué hay |
+|---|---|
+| `src/pages/` | Una pantalla por archivo: Venta, Inventario, Taller, Domicilio, Caja, Reportes, Ajustes, etc. |
+| `src/api/` | Un módulo por dominio, con funciones tipadas sobre `axiosClient.ts`, que renueva la sesión sola cuando vence. |
+| `src/types/` | Los tipos de las respuestas del backend. |
+| `src/components/ui/` | Piezas reutilizables: botones, tarjetas, chips, hojas inferiores. |
+| `src/context/` | Sesión, caja abierta, avisos y tema. |
+| `src/utils/` | Formato de soles (`format.ts`) y fechas en hora de Perú (`fecha.ts`). |
 
-## ⚠️ Importante: usa `localhost`, no `127.0.0.1`
+Tailwind CSS 4 no usa `tailwind.config.js`: los colores y las tipografías están en `src/index.css`, dentro de `@theme`.
 
-El refresh token viaja en una cookie `Secure`. Los navegadores solo tratan `localhost` (no `127.0.0.1`) como "origen seguro" sin HTTPS. Por eso:
-- El backend debe estar accesible en `http://localhost:8080` (ya lo está, según `application.yml`)
-- El frontend debe abrirse en `http://localhost:5173` (Vite ya usa ese puerto por defecto)
+## Cómo levantarlo para desarrollar
 
-Si accedes a alguno por `127.0.0.1`, el login funcionará pero el refresh automático fallará.
+Primero tiene que estar corriendo el backend (ver [backend/README.md](../backend/README.md)).
 
-## Cómo levantarlo
-
-1. **Backend corriendo primero** (Docker Compose + `SigApplication` desde IntelliJ, como ya lo tienes).
-
-2. **Instalar dependencias**:
-   ```bash
-   npm install
-   ```
-
-3. **Levantar el servidor de desarrollo**:
-   ```bash
-   npm run dev
-   ```
-   Abre `http://localhost:5173`.
-
-4. **Iniciar sesión** con `admin` / `admin123` (o el usuario que hayas creado).
-
-## Variables de entorno
-
-Copia `.env.example` a `.env` si necesitas apuntar a un backend distinto de `http://localhost:8080/api/v1`:
 ```bash
-cp .env.example .env
+npm install
+npm run dev       # http://localhost:5173
 ```
 
-## Próximos pasos
+Entra con `admin` / `admin123`, o con el usuario que hayas creado.
 
-Construir, en este orden, las pantallas reales de: **Venta rápida** (la más crítica, según Fase 7), **Inventario**, **Clientes**, **Taller (Órdenes de trabajo)**, **Domicilio**, **Compras**, **Reportes** — cada una consumiendo los endpoints que ya están completos y probados en el backend.
+Abre la app en `http://localhost:5173` y no en `127.0.0.1`. La sesión se renueva con una cookie `Secure`, y sin HTTPS el navegador solo la acepta en `localhost`. Con `127.0.0.1` el login funciona, pero la sesión se corta a los 15 minutos.
+
+Si el backend no está en `http://localhost:8080/api/v1`, copia `.env.example` a `.env` y cambia `VITE_API_BASE_URL`.
+
+## Antes de subir cambios
+
+```bash
+npm run lint
+npm test          # Vitest: fechas en hora de Perú, formato de soles y permisos por rol
+npm run build     # revisa los tipos y genera la versión de producción
+```
+
+Los tests van junto al código, como `*.test.ts(x)` dentro de `src/`.
+
+Es lo mismo que corre el CI en cada PR. En producción, el frontend lo sirve Nginx dentro de Docker y llama a la API por rutas relativas (`/api/v1`).

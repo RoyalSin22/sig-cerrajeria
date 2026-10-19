@@ -40,3 +40,47 @@ export interface ReporteInventarioResponse {
   valorTotalInventario: number
   items: ItemInventario[]
 }
+
+/** RF-43: servicios realizados en el rango */
+export interface GrupoServicios {
+  nombre: string
+  cantidad: number
+  total: number
+}
+
+export interface ReporteServiciosResponse {
+  domicilio: {
+    realizados: number
+    cancelados: number
+    cobrado: number
+    porTipo: GrupoServicios[]
+    porTecnico: GrupoServicios[]
+  }
+  taller: {
+    recibidas: number
+    entregadas: number
+    /** Abiertas hoy, no depende del rango */
+    abiertas: number
+    ingresosNetos: number
+  }
+}
+
+/** RF-44: lo que dejó cada cliente en el rango */
+export interface MovimientoCliente {
+  cantidad: number
+  total: number
+}
+
+export interface ReporteClientesResponse {
+  clientesConMovimiento: number
+  /** Ventas de mostrador sin cliente asociado */
+  ventasSinCliente: number
+  ranking: {
+    clienteId: number
+    nombre: string
+    ventas: MovimientoCliente
+    taller: MovimientoCliente
+    domicilio: MovimientoCliente
+    total: number
+  }[]
+}

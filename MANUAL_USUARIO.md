@@ -108,6 +108,8 @@ Desde el menú ☰, entra a **Reportes**. Elige un rango de fechas y consulta:
 - **Ingresos totales**, que suman las ventas de mostrador, el taller y los servicios a domicilio.
 - Por separado, cada uno de esos tres. El taller cuenta los adelantos y liquidaciones cobrados en esas fechas, menos las devoluciones de órdenes canceladas. El domicilio cuenta lo cobrado en los servicios realizados en esas fechas.
 - Las ventas por método de pago, los productos más vendidos y el valor total de tu inventario.
+- **Servicios realizados**: cuántos domicilios se hicieron y cuánto se cobró, separados por tipo de trabajo y por técnico, más las órdenes del taller recibidas, entregadas y las que siguen abiertas.
+- **Clientes que más dejaron**: un ranking que suma lo que cada cliente gastó en compras, taller y domicilio. Las ventas de mostrador sin cliente no entran, porque no se sabe de quién son.
 
 ## El asistente
 
@@ -128,4 +130,4 @@ Si un empleado olvida su contraseña, el Administrador entra a **Ajustes → Usu
 
 ## Administrador vs. Empleado
 
-El Administrador puede, además de todo lo anterior: crear y desactivar usuarios, restablecer contraseñas, anular ventas, ver el registro de auditoría (quién hizo qué y cuándo), editar productos e importar el inventario desde Excel. Un Empleado puede vender, atender órdenes, agendar servicios y registrar clientes, pero no ve esas pantallas de administración.
+El Administrador puede, además de todo lo anterior: crear y desactivar usuarios, restablecer contraseñas, anular ventas, ver el registro de auditoría (quién hizo qué y cuándo), crear y editar productos, ajustar el stock, cambiar fotos, importar el inventario desde Excel y registrar compras. Un Empleado puede vender, atender órdenes, agendar y cobrar servicios a domicilio, registrar clientes, consultar el inventario y ver el historial de compras. Los botones de administración no le aparecen.

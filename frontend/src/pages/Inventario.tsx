@@ -73,7 +73,9 @@ export function Inventario() {
           {usuario?.role === 'ROLE_ADMIN' && (
             <Button variant="secondary" onClick={() => setMostrarImportar(true)}>Importar</Button>
           )}
-          <Button onClick={() => setMostrarAlta(true)}>Nuevo producto</Button>
+          {usuario?.role === 'ROLE_ADMIN' && (
+            <Button onClick={() => setMostrarAlta(true)}>Nuevo producto</Button>
+          )}
         </div>
       </div>
 
@@ -151,6 +153,7 @@ export function Inventario() {
           setSeleccionado(p)
         }}
         notificar={notificar}
+        esAdmin={usuario?.role === 'ROLE_ADMIN'}
       />
     </div>
   )
@@ -161,11 +164,14 @@ function FichaProducto({
   onCerrar,
   onActualizado,
   notificar,
+  esAdmin,
 }: {
   producto: ProductoResponse | null
   onCerrar: () => void
   onActualizado: (p: ProductoResponse) => void
   notificar: (msg: string) => void
+  /** Editar, ajustar stock y cambiar la foto son solo del administrador (el backend responde 403) */
+  esAdmin: boolean
 }) {
   const [historial, setHistorial] = useState<MovimientoInventarioResponse[]>([])
   const [cantidadAjuste, setCantidadAjuste] = useState(0)
@@ -277,10 +283,12 @@ function FichaProducto({
               Sin foto
             </div>
           )}
-          <label className="cursor-pointer text-xs text-steel underline">
-            {subiendoImagen ? 'Subiendo…' : producto.imagenUrl ? 'Cambiar foto' : 'Subir foto'}
-            <input type="file" accept="image/*" className="hidden" disabled={subiendoImagen} onChange={handleSubirImagen} />
-          </label>
+          {esAdmin && (
+            <label className="cursor-pointer text-xs text-steel underline">
+              {subiendoImagen ? 'Subiendo…' : producto.imagenUrl ? 'Cambiar foto' : 'Subir foto'}
+              <input type="file" accept="image/*" className="hidden" disabled={subiendoImagen} onChange={handleSubirImagen} />
+            </label>
+          )}
         </div>
         {editando ? (
           <form onSubmit={guardarEdicion} className="flex flex-col gap-3 text-sm">
@@ -315,10 +323,13 @@ function FichaProducto({
             {producto.llavePerfil && <div><span className="text-sub">Perfil</span><p>{producto.llavePerfil}</p></div>}
             <div><span className="text-sub">Precio venta</span><p>{formatearSoles(producto.precioVenta)}</p></div>
             <div><span className="text-sub">Stock mínimo</span><p>{producto.stockMinimo}</p></div>
-            <Button variant="secondary" onClick={() => setEditando(true)} className="col-span-2">Editar</Button>
+            {esAdmin && (
+              <Button variant="secondary" onClick={() => setEditando(true)} className="col-span-2">Editar</Button>
+            )}
           </div>
         )}
 
+        {esAdmin ? (
         <div className="panel-cepillado flex flex-col gap-3 rounded-lg p-4">
           <span className="text-sm font-medium">Ajustar stock actual: {producto.cantidadStock} unidades</span>
           <div className="flex items-center justify-center gap-4">
@@ -353,6 +364,9 @@ function FichaProducto({
             </>
           )}
         </div>
+        ) : (
+          <p className="text-sm">Stock actual: {producto.cantidadStock} unidades</p>
+        )}
 
         <div>
           <span className="font-heading mb-2 block text-sm font-semibold">Historial (Kárdex)</span>

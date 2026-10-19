@@ -34,6 +34,19 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
         """)
     List<VentaPorMetodoPagoProjection> totalPorMetodoPago(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 
+    /** RF-44: compras de cada cliente identificado en el rango (sin anuladas). */
+    @Query("""
+        SELECT c.id AS clave, c.nombre AS nombre, COUNT(v) AS cantidad, COALESCE(SUM(v.montoTotal), 0) AS total
+        FROM Venta v JOIN v.cliente c
+        WHERE v.anulada = false AND v.fechaHora BETWEEN :desde AND :hasta
+        GROUP BY c.id, c.nombre
+        """)
+    List<com.cerrajeria.sig.reportes.TotalAgrupadoProjection> comprasPorCliente(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
+
+    /** Ventas de mostrador sin cliente asociado (la mayoria): no entran al ranking. */
+    @Query("SELECT COALESCE(SUM(v.montoTotal), 0) FROM Venta v WHERE v.anulada = false AND v.cliente IS NULL AND v.fechaHora BETWEEN :desde AND :hasta")
+    BigDecimal totalSinClienteEntreFechas(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
+
     interface VentaPorMetodoPagoProjection {
         com.cerrajeria.sig.common.MetodoPago getMetodoPago();
         BigDecimal getTotal();
