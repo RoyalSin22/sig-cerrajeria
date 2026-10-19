@@ -17,16 +17,19 @@ Entra a **console.anthropic.com**, crea una API key. Esto es lo que interpreta l
 
 ## 3. Variables de entorno
 
-Agrégalas a tu `.env` (o como variables de entorno si corres el backend desde IntelliJ):
+Agrégalas a `backend/.env` (o como variables de entorno si corres el backend desde IntelliJ). Con Docker, `docker-compose.yml` ya se las pasa al backend; después de editarlas, vuelve a iniciar el sistema.
 
 ```
 WHATSAPP_ACCESS_TOKEN=el token temporal de Meta
 WHATSAPP_PHONE_NUMBER_ID=el Phone number ID
 WHATSAPP_VERIFY_TOKEN=inventa cualquier palabra (ej. "cerrajeria2026")
+WHATSAPP_APP_SECRET=el App Secret de tu app de Meta
 ANTHROPIC_API_KEY=tu api key de Anthropic
 ```
 
 `WHATSAPP_VERIFY_TOKEN` no viene de Meta — lo inventas tú y lo pones **igual** en el siguiente paso.
+
+`WHATSAPP_APP_SECRET` está en el panel de tu app de Meta → **App settings → Basic → App Secret**. Es obligatorio: Meta firma cada mensaje con él, y el sistema rechaza los que no traen una firma válida. Sin esta comprobación, cualquiera que conociera la URL del webhook podría mandar un mensaje haciéndose pasar por tu número y registrar ventas a tu nombre.
 
 ## 4. Exponer tu backend a internet (para pruebas)
 

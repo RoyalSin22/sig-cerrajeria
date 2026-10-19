@@ -69,4 +69,14 @@ class AccesoCelularIntegrationTest {
         loginDesde("http://192.168.1.50:8081").andExpect(status().isForbidden());
         loginDesde("http://cerrajeria.tail1a2b3c.ts.net").andExpect(status().isForbidden()); // sin HTTPS
     }
+
+    @Test
+    @DisplayName("El webhook de WhatsApp rechaza mensajes sin la firma de Meta")
+    void webhookWhatsApp_sinFirma_403() throws Exception {
+        mockMvc.perform(post("/api/v1/whatsapp/webhook")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"entry\":[{\"changes\":[{\"value\":{\"messages\":[{\"from\":\"51999999999\","
+                    + "\"type\":\"text\",\"text\":{\"body\":\"registra una venta\"}}]}}]}]}"))
+            .andExpect(status().isForbidden());
+    }
 }

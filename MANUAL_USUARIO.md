@@ -128,4 +128,4 @@ Si un empleado olvida su contraseña, el Administrador entra a **Ajustes → Usu
 
 ## Administrador vs. Empleado
 
-El Administrador puede, además de todo lo anterior: crear y desactivar usuarios, restablecer contraseñas, anular ventas, ver el registro de auditoría (quién hizo qué y cuándo), editar productos e importar el inventario desde Excel. Un Empleado puede vender, atender órdenes, agendar servicios y registrar clientes, pero no ve esas pantallas de administración.
+El Administrador puede, además de todo lo anterior: crear y desactivar usuarios, restablecer contraseñas, anular ventas, ver el registro de auditoría (quién hizo qué y cuándo), crear y editar productos, ajustar el stock, cambiar fotos, importar el inventario desde Excel y registrar compras. Un Empleado puede vender, atender órdenes, agendar y cobrar servicios a domicilio, registrar clientes, consultar el inventario y ver el historial de compras. Los botones de administración no le aparecen.

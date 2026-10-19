@@ -1,57 +1,65 @@
-# SIG-Cerrajería — Backend
+# SIG-Cerrajería: backend
 
-Esqueleto inicial del backend (Fase 8), construido sobre **Spring Boot 4.1.0 / Java 25 / PostgreSQL 16**,
-según lo validado en las Fases 5 (Arquitectura) y 6 (Base de Datos).
+API REST del sistema, hecha con Spring Boot 4.1 sobre Java 25 y PostgreSQL 16. Flyway maneja el esquema y la sesión va con JWT.
 
-## Qué incluye este primer paso
+## Módulos
 
-- Estructura de paquetes por feature (`config`, `common`, `usuarios`, `auth`).
-- Migraciones Flyway con el esquema completo de la Fase 6 (`V1__init.sql`) + un usuario admin semilla (`V2__seed_admin.sql`).
-- Seguridad JWT stateless (access token en memoria del frontend + refresh token en cookie httpOnly), usando las clases nativas de Spring Security (`NimbusJwtEncoder`/`NimbusJwtDecoder`) en vez de una librería externa.
-- Manejo centralizado de excepciones con `ProblemDetail`.
-- Swagger UI para documentación de la API.
-- **Módulo funcional ya operativo:** login (`/api/v1/auth/login`) y refresh (`/api/v1/auth/refresh`).
+El código está ordenado por funcionalidad y no por capa: cada carpeta tiene su entidad, repositorio, servicio, controlador y DTOs.
 
-Los módulos de negocio (inventario, ventas, caja, órdenes, etc.) se agregan en los siguientes pasos, uno por uno.
+| Carpeta | Qué hace |
+|---|---|
+| `auth`, `usuarios` | Login, renovación de sesión, usuarios, roles y cambio de contraseña |
+| `inventario` | Productos, Kárdex, ajustes de stock, fotos e importación desde CSV |
+| `ventas` | Ventas de mostrador, pago mixto y anulación |
+| `ordenes` | Órdenes del taller: adelantos, entrega y cancelación |
+| `domicilio` | Agenda de servicios a domicilio y su cobro |
+| `compras` | Proveedores y compras |
+| `caja` | Apertura, movimientos y cierre de la caja diaria |
+| `reportes`, `dashboard`, `busqueda` | Reportes de ingresos, panel de inicio y buscador |
+| `asistente`, `whatsapp` | Asistente de IA (API de Claude) y su canal de WhatsApp |
+| `common`, `config` | Auditoría, excepciones, seguridad y configuración |
 
-## Cómo levantarlo
+Las reglas de negocio y las decisiones de diseño están en [MANUAL_TECNICO.md](../MANUAL_TECNICO.md).
 
-1. **Levantar PostgreSQL** (Docker Desktop debe estar corriendo):
-   ```bash
-   cp .env.example .env          # una sola vez
-   docker compose up -d postgres
-   ```
-   Verifica que el contenedor esté saludable:
-   ```bash
-   docker ps
-   ```
+## Cómo levantarlo para desarrollar
 
-2. **Ejecutar el backend** (desde la carpeta del proyecto, con el IDE o por línea de comandos):
-   ```bash
-   ./mvnw spring-boot:run
-   ```
-   *(En Windows, usa `mvnw.cmd spring-boot:run`. El wrapper descarga Maven solo; necesitas JDK 25.)*
+Necesitas Docker Desktop y el JDK 25.
 
-   Al arrancar, Flyway aplicará automáticamente las migraciones (`V1__init.sql` y `V2__seed_admin.sql`) sobre la base de datos vacía.
+```bash
+cp .env.example .env              # una sola vez
+docker compose up -d postgres     # solo la base, en localhost:5433
+./mvnw spring-boot:run            # en Windows: mvnw.cmd spring-boot:run
+```
 
-3. **Probar el login** con Postman/Insomnia o `curl`:
-   ```bash
-   curl -X POST http://localhost:8080/api/v1/auth/login \
-     -H "Content-Type: application/json" \
-     -d '{"username":"admin","password":"admin123"}'
-   ```
-   Debe devolver un `accessToken` en el cuerpo y una cookie `refresh_token` (httpOnly).
+Flyway aplica las migraciones solo al arrancar. La API queda en `http://localhost:8080` y la documentación interactiva en `http://localhost:8080/swagger-ui.html`.
 
-   ⚠️ **Cambia la contraseña del usuario `admin` antes de cualquier uso real.**
+Para probar el login:
 
-4. **Ver la documentación de la API**: http://localhost:8080/swagger-ui.html
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+```
 
-## Variables de entorno importantes
+`admin123` es la contraseña inicial. En una instalación real se cambia en Ajustes → Contraseña.
 
-| Variable | Por defecto | Descripción |
-|---|---|---|
-| `JWT_SECRET` | valor de ejemplo en `application.yml` | **Cambiar en cualquier entorno real** — mínimo 32 caracteres |
+Para levantar el sistema completo (base, backend y frontend) como en el local, ver [INSTALACION.md](../INSTALACION.md).
 
-## Próximos pasos (siguiente mensaje en la conversación)
+## Tests
 
-Construir el primer módulo de negocio real (probablemente **Productos/Inventario**, base de todo lo demás) siguiendo el mismo patrón: entidad + repositorio + DTO/Mapper + servicio + controlador, con sus pruebas.
+```bash
+./mvnw test      # unitarios, no necesitan Docker
+./mvnw verify    # además, los de integración contra un PostgreSQL real (Testcontainers)
+```
+
+## Variables de entorno
+
+Van en `backend/.env`. `.env.example` trae todas, comentadas.
+
+| Variable | Para qué |
+|---|---|
+| `JWT_SECRET` | Firma de la sesión. Obligatoria, mínimo 32 caracteres. El lanzador `.exe` la genera sola. |
+| `DB_PASSWORD` | Contraseña de la base. Solo se puede cambiar antes de crearla. |
+| `BACKUP_DIR`, `BACKUP_INTERVALO_HORAS`, `BACKUP_DIAS` | Respaldos automáticos (ver [DEPLOYMENT.md](../DEPLOYMENT.md)) |
+| `ORIGENES_CELULAR` | Orígenes extra permitidos. Por defecto, la dirección de Tailscale (`https://*.ts.net`). |
+| `ANTHROPIC_API_KEY`, `WHATSAPP_*` | Asistente de IA y WhatsApp, opcionales (ver [WHATSAPP_SETUP.md](../WHATSAPP_SETUP.md)) |

@@ -62,7 +62,12 @@ public class ClaudeClient {
     public ComandoInterpretado interpretar(List<TurnoChat> historial, String mensajeNuevo) {
         ObjectNode body = objectMapper.createObjectNode();
         body.put("model", model);
-        body.put("max_tokens", 1024);
+        // Claude Sonnet 5 piensa (thinking adaptativo) aunque no se pida, y esos
+        // tokens cuentan dentro de max_tokens: con 1024 podia cortarse antes de
+        // llegar a la llamada a la herramienta. Interpretar un comando es una
+        // tarea corta, asi que se pide esfuerzo bajo.
+        body.put("max_tokens", 4096);
+        body.putObject("output_config").put("effort", "low");
         body.put("system", SYSTEM_PROMPT);
 
         ArrayNode messages = body.putArray("messages");
@@ -90,6 +95,10 @@ public class ClaudeClient {
     }
 
     private ComandoInterpretado parsearRespuesta(JsonNode respuesta) {
+        String motivoFin = respuesta.path("stop_reason").asString();
+        if ("refusal".equals(motivoFin)) {
+            return new ComandoInterpretado(null, null, "No puedo ayudar con ese pedido.");
+        }
         JsonNode content = respuesta.path("content");
         String textoLibre = null;
 

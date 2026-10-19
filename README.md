@@ -15,15 +15,16 @@ Lo que cubre:
 - Compras a proveedores.
 - Caja diaria por usuario. El cierre cuadra contra el efectivo, porque Yape y Plin no están en el cajón.
 - Reportes de ingresos, productos más vendidos y valor del inventario.
-- Usuarios, registro de auditoría y respaldos automáticos de la base de datos.
+- Dos roles: el administrador maneja usuarios, inventario, compras y anulaciones; el empleado vende y atiende, y no ve esas opciones.
+- Registro de auditoría y respaldos automáticos de la base de datos.
 
-También tiene un asistente de IA que entiende mensajes como "¿cuántas llaves KW1 quedan?" o "registra una venta de 2 llaves Cantol", dentro de la app y opcionalmente por WhatsApp. Usa la API de Claude y necesita una clave de Anthropic. Sin ella, el resto del sistema funciona igual. El asistente está implementado, pero todavía no lo probé con claves reales.
+También tiene un asistente de IA que entiende mensajes como "¿cuántas llaves KW1 quedan?" o "registra una venta de 2 llaves Cantol", dentro de la app y opcionalmente por WhatsApp. Usa la API de Claude y necesita una clave de Anthropic; para WhatsApp hace falta además una app de Meta (los pasos están en WHATSAPP_SETUP.md). Sin esas claves, el resto del sistema funciona igual. El asistente está implementado, pero todavía no lo probé con claves reales.
 
 ## Con qué está hecho
 
 - Backend: Java 25, Spring Boot 4.1, PostgreSQL 16, Flyway para las migraciones y JWT.
 - Frontend: React 19, TypeScript, Tailwind CSS 4 y Vite 8. Se instala en el celular como app (PWA).
-- Infraestructura: Docker Compose con Nginx adelante. El celular entra por Tailscale, con HTTPS en una red privada y sin exponer el sistema a internet.
+- Infraestructura: Docker Compose con Nginx adelante. La base de datos y la API solo escuchan dentro de la PC; el celular entra por Tailscale, con HTTPS en una red privada y sin exponer el sistema a internet.
 - Pruebas: tests unitarios y de integración contra un PostgreSQL real (Testcontainers). El CI corre en GitHub Actions en cada PR.
 - Lanzador para Windows escrito en Go: `SIG-Cerrajeria.exe` arranca todo con doble clic.
 
