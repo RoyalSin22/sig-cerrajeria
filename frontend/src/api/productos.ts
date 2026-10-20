@@ -13,6 +13,8 @@ export const productosApi = {
       .then(r => r.data),
   buscar: (q: string) => axiosClient.get<ProductoResponse[]>('/productos/buscar', { params: { q } }).then(r => r.data),
   obtener: (id: number) => axiosClient.get<ProductoResponse>(`/productos/${id}`).then(r => r.data),
+  /** Llaves con precio de duplicado, para el boton "Duplicado de llave". */
+  duplicables: () => axiosClient.get<ProductoResponse[]>('/productos/duplicables').then(r => r.data),
   stockBajo: () => axiosClient.get<ProductoResponse[]>('/productos/stock-bajo').then(r => r.data),
   crear: (body: ProductoCreateRequest) => axiosClient.post<ProductoResponse>('/productos', body).then(r => r.data),
   actualizar: (id: number, body: ProductoUpdateRequest) =>

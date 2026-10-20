@@ -25,6 +25,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     /** Todo el catalogo activo, para descargarlo como planilla. */
     List<Producto> findByActivoTrueOrderByTipoProductoAscNombreAsc();
 
+    List<Producto> findByActivoTrueAndPrecioDuplicadoIsNotNullOrderByNombreAsc();
+
     List<Producto> findByCodigoIn(java.util.Collection<String> codigos);
 
     /**

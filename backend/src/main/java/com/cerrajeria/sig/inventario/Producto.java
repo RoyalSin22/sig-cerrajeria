@@ -51,6 +51,10 @@ public class Producto extends BaseAuditable {
     @Column(name = "precio_venta", nullable = false, precision = 12, scale = 2)
     private BigDecimal precioVenta;
 
+    /** Precio del duplicado (material + corte); null si no se ofrece como duplicado. */
+    @Column(name = "precio_duplicado", precision = 12, scale = 2)
+    private BigDecimal precioDuplicado;
+
     @Column(name = "imagen_url", length = 500)
     private String imagenUrl;
 

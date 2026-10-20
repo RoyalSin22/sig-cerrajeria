@@ -29,13 +29,22 @@ Entra a **Caja** (desde el menú ☰), pon el monto con el que arrancas el día 
 
 Ve a la pestaña **Venta**. Busca el producto por nombre o código (por ejemplo "KW1" o "chapa yale") y tócalo para agregarlo. Puedes sumar o restar cantidad con los botones `+` y `−` o escribirla directamente (por ejemplo `25`), o quitar el producto del todo con el ícono de basura.
 
-### Duplicado de llave (sin datos del cliente)
-
-Para un duplicado no hace falta registrar a nadie. Toca **Duplicado de llave** (arriba del buscador), elige la llave virgen (puedes buscarla por nombre o código), pon cuántas copias son y toca **Agregar al carrito**. Se cobra como cualquier venta y el stock de esa llave virgen baja solo. El precio que se cobra es el precio de venta de la llave virgen, así que configúralo con el precio del duplicado ya hecho.
-
 Abajo aparece el total. Elige cómo te pagan (Efectivo, Yape, Plin, Tarjeta, o Mixto si es una combinación) y toca **Cobrar**.
 
 Si eliges **Mixto**, el sistema te pide cuánto pagaron en cada método — por ejemplo `S/ 20.00` en efectivo y `S/ 15.00` en Yape — y no te deja cobrar hasta que la suma cuadre exactamente con el total.
+
+### Duplicado de llave (sin datos del cliente)
+
+Para un duplicado no hace falta registrar a nadie. Toca **Duplicado de llave** (arriba del buscador), elige la llave (puedes buscarla por nombre o código), pon cuántas copias son y toca **Agregar al carrito**. Se cobra como cualquier venta y una llave virgen sale del stock por cada copia.
+
+Cada llave tiene dos precios, que el Administrador pone en su ficha (Inventario → la llave → Editar):
+
+| Precio | Ejemplo (llave de casa) | Cuándo se cobra |
+|---|---|---|
+| **Precio del duplicado** (material + corte) | S/ 2.50 | Con el botón **Duplicado de llave**, o con **Duplicado** al buscarla en Venta |
+| **Llave sola** | lo que cobres por la llave sin duplicar | Muy rara vez: a otro cerrajero o de adorno. Botón **Sola** al buscarla |
+
+El **precio de compra** (S/ 0.90 en el ejemplo, lo que te cuesta el material) es aparte y no se cobra. Una llave sin precio del duplicado no aparece en **Duplicado de llave**. En el carrito, los duplicados se ven como "Duplicado · Llave de casa".
 
 Si te equivocaste en una venta, un Administrador puede anularla desde **Historial de ventas** (el link está arriba de la pantalla de Venta). Eso devuelve el stock y descuenta el dinero de la caja, siempre que la caja de esa venta siga abierta.
 

@@ -18,7 +18,13 @@ import type { ProductoResponse } from '../types/productos'
 interface ItemCarrito {
   producto: ProductoResponse
   cantidad: number
+  /** Duplicado (material + corte) o la llave/producto solo: la misma llave puede estar dos veces. */
+  duplicado: boolean
 }
+
+const clave = (i: ItemCarrito) => `${i.producto.id}-${i.duplicado ? 'dup' : 'sola'}`
+const precioUnitario = (i: ItemCarrito) =>
+  i.duplicado ? i.producto.precioDuplicado ?? i.producto.precioVenta : i.producto.precioVenta
 
 const METODOS: MetodoPago[] = [...METODOS_EN_USO, 'MIXTO']
 
@@ -49,38 +55,37 @@ export function Venta() {
     }
   }
 
-  function agregarAlCarrito(producto: ProductoResponse, cantidad = 1) {
+  function agregarAlCarrito(producto: ProductoResponse, cantidad = 1, duplicado = false) {
+    const nuevo: ItemCarrito = { producto, cantidad, duplicado }
     setCarrito((prev) => {
-      const existente = prev.find((i) => i.producto.id === producto.id)
+      const existente = prev.find((i) => clave(i) === clave(nuevo))
       if (existente) {
-        return prev.map((i) =>
-          i.producto.id === producto.id ? { ...i, cantidad: i.cantidad + cantidad } : i,
-        )
+        return prev.map((i) => (i === existente ? { ...i, cantidad: i.cantidad + cantidad } : i))
       }
-      return [...prev, { producto, cantidad }]
+      return [...prev, nuevo]
     })
   }
 
   /** Cantidad escrita a mano en el carrito (vacio o 0 no quita el item: para eso esta el tacho). */
-  function fijarCantidad(productoId: number, texto: string) {
+  function fijarCantidad(item: ItemCarrito, texto: string) {
     const n = Number.parseInt(texto, 10)
     if (Number.isNaN(n) || n < 1) return
-    setCarrito((prev) => prev.map((i) => (i.producto.id === productoId ? { ...i, cantidad: n } : i)))
+    setCarrito((prev) => prev.map((i) => (clave(i) === clave(item) ? { ...i, cantidad: n } : i)))
   }
 
-  function cambiarCantidad(productoId: number, delta: number) {
+  function cambiarCantidad(item: ItemCarrito, delta: number) {
     setCarrito((prev) =>
       prev
-        .map((i) => (i.producto.id === productoId ? { ...i, cantidad: i.cantidad + delta } : i))
+        .map((i) => (clave(i) === clave(item) ? { ...i, cantidad: i.cantidad + delta } : i))
         .filter((i) => i.cantidad > 0),
     )
   }
 
-  function quitarDelCarrito(productoId: number) {
-    setCarrito((prev) => prev.filter((i) => i.producto.id !== productoId))
+  function quitarDelCarrito(item: ItemCarrito) {
+    setCarrito((prev) => prev.filter((i) => clave(i) !== clave(item)))
   }
 
-  const total = carrito.reduce((acc, i) => acc + i.producto.precioVenta * i.cantidad, 0)
+  const total = carrito.reduce((acc, i) => acc + precioUnitario(i) * i.cantidad, 0)
 
   const sumaDesglose = METODOS_EN_USO.reduce((acc, m) => acc + (Number(desglose[m]) || 0), 0)
   const desgloseValido = Math.abs(sumaDesglose - total) < 0.005 && sumaDesglose > 0
@@ -92,7 +97,7 @@ export function Venta() {
     try {
       await ventasApi.crear({
         metodoPago,
-        items: carrito.map((i) => ({ productoId: i.producto.id, cantidad: i.cantidad })),
+        items: carrito.map((i) => ({ productoId: i.producto.id, cantidad: i.cantidad, duplicado: i.duplicado })),
         desglosePago: metodoPago === 'MIXTO'
           ? METODOS_EN_USO
               .filter((m) => Number(desglose[m]) > 0)
@@ -136,19 +141,37 @@ export function Venta() {
 
       {resultados.length > 0 && (
         <div className="flex flex-col gap-2">
-          {resultados.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => agregarAlCarrito(p)}
-              className="panel-cepillado flex items-center justify-between rounded-lg p-3 text-left"
-            >
-              <div>
-                <p className="text-sm font-medium">{p.nombre}</p>
-                <p className="text-xs text-sub">{p.codigo} · Stock: {p.cantidadStock}</p>
+          {resultados.map((p) =>
+            p.precioDuplicado != null ? (
+              // Una llave casi siempre se cobra como duplicado: es la opcion principal, la llave sola va aparte
+              <div key={p.id} className="panel-cepillado flex items-center justify-between gap-2 rounded-lg p-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{p.nombre}</p>
+                  <p className="text-xs text-sub">{p.codigo} · Stock: {p.cantidadStock}</p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button onClick={() => agregarAlCarrito(p, 1, true)} className="px-3">
+                    Duplicado {formatearSoles(p.precioDuplicado)}
+                  </Button>
+                  <Button variant="secondary" onClick={() => agregarAlCarrito(p)} className="px-3">
+                    Sola {formatearSoles(p.precioVenta)}
+                  </Button>
+                </div>
               </div>
-              <span className="font-heading font-semibold text-steel-dark">{formatearSoles(p.precioVenta)}</span>
-            </button>
-          ))}
+            ) : (
+              <button
+                key={p.id}
+                onClick={() => agregarAlCarrito(p)}
+                className="panel-cepillado flex items-center justify-between rounded-lg p-3 text-left"
+              >
+                <div>
+                  <p className="text-sm font-medium">{p.nombre}</p>
+                  <p className="text-xs text-sub">{p.codigo} · Stock: {p.cantidadStock}</p>
+                </div>
+                <span className="font-heading font-semibold text-steel-dark">{formatearSoles(p.precioVenta)}</span>
+              </button>
+            ),
+          )}
         </div>
       )}
 
@@ -158,14 +181,17 @@ export function Venta() {
           <EmptyState mensaje="Busca un producto arriba para agregarlo a la venta." />
         ) : (
           carrito.map((item) => (
-            <div key={item.producto.id} className="flex items-center justify-between gap-2 border-b border-hair pb-2">
+            <div key={clave(item)} className="flex items-center justify-between gap-2 border-b border-hair pb-2">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{item.producto.nombre}</p>
-                <p className="text-xs text-sub">{formatearSoles(item.producto.precioVenta)} c/u</p>
+                <p className="truncate text-sm font-medium">
+                  {item.duplicado && <span className="text-steel-dark">Duplicado · </span>}
+                  {item.producto.nombre}
+                </p>
+                <p className="text-xs text-sub">{formatearSoles(precioUnitario(item))} c/u</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => cambiarCantidad(item.producto.id, -1)}
+                  onClick={() => cambiarCantidad(item, -1)}
                   className="flex h-9 w-9 items-center justify-center rounded-md border border-line hover:bg-hair"
                   aria-label="Restar"
                 >
@@ -178,18 +204,18 @@ export function Venta() {
                   step="1"
                   aria-label={`Cantidad de ${item.producto.nombre}`}
                   value={item.cantidad}
-                  onChange={(e) => fijarCantidad(item.producto.id, e.target.value)}
+                  onChange={(e) => fijarCantidad(item, e.target.value)}
                   className="w-14 rounded-md border border-line bg-paper px-1 py-1.5 text-center text-sm font-medium outline-none focus:border-steel"
                 />
                 <button
-                  onClick={() => cambiarCantidad(item.producto.id, 1)}
+                  onClick={() => cambiarCantidad(item, 1)}
                   className="flex h-9 w-9 items-center justify-center rounded-md border border-line hover:bg-hair"
                   aria-label="Sumar"
                 >
                   <Plus size={16} />
                 </button>
                 <button
-                  onClick={() => quitarDelCarrito(item.producto.id)}
+                  onClick={() => quitarDelCarrito(item)}
                   className="flex h-9 w-9 items-center justify-center rounded-md text-danger hover:bg-hair"
                   aria-label="Quitar"
                 >
@@ -253,7 +279,7 @@ export function Venta() {
         abierto={mostrarDuplicado}
         onCerrar={() => setMostrarDuplicado(false)}
         onAgregar={(producto, cantidad) => {
-          agregarAlCarrito(producto, cantidad)
+          agregarAlCarrito(producto, cantidad, true)
           setMostrarDuplicado(false)
           notificar(`${cantidad} duplicado(s) de ${producto.nombre} al carrito`)
         }}
@@ -263,9 +289,11 @@ export function Venta() {
 }
 
 /**
- * Duplicado de llave: se elige la llave virgen y la cantidad, y va al carrito
- * como cualquier venta (descuenta stock por el Kardex y entra a la caja). No
- * pide cliente: un duplicado se hace y se cobra en el momento.
+ * Duplicado de llave: se elige la llave y la cantidad, y va al carrito con su
+ * precio de duplicado (material + corte), aparte del precio de la llave sola.
+ * Descuenta la llave del stock por el Kardex y entra a la caja como cualquier
+ * venta. No pide cliente: un duplicado se hace y se cobra en el momento. Solo
+ * aparecen las llaves con precio de duplicado (se pone en su ficha).
  */
 function DuplicadoLlave({
   abierto, onCerrar, onAgregar,
@@ -284,22 +312,15 @@ function DuplicadoLlave({
     setElegida(null)
     setCantidad('1')
     setTermino('')
-    productosApi.listar(0, 'LLAVE_VIRGEN').then((r) => setLlaves(r.content)).catch(() => setLlaves([]))
+    productosApi.duplicables().then(setLlaves).catch(() => setLlaves([]))
   }, [abierto])
 
-  async function buscar(texto: string) {
-    setTermino(texto)
-    try {
-      if (texto.trim().length >= 2) {
-        const r = await productosApi.buscar(texto.trim())
-        setLlaves(r.filter((p) => p.tipoProducto === 'LLAVE_VIRGEN'))
-      } else {
-        setLlaves((await productosApi.listar(0, 'LLAVE_VIRGEN')).content)
-      }
-    } catch {
-      setLlaves([])
-    }
-  }
+  // La lista completa ya esta cargada: buscar es filtrar
+  const q = termino.trim().toLowerCase()
+  const visibles = q.length === 0
+    ? llaves
+    : llaves.filter((p) => p.nombre.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q))
+  const precio = elegida?.precioDuplicado ?? 0
 
   const n = Number.parseInt(cantidad, 10)
   const cantidadValida = Number.isInteger(n) && n >= 1
@@ -309,14 +330,16 @@ function DuplicadoLlave({
     <BottomSheet abierto={abierto} onCerrar={onCerrar} titulo="Duplicado de llave">
       {!elegida ? (
         <div className="flex flex-col gap-3">
-          <SearchInput placeholder="Buscar llave virgen (ej. KW1, Yale)…" onBuscar={buscar} />
-          {llaves.length === 0 ? (
+          <SearchInput placeholder="Buscar llave (ej. KW1, Yale)…" onBuscar={setTermino} debounceMs={0} />
+          {visibles.length === 0 ? (
             <p className="text-sm text-sub">
-              {termino ? 'No hay llaves vírgenes con ese nombre.' : 'No hay llaves vírgenes en el inventario.'}
+              {termino
+                ? 'No hay llaves con ese nombre.'
+                : 'Ninguna llave tiene precio de duplicado. Ponlo en su ficha, en Inventario.'}
             </p>
           ) : (
             <div className="flex max-h-80 flex-col gap-2 overflow-y-auto">
-              {llaves.map((p) => (
+              {visibles.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => setElegida(p)}
@@ -326,7 +349,7 @@ function DuplicadoLlave({
                     <p className="text-sm font-medium">{p.nombre}</p>
                     <p className="text-xs text-sub">{p.codigo} · Stock: {p.cantidadStock}</p>
                   </div>
-                  <span className="font-heading font-semibold text-steel-dark">{formatearSoles(p.precioVenta)}</span>
+                  <span className="font-heading font-semibold text-steel-dark">{formatearSoles(p.precioDuplicado)}</span>
                 </button>
               ))}
             </div>
@@ -352,8 +375,8 @@ function DuplicadoLlave({
             ))}
           </div>
           <p className="text-sub">
-            {formatearSoles(elegida.precioVenta)} c/u
-            {cantidadValida && <> · total <span className="font-semibold text-ink">{formatearSoles(elegida.precioVenta * n)}</span></>}
+            {formatearSoles(precio)} c/u
+            {cantidadValida && <> · total <span className="font-semibold text-ink">{formatearSoles(precio * n)}</span></>}
           </p>
           {sinStock && <p className="text-danger">Solo quedan {elegida.cantidadStock} en stock.</p>}
           <Button disabled={!cantidadValida || sinStock} onClick={() => onAgregar(elegida, n)}>

@@ -101,6 +101,12 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.listarStockBajo());
     }
 
+    @GetMapping("/duplicables")
+    @Operation(summary = "Llaves con precio de duplicado, para el botón Duplicado de llave")
+    public ResponseEntity<List<ProductoResponse>> duplicables() {
+        return ResponseEntity.ok(productoService.listarDuplicables());
+    }
+
     @PostMapping(value = "/{id}/imagen", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Subir o reemplazar la fotografía de un producto (RF-16)")

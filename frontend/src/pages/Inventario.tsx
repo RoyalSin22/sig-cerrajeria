@@ -15,7 +15,7 @@ import { useToast } from '../context/useToast'
 import { useAuth } from '../context/useAuth'
 import { formatearSoles, formatearFechaHora, urlImagen } from '../utils/format'
 import {
-  ETIQUETA_TIPO_PRODUCTO, type ProductoResponse, type MovimientoInventarioResponse,
+  ETIQUETA_TIPO_PRODUCTO, esLlave, type ProductoResponse, type MovimientoInventarioResponse,
   type ProductoCreateRequest, type TipoProducto, type ImportacionResultado,
   type ActualizacionStockResultado, type ModoPlanilla,
 } from '../types/productos'
@@ -198,7 +198,9 @@ function FichaProducto({
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
   const [editando, setEditando] = useState(false)
-  const [edicion, setEdicion] = useState<{ nombre: string; marca: string; stockMinimo: number; precioCompra: number; precioVenta: number } | null>(null)
+  const [edicion, setEdicion] = useState<{
+    nombre: string; marca: string; stockMinimo: number; precioCompra: number; precioVenta: number; precioDuplicado: string
+  } | null>(null)
   const [subiendoImagen, setSubiendoImagen] = useState(false)
 
   useEffect(() => {
@@ -210,6 +212,7 @@ function FichaProducto({
       setEdicion({
         nombre: producto.nombre, marca: producto.marca ?? '', stockMinimo: producto.stockMinimo,
         precioCompra: producto.precioCompra, precioVenta: producto.precioVenta,
+        precioDuplicado: producto.precioDuplicado == null ? '' : String(producto.precioDuplicado),
       })
       productosApi.kardex(producto.id).then(setHistorial).catch(() => setHistorial([]))
     }
@@ -230,6 +233,7 @@ function FichaProducto({
         stockMinimo: edicion.stockMinimo,
         precioCompra: edicion.precioCompra,
         precioVenta: edicion.precioVenta,
+        precioDuplicado: edicion.precioDuplicado === '' ? null : Number(edicion.precioDuplicado),
         imagenUrl: producto!.imagenUrl ?? undefined,
         llavePerfil: producto!.llavePerfil ?? undefined,
         llaveColor: producto!.llaveColor ?? undefined,
@@ -321,13 +325,27 @@ function FichaProducto({
                 placeholder="Stock mínimo" className="flex-1 rounded-md border border-line bg-paper px-3 py-2 outline-none focus:border-steel" />
             </div>
             <div className="flex gap-2">
-              <input required type="number" step="0.01" min="0" value={edicion?.precioCompra ?? 0}
-                onChange={(e) => setEdicion((s) => s && { ...s, precioCompra: Number(e.target.value) })}
-                placeholder="Precio compra" className="flex-1 rounded-md border border-line bg-paper px-3 py-2 outline-none focus:border-steel" />
-              <input required type="number" step="0.01" min="0" value={edicion?.precioVenta ?? 0}
-                onChange={(e) => setEdicion((s) => s && { ...s, precioVenta: Number(e.target.value) })}
-                placeholder="Precio venta" className="flex-1 rounded-md border border-line bg-paper px-3 py-2 outline-none focus:border-steel" />
+              <label className="flex flex-1 flex-col gap-1 text-xs text-sub">
+                Precio compra (S/)
+                <input required type="number" step="0.01" min="0" value={edicion?.precioCompra ?? 0}
+                  onChange={(e) => setEdicion((s) => s && { ...s, precioCompra: Number(e.target.value) })}
+                  className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-steel" />
+              </label>
+              <label className="flex flex-1 flex-col gap-1 text-xs text-sub">
+                {esLlave(producto.tipoProducto) ? 'Llave sola (S/)' : 'Precio venta (S/)'}
+                <input required type="number" step="0.01" min="0" value={edicion?.precioVenta ?? 0}
+                  onChange={(e) => setEdicion((s) => s && { ...s, precioVenta: Number(e.target.value) })}
+                  className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-steel" />
+              </label>
             </div>
+            {esLlave(producto.tipoProducto) && (
+              <label className="flex flex-col gap-1 text-xs text-sub">
+                Precio del duplicado (S/) · material + corte. Vacío: no aparece en "Duplicado de llave".
+                <input type="number" step="0.01" min="0" value={edicion?.precioDuplicado ?? ''}
+                  onChange={(e) => setEdicion((s) => s && { ...s, precioDuplicado: e.target.value })}
+                  className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-steel" />
+              </label>
+            )}
             {error && <p className="text-danger">{error}</p>}
             <div className="flex gap-2">
               <Button type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar'}</Button>
@@ -340,7 +358,16 @@ function FichaProducto({
             <div><span className="text-sub">Tipo</span><p>{ETIQUETA_TIPO_PRODUCTO[producto.tipoProducto]}</p></div>
             {producto.marca && <div><span className="text-sub">Marca</span><p>{producto.marca}</p></div>}
             {producto.llavePerfil && <div><span className="text-sub">Perfil</span><p>{producto.llavePerfil}</p></div>}
-            <div><span className="text-sub">Precio venta</span><p>{formatearSoles(producto.precioVenta)}</p></div>
+            <div>
+              <span className="text-sub">{esLlave(producto.tipoProducto) ? 'Llave sola' : 'Precio venta'}</span>
+              <p>{formatearSoles(producto.precioVenta)}</p>
+            </div>
+            {esLlave(producto.tipoProducto) && (
+              <div>
+                <span className="text-sub">Duplicado</span>
+                <p>{producto.precioDuplicado == null ? 'No se ofrece' : formatearSoles(producto.precioDuplicado)}</p>
+              </div>
+            )}
             <div><span className="text-sub">Stock mínimo</span><p>{producto.stockMinimo}</p></div>
             {esAdmin && (
               <Button variant="secondary" onClick={() => setEditando(true)} className="col-span-2">Editar</Button>
@@ -460,7 +487,9 @@ function FormularioProducto({
     setError(null)
     setGuardando(true)
     try {
-      const creado = await productosApi.crear(form)
+      const creado = await productosApi.crear({
+        ...form, precioDuplicado: esLlave(form.tipoProducto) ? form.precioDuplicado : null,
+      })
       setForm(CAMPO_INICIAL)
       onCreado(creado)
     } catch (err) {
@@ -525,13 +554,25 @@ function FormularioProducto({
         </div>
 
         <div className="flex gap-2">
-          <input required type="number" step="0.01" min="0" value={form.precioCompra}
-            onChange={(e) => set('precioCompra', Number(e.target.value))}
-            placeholder="Precio compra (S/)" className={`flex-1 ${inputClase}`} />
-          <input required type="number" step="0.01" min="0" value={form.precioVenta}
-            onChange={(e) => set('precioVenta', Number(e.target.value))}
-            placeholder="Precio venta (S/)" className={`flex-1 ${inputClase}`} />
+          <label className="flex flex-1 flex-col gap-1 text-xs text-sub">
+            Precio compra (S/)
+            <input required type="number" step="0.01" min="0" value={form.precioCompra}
+              onChange={(e) => set('precioCompra', Number(e.target.value))} className={`text-sm text-ink ${inputClase}`} />
+          </label>
+          <label className="flex flex-1 flex-col gap-1 text-xs text-sub">
+            {esLlave(form.tipoProducto) ? 'Llave sola (S/)' : 'Precio venta (S/)'}
+            <input required type="number" step="0.01" min="0" value={form.precioVenta}
+              onChange={(e) => set('precioVenta', Number(e.target.value))} className={`text-sm text-ink ${inputClase}`} />
+          </label>
         </div>
+        {esLlave(form.tipoProducto) && (
+          <label className="flex flex-col gap-1 text-xs text-sub">
+            Precio del duplicado (S/) · material + corte. Vacío: no aparece en "Duplicado de llave".
+            <input type="number" step="0.01" min="0" value={form.precioDuplicado ?? ''}
+              onChange={(e) => set('precioDuplicado', e.target.value === '' ? null : Number(e.target.value))}
+              className={`text-sm text-ink ${inputClase}`} />
+          </label>
+        )}
 
         {error && <p className="text-sm text-danger">{error}</p>}
         <Button type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Crear producto'}</Button>
@@ -548,9 +589,9 @@ function FormularioProducto({
  */
 const PLANTILLA_CSV = [
   'sep=;',
-  'codigo;nombre;tipo;marca;stock;stock_minimo;precio_compra;precio_venta',
-  'KW1-001;Llave virgen KW1;Llave virgen;Kwikset;50;10;2;5',
-  'CAN-40;Candado 40 mm;Candado;Forte;6;2;18;30',
+  'codigo;nombre;tipo;marca;stock;stock_minimo;precio_compra;precio_venta;precio_duplicado',
+  'KW1-001;Llave virgen KW1;Llave virgen;Kwikset;50;10;1;2;3',
+  'CAN-40;Candado 40 mm;Candado;Forte;6;2;18;30;',
 ].join('\r\n') + '\r\n'
 
 function descargarPlantilla() {
@@ -630,7 +671,7 @@ function ImportarInventario({
         </ol>
         <p className="text-xs text-sub">
           Obligatorias: codigo, nombre, tipo, precio_compra, precio_venta. Opcionales: marca, stock, stock_minimo,
-          perfil, color, diseno, modelo, tamano, material. Solo agrega productos nuevos: si un código ya existe,
+          precio_duplicado (solo llaves), perfil, color, diseno, modelo, tamano, material. Solo agrega productos nuevos: si un código ya existe,
           cambia su stock o precio desde su ficha.
         </p>
 

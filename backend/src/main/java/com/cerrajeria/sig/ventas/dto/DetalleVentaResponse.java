@@ -7,6 +7,7 @@ public record DetalleVentaResponse(
     String nombreProducto,
     Integer cantidad,
     BigDecimal precioUnitario,
-    BigDecimal subtotal
+    BigDecimal subtotal,
+    boolean duplicado
 ) {
 }

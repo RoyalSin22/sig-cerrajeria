@@ -67,6 +67,7 @@ Base de datos: Flyway controla el esquema (`ddl-auto: validate` — Hibernate nu
 - `V7` — Yape, Plin y tarjeta por separado en `cajas_diarias` (el cierre se cuadra solo contra el efectivo)
 - `V8` — fecha de cambio de contraseña (invalida las sesiones anteriores)
 - `V9` — cobro de servicios a domicilio, estado `CANCELADO` en órdenes y pagos `DEVOLUCION`
+- `V10` — `productos.precio_duplicado` (material + corte, aparte del precio de la llave sola; `NULL` = no se ofrece como duplicado, y a las `LLAVE_VIRGEN` existentes se les copió su precio de venta) y `detalle_ventas.es_duplicado`. `ItemVentaRequest.duplicado` elige qué precio cobra `VentaService`
 
 Una migración nueva nunca edita una anterior: Flyway valida el checksum de las ya aplicadas y la app no arranca si cambian.
 

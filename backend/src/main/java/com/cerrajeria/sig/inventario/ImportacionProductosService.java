@@ -48,7 +48,7 @@ public class ImportacionProductosService {
         CODIGO(50, true), NOMBRE(150, true), TIPO(0, true), MARCA(100, false),
         STOCK(0, false), STOCK_MINIMO(0, false), PRECIO_COMPRA(0, true), PRECIO_VENTA(0, true),
         PERFIL(50, false), COLOR(30, false), DISENO(50, false), MODELO(100, false),
-        TAMANO(30, false), MATERIAL(50, false);
+        TAMANO(30, false), MATERIAL(50, false), PRECIO_DUPLICADO(0, false);
 
         final int largoMaximo;
         final boolean obligatoria;
@@ -83,6 +83,7 @@ public class ImportacionProductosService {
         ALIAS_COLUMNAS.put("costo", Columna.PRECIO_COMPRA);
         ALIAS_COLUMNAS.put("precio_costo", Columna.PRECIO_COMPRA);
         ALIAS_COLUMNAS.put("precio", Columna.PRECIO_VENTA);
+        ALIAS_COLUMNAS.put("duplicado", Columna.PRECIO_DUPLICADO);
         ALIAS_COLUMNAS.put("llave_perfil", Columna.PERFIL);
         ALIAS_COLUMNAS.put("llave_color", Columna.COLOR);
         ALIAS_COLUMNAS.put("tematica", Columna.DISENO);
@@ -256,13 +257,14 @@ public class ImportacionProductosService {
         Integer stockMinimo = entero(v.get(Columna.STOCK_MINIMO), "stock_minimo", problemas).orElse(null);
         BigDecimal precioCompra = precio(obligatorio(v, Columna.PRECIO_COMPRA, problemas), "precio_compra", problemas);
         BigDecimal precioVenta = precio(obligatorio(v, Columna.PRECIO_VENTA, problemas), "precio_venta", problemas);
+        BigDecimal precioDuplicado = precio(v.get(Columna.PRECIO_DUPLICADO), "precio_duplicado", problemas);
 
         if (!problemas.isEmpty()) {
             return null;
         }
         return new ProductoCreateRequest(codigo, nombre, tipo, v.get(Columna.MARCA), stock, stockMinimo,
             precioCompra, precioVenta, null, v.get(Columna.PERFIL), v.get(Columna.COLOR), v.get(Columna.DISENO),
-            v.get(Columna.MODELO), v.get(Columna.TAMANO), v.get(Columna.MATERIAL));
+            v.get(Columna.MODELO), v.get(Columna.TAMANO), v.get(Columna.MATERIAL), precioDuplicado);
     }
 
     private static String obligatorio(Map<Columna, String> valores, Columna columna, List<String> problemas) {

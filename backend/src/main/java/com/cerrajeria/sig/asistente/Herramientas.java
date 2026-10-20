@@ -34,6 +34,9 @@ class Herramientas {
                 var itemProps = itemSchema.putObject("properties");
                 itemProps.putObject("producto").put("type", "string").put("description", "Nombre del producto, tal como lo escribio el usuario.");
                 itemProps.putObject("cantidad").put("type", "integer").put("description", "Cantidad vendida de ese producto.");
+                itemProps.putObject("duplicado").put("type", "boolean").put("description",
+                    "Solo llaves. true: duplicado o copia de llave (lo normal). false: solo si piden la llave virgen sola, "
+                        + "sin duplicar (para otro cerrajero o de adorno). Si no lo dicen, omitirlo.");
                 var itemReq = itemSchema.putArray("required");
                 itemReq.add("producto");
                 itemReq.add("cantidad");

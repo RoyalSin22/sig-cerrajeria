@@ -10,5 +10,10 @@ public enum TipoProducto {
     CANDADO,
     LLAVERO,
     ARGOLLA,
-    ACCESORIO
+    ACCESORIO;
+
+    /** Las llaves se pueden vender como duplicado, con su propio precio. */
+    public boolean esLlave() {
+        return this == LLAVE_VIRGEN || this == LLAVE_COLOR || this == LLAVE_DISENO;
+    }
 }
