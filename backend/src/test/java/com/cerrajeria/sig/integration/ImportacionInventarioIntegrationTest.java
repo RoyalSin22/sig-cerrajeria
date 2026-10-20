@@ -139,4 +139,69 @@ class ImportacionInventarioIntegrationTest {
                 .header("Authorization", empleado))
             .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("Planilla: descargar, llenar la cantidad y subirla como conteo; la compra de varios entra todo junto")
+    void planillaYCompraDeVarios() throws Exception {
+        String admin = login("admin", "admin123");
+        importar(admin, """
+            codigo;nombre;tipo;stock;precio_compra;precio_venta
+            PLA-001;Planilla llave Yale;Llave virgen;200;1;3
+            PLA-002;Planilla candado;candado;5;10;18
+            """, true);
+
+        MvcResult descarga = mockMvc.perform(get("/api/v1/productos/planilla").header("Authorization", admin))
+            .andExpect(status().isOk())
+            .andReturn();
+        java.nio.charset.Charset ansi = java.nio.charset.Charset.forName("windows-1252");
+        String planilla = new String(descarga.getResponse().getContentAsByteArray(), ansi);
+        assertThat(planilla).contains("=\"PLA-001\";Planilla llave Yale;llave virgen;;200;");
+
+        String llena = planilla.replace("Planilla llave Yale;llave virgen;;200;", "Planilla llave Yale;llave virgen;;200;1000");
+        MvcResult subida = mockMvc.perform(multipart("/api/v1/productos/planilla")
+                .file(new MockMultipartFile("archivo", "inventario.csv", "text/csv", llena.getBytes(ansi)))
+                .param("modo", "CONTEO").param("confirmar", "true")
+                .header("Authorization", admin))
+            .andExpect(status().isOk())
+            .andReturn();
+        JsonNode resultado = objectMapper.readTree(subida.getResponse().getContentAsString());
+        assertThat(resultado.get("errores")).isEmpty();
+        assertThat(resultado.get("actualizados").asInt()).isEqualTo(1);
+
+        JsonNode llave = objectMapper.readTree(mockMvc.perform(get("/api/v1/productos/buscar").param("q", "PLA-001")
+            .header("Authorization", admin)).andReturn().getResponse().getContentAsString()).get(0);
+        assertThat(llave.get("cantidadStock").asInt()).isEqualTo(1000);
+        JsonNode kardex = objectMapper.readTree(mockMvc.perform(get("/api/v1/productos/" + llave.get("id").asLong() + "/kardex")
+            .header("Authorization", admin)).andReturn().getResponse().getContentAsString());
+        assertThat(kardex.get(0).get("cantidad").asInt()).isEqualTo(800);
+        assertThat(kardex.get(0).get("motivo").asString()).isEqualTo("Conteo físico (planilla)");
+
+        // Compra de varios al mismo distribuidor
+        long proveedorId = objectMapper.readTree(mockMvc.perform(post("/api/v1/proveedores")
+                .header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombre\":\"Distribuidora Planilla\"}"))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
+        JsonNode candado = objectMapper.readTree(mockMvc.perform(get("/api/v1/productos/buscar").param("q", "PLA-002")
+            .header("Authorization", admin)).andReturn().getResponse().getContentAsString()).get(0);
+        mockMvc.perform(post("/api/v1/compras/lote").header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"proveedorId":%d,"pagarDeCaja":false,"items":[
+                      {"productoId":%d,"cantidad":100,"precioUnitario":0.9},
+                      {"productoId":%d,"cantidad":2,"precioUnitario":11}]}
+                    """.formatted(proveedorId, llave.get("id").asLong(), candado.get("id").asLong())))
+            .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/v1/compras/lote").header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"proveedorId":%d,"pagarDeCaja":false,"items":[{"productoId":%d,"cantidad":0,"precioUnitario":1}]}
+                    """.formatted(proveedorId, candado.get("id").asLong())))
+            .andExpect(status().isBadRequest());
+        assertThat(contarStock(admin, "PLA-001")).isEqualTo(1100);
+        assertThat(contarStock(admin, "PLA-002")).isEqualTo(7);
+    }
+
+    private int contarStock(String token, String codigo) throws Exception {
+        return objectMapper.readTree(mockMvc.perform(get("/api/v1/productos/buscar").param("q", codigo)
+            .header("Authorization", token)).andReturn().getResponse().getContentAsString())
+            .get(0).get("cantidadStock").asInt();
+    }
 }

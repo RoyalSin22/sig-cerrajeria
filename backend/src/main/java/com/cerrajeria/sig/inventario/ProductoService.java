@@ -60,6 +60,7 @@ public class ProductoService {
             request.stockMinimo(), request.precioCompra(), request.precioVenta(), request.imagenUrl(),
             request.llavePerfil(), request.llaveColor(), request.llaveDisenoTematica(),
             request.productoModelo(), request.productoTamano(), request.productoMaterial());
+        producto.setPrecioDuplicado(request.tipoProducto().esLlave() ? request.precioDuplicado() : null);
         producto.setCantidadStock(0);
         producto = productoRepository.save(producto);
 
@@ -93,6 +94,12 @@ public class ProductoService {
         return productoMapper.toResponseList(productoRepository.buscar(termino));
     }
 
+    /** Las llaves que se ofrecen en "Duplicado de llave" (tienen precio de duplicado). */
+    @Transactional(readOnly = true)
+    public List<ProductoResponse> listarDuplicables() {
+        return productoMapper.toResponseList(productoRepository.findByActivoTrueAndPrecioDuplicadoIsNotNullOrderByNombreAsc());
+    }
+
     @Transactional(readOnly = true)
     public List<ProductoResponse> listarStockBajo() {
         return productoMapper.toResponseList(productoRepository.findStockBajo());
@@ -105,6 +112,7 @@ public class ProductoService {
             request.stockMinimo(), request.precioCompra(), request.precioVenta(), request.imagenUrl(),
             request.llavePerfil(), request.llaveColor(), request.llaveDisenoTematica(),
             request.productoModelo(), request.productoTamano(), request.productoMaterial());
+        producto.setPrecioDuplicado(request.tipoProducto().esLlave() ? request.precioDuplicado() : null);
         return productoMapper.toResponse(productoRepository.save(producto));
     }
 

@@ -123,8 +123,10 @@ public class AsistenteIAService {
             }
 
             Producto p = encontrados.get(0);
-            items.add(new ItemVentaRequest(p.getId(), cantidad));
-            resumen.add(cantidad + " × " + p.getNombre());
+            // Una llave con precio de duplicado se cobra como duplicado salvo que pidan la llave sola
+            boolean duplicado = p.getPrecioDuplicado() != null && item.path("duplicado").asBoolean(true);
+            items.add(new ItemVentaRequest(p.getId(), cantidad, duplicado));
+            resumen.add(cantidad + " × " + (duplicado ? "duplicado de " : "") + p.getNombre());
         }
 
         String metodoPagoTexto = params.path("metodo_pago").asString("EFECTIVO");

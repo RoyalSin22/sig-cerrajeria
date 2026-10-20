@@ -33,4 +33,7 @@ public class DetalleVenta {
 
     @Column(name = "precio_unitario", nullable = false, precision = 12, scale = 2)
     private BigDecimal precioUnitario;
+
+    @Column(name = "es_duplicado", nullable = false)
+    private boolean duplicado;
 }

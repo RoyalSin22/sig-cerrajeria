@@ -24,6 +24,8 @@ export const METODOS_EN_USO: MetodoPagoSimple[] = ['EFECTIVO', 'YAPE', 'PLIN']
 export interface ItemVentaRequest {
   productoId: number
   cantidad: number
+  /** Cobra el precio de duplicado de la llave en vez del de la llave sola. */
+  duplicado?: boolean
 }
 
 export interface DesglosePagoRequest {
@@ -50,6 +52,7 @@ export interface DetalleVentaResponse {
   cantidad: number
   precioUnitario: number
   subtotal: number
+  duplicado: boolean
 }
 
 export interface VentaResponse {

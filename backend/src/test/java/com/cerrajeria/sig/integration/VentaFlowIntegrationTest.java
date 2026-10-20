@@ -124,6 +124,40 @@ class VentaFlowIntegrationTest {
             .andExpect(jsonPath("$.montoYape").value(10.0))
             .andExpect(jsonPath("$.saldoEsperado").value(125.0))
             .andExpect(jsonPath("$.efectivoEsperado").value(115.0));
+
+        // Duplicado: cobra el precio del duplicado (material + corte); la llave sola, su precio de venta
+        long casaId = objectMapper.readTree(mockMvc.perform(post("/api/v1/productos")
+                .header("Authorization", auth).contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"codigo": "TEST-CASA", "nombre": "Llave de casa", "tipoProducto": "LLAVE_VIRGEN",
+                     "cantidadStock": 100, "precioCompra": 0.5, "precioVenta": 0.9, "precioDuplicado": 2.5}
+                    """))
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString()).get("id").asLong();
+        mockMvc.perform(get("/api/v1/productos/duplicables").header("Authorization", auth))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[?(@.codigo == 'TEST-CASA')].precioDuplicado").value(2.5));
+        mockMvc.perform(post("/api/v1/ventas")
+                .header("Authorization", auth).contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"metodoPago": "EFECTIVO", "items": [
+                      {"productoId": %d, "cantidad": 2, "duplicado": true},
+                      {"productoId": %d, "cantidad": 1}]}
+                    """.formatted(casaId, casaId)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.montoTotal").value(5.9))
+            .andExpect(jsonPath("$.detalles[0].duplicado").value(true))
+            .andExpect(jsonPath("$.detalles[0].precioUnitario").value(2.5))
+            .andExpect(jsonPath("$.detalles[1].duplicado").value(false));
+        // Un producto sin precio de duplicado no se puede cobrar como duplicado (y no descuenta stock)
+        mockMvc.perform(post("/api/v1/ventas")
+                .header("Authorization", auth).contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"metodoPago": "EFECTIVO", "items": [{"productoId": %d, "cantidad": 1, "duplicado": true}]}
+                    """.formatted(productoId)))
+            .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/productos/" + productoId).header("Authorization", auth))
+            .andExpect(jsonPath("$.cantidadStock").value(5));
     }
 
     @Test

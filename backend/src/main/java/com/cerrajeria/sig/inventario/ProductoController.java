@@ -1,5 +1,6 @@
 package com.cerrajeria.sig.inventario;
 
+import com.cerrajeria.sig.inventario.dto.ActualizacionStockResultado;
 import com.cerrajeria.sig.inventario.dto.AjusteStockRequest;
 import com.cerrajeria.sig.inventario.dto.ImportacionResultado;
 import com.cerrajeria.sig.inventario.dto.MovimientoInventarioResponse;
@@ -33,6 +34,7 @@ public class ProductoController {
 
     private final ProductoService productoService;
     private final ImportacionProductosService importacionProductosService;
+    private final PlanillaStockService planillaStockService;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -48,6 +50,26 @@ public class ProductoController {
             @RequestParam("archivo") org.springframework.web.multipart.MultipartFile archivo,
             @RequestParam(defaultValue = "false") boolean confirmar) throws java.io.IOException {
         return ResponseEntity.ok(importacionProductosService.importar(archivo.getBytes(), confirmar));
+    }
+
+    @GetMapping("/planilla")
+    @Operation(summary = "Descargar el inventario como planilla CSV para Excel, con la columna cantidad vacía")
+    public ResponseEntity<byte[]> descargarPlanilla() {
+        return ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"inventario-" + java.time.LocalDate.now() + ".csv\"")
+            .contentType(org.springframework.http.MediaType.parseMediaType("text/csv; charset=windows-1252"))
+            .body(planillaStockService.exportar());
+    }
+
+    @PostMapping(value = "/planilla", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Actualizar stock desde la planilla: CONTEO reemplaza, ENTRADA suma (revisar con confirmar=false)")
+    public ResponseEntity<ActualizacionStockResultado> subirPlanilla(
+            @RequestParam("archivo") org.springframework.web.multipart.MultipartFile archivo,
+            @RequestParam PlanillaStockService.Modo modo,
+            @RequestParam(defaultValue = "false") boolean confirmar) throws java.io.IOException {
+        return ResponseEntity.ok(planillaStockService.actualizar(archivo.getBytes(), modo, confirmar));
     }
 
     @GetMapping
@@ -77,6 +99,12 @@ public class ProductoController {
     @Operation(summary = "Productos en o por debajo de su stock mínimo (RF-13)")
     public ResponseEntity<List<ProductoResponse>> stockBajo() {
         return ResponseEntity.ok(productoService.listarStockBajo());
+    }
+
+    @GetMapping("/duplicables")
+    @Operation(summary = "Llaves con precio de duplicado, para el botón Duplicado de llave")
+    public ResponseEntity<List<ProductoResponse>> duplicables() {
+        return ResponseEntity.ok(productoService.listarDuplicables());
     }
 
     @PostMapping(value = "/{id}/imagen", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)

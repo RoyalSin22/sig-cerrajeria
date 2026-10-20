@@ -12,6 +12,7 @@ public record ProductoResponse(
     Integer stockMinimo,
     BigDecimal precioCompra,
     BigDecimal precioVenta,
+    BigDecimal precioDuplicado,
     String imagenUrl,
     String llavePerfil,
     String llaveColor,

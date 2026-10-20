@@ -71,14 +71,16 @@ public class VentaService {
             Producto producto = productoService.descontarStock(
                 item.productoId(), item.cantidad(), ReferenciaTipo.VENTA, venta.getId());
 
-            BigDecimal subtotal = producto.getPrecioVenta().multiply(BigDecimal.valueOf(item.cantidad()));
+            BigDecimal precio = precioDeLinea(producto, item.esDuplicado());
+            BigDecimal subtotal = precio.multiply(BigDecimal.valueOf(item.cantidad()));
             total = total.add(subtotal);
 
             DetalleVenta detalle = new DetalleVenta();
             detalle.setVenta(venta);
             detalle.setProducto(producto);
             detalle.setCantidad(item.cantidad());
-            detalle.setPrecioUnitario(producto.getPrecioVenta());
+            detalle.setPrecioUnitario(precio);
+            detalle.setDuplicado(item.esDuplicado());
             venta.getDetalles().add(detalle);
         }
 
@@ -185,6 +187,17 @@ public class VentaService {
         return mapearAResponse(venta);
     }
 
+    /** Un duplicado cobra material + corte; la llave sola, su precio de venta. */
+    private static BigDecimal precioDeLinea(Producto producto, boolean duplicado) {
+        if (!duplicado) {
+            return producto.getPrecioVenta();
+        }
+        if (producto.getPrecioDuplicado() == null) {
+            throw new IllegalArgumentException(producto.getNombre() + " no tiene precio de duplicado");
+        }
+        return producto.getPrecioDuplicado();
+    }
+
     private VentaResponse mapearAResponse(Venta venta) {
         List<DetalleVentaResponse> detalles = venta.getDetalles().stream()
             .map(d -> new DetalleVentaResponse(
@@ -192,7 +205,8 @@ public class VentaService {
                 d.getProducto().getNombre(),
                 d.getCantidad(),
                 d.getPrecioUnitario(),
-                d.getPrecioUnitario().multiply(BigDecimal.valueOf(d.getCantidad()))
+                d.getPrecioUnitario().multiply(BigDecimal.valueOf(d.getCantidad())),
+                d.isDuplicado()
             ))
             .toList();
 

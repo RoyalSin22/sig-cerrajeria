@@ -11,7 +11,8 @@ import type {
   ReporteServiciosResponse, ReporteClientesResponse, GrupoServicios,
 } from '../types/reportes'
 
-const COLORES = ['#5980a6', '#2c455d', '#7d9e86', '#b0975f', '#bd8080']
+// Okabe-Ito: colores que se distinguen entre si con los daltonismos comunes
+const COLORES = ['#0072B2', '#E69F00', '#009E73', '#CC79A7', '#56B4E9', '#D55E00']
 
 
 export function Reportes() {
@@ -112,7 +113,7 @@ export function Reportes() {
               <XAxis type="number" />
               <YAxis type="category" dataKey="nombre" width={140} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="cantidadVendida" fill="#5980a6" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="cantidadVendida" fill="#0072B2" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </Card>

@@ -4,6 +4,11 @@ export type TipoProducto =
   | 'LLAVE_VIRGEN' | 'LLAVE_COLOR' | 'LLAVE_DISENO' | 'CHAPA' | 'CILINDRO'
   | 'CANDADO' | 'LLAVERO' | 'ARGOLLA' | 'ACCESORIO'
 
+/** Las llaves se pueden ofrecer como duplicado (con su propio precio). */
+export function esLlave(tipo: TipoProducto): boolean {
+  return tipo === 'LLAVE_VIRGEN' || tipo === 'LLAVE_COLOR' || tipo === 'LLAVE_DISENO'
+}
+
 export const ETIQUETA_TIPO_PRODUCTO: Record<TipoProducto, string> = {
   LLAVE_VIRGEN: 'Llave virgen',
   LLAVE_COLOR: 'Llave de color',
@@ -26,6 +31,8 @@ export interface ProductoResponse {
   stockMinimo: number
   precioCompra: number
   precioVenta: number
+  /** Material + corte; null si no se ofrece en "Duplicado de llave". */
+  precioDuplicado: number | null
   imagenUrl: string | null
   llavePerfil: string | null
   llaveColor: string | null
@@ -53,6 +60,7 @@ export interface ProductoCreateRequest {
   productoModelo?: string
   productoTamano?: string
   productoMaterial?: string
+  precioDuplicado?: number | null
 }
 
 export type ProductoUpdateRequest = Omit<ProductoCreateRequest, 'codigo' | 'cantidadStock'>
@@ -89,4 +97,15 @@ export interface ImportacionResultado {
   }[]
   errores: { fila: number; mensaje: string }[]
   columnasIgnoradas: string[]
+}
+
+export type ModoPlanilla = 'CONTEO' | 'ENTRADA'
+
+/** Refleja inventario.dto.ActualizacionStockResultado */
+export interface ActualizacionStockResultado {
+  filasConCantidad: number
+  actualizados: number
+  sinCambio: number
+  cambios: { fila: number; codigo: string; nombre: string; stockAnterior: number; stockNuevo: number }[]
+  errores: { fila: number; mensaje: string }[]
 }

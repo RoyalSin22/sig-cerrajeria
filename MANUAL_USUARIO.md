@@ -27,11 +27,24 @@ Entra a **Caja** (desde el menú ☰), pon el monto con el que arrancas el día 
 
 ## Vender
 
-Ve a la pestaña **Venta**. Busca el producto por nombre o código (por ejemplo "KW1" o "chapa yale") y tócalo para agregarlo. Puedes sumar o restar cantidad con los botones `+` y `−`, o quitar el producto del todo con el ícono de basura.
+Ve a la pestaña **Venta**. Busca el producto por nombre o código (por ejemplo "KW1" o "chapa yale") y tócalo para agregarlo. Puedes sumar o restar cantidad con los botones `+` y `−` o escribirla directamente (por ejemplo `25`), o quitar el producto del todo con el ícono de basura.
 
 Abajo aparece el total. Elige cómo te pagan (Efectivo, Yape, Plin, Tarjeta, o Mixto si es una combinación) y toca **Cobrar**.
 
 Si eliges **Mixto**, el sistema te pide cuánto pagaron en cada método — por ejemplo `S/ 20.00` en efectivo y `S/ 15.00` en Yape — y no te deja cobrar hasta que la suma cuadre exactamente con el total.
+
+### Duplicado de llave (sin datos del cliente)
+
+Para un duplicado no hace falta registrar a nadie. Toca **Duplicado de llave** (arriba del buscador), elige la llave (puedes buscarla por nombre o código), pon cuántas copias son y toca **Agregar al carrito**. Se cobra como cualquier venta y una llave virgen sale del stock por cada copia.
+
+Cada llave tiene dos precios, que el Administrador pone en su ficha (Inventario → la llave → Editar):
+
+| Precio | Ejemplo (llave de casa) | Cuándo se cobra |
+|---|---|---|
+| **Precio del duplicado** (material + corte) | S/ 2.50 | Con el botón **Duplicado de llave**, o con **Duplicado** al buscarla en Venta |
+| **Llave sola** | lo que cobres por la llave sin duplicar | Muy rara vez: a otro cerrajero o de adorno. Botón **Sola** al buscarla |
+
+El **precio de compra** (S/ 0.90 en el ejemplo, lo que te cuesta el material) es aparte y no se cobra. Una llave sin precio del duplicado no aparece en **Duplicado de llave**. En el carrito, los duplicados se ven como "Duplicado · Llave de casa".
 
 Si te equivocaste en una venta, un Administrador puede anularla desde **Historial de ventas** (el link está arriba de la pantalla de Venta). Eso devuelve el stock y descuenta el dinero de la caja, siempre que la caja de esa venta siga abierta.
 
@@ -61,9 +74,22 @@ Un servicio realizado ya no se puede cambiar, para no descuadrar la caja de quie
 
 En **Inventario** puedes explorar todo el catálogo sin buscar nada (se muestra por página, con "Cargar más" abajo), o escribir para buscar un producto puntual. El chip "Stock bajo" te muestra solo lo que se está por acabar.
 
-Toca un producto para ver su ficha: ahí puedes subir o cambiar su foto, editar el precio o la marca, y ajustar el stock con los botones `+`/`−` — el sistema te va a pedir un motivo (por ejemplo "conteo físico" o "producto dañado") antes de guardar el ajuste, para que quede registrado por qué cambió.
+Toca un producto para ver su ficha: ahí puedes subir o cambiar su foto, editar el precio o la marca, y ajustar el stock con los botones `+`/`−`, escribiendo la cantidad (por ejemplo `1000` si llegó un millar de llaves) o con los atajos **+100**, **+500** y **+1000**. Antes de guardar ves cuánto queda el stock. El sistema te va a pedir un motivo (por ejemplo "conteo físico" o "producto dañado") antes de guardar el ajuste, para que quede registrado por qué cambió.
 
 Para dar de alta un producto nuevo, toca **Nuevo producto** arriba. Los campos que te pide cambian según el tipo que elijas (una llave virgen pide "perfil", un candado pide "tamaño", etc.).
+
+### Cambiar muchas cantidades con Excel
+
+Para no ajustar producto por producto, el Administrador toca **Cantidades (Excel)** en Inventario:
+
+1. **Descarga el inventario**: baja un archivo con todos los productos (código, nombre, tipo, marca y stock actual) y una columna **cantidad** vacía.
+2. Ábrelo en Excel y escribe la cantidad solo en las filas que quieras cambiar. Las vacías no se tocan.
+3. Guárdalo (Ctrl+S, como CSV) y súbelo eligiendo qué significa el número:
+   - **Lo que conté (reemplaza)**: el número pasa a ser el stock. Sirve para el inventario físico.
+   - **Lo que llegó (se suma)**: el número se suma al stock. Sirve cuando llega mercadería; si además quieres registrar lo que gastaste, usa **Compras** en vez de esto.
+4. Antes de guardar ves cada cambio (por ejemplo `200 → 1200`). Si hay un problema, como un código que no existe o una cantidad con decimales, no se cambia nada hasta que lo corrijas.
+
+Cada cambio queda en el Kárdex del producto con el motivo "Conteo físico (planilla)" o "Mercadería recibida (planilla)".
 
 ### Cargar muchos productos de una vez (Importar)
 
@@ -90,13 +116,27 @@ Bueno saber:
 - El stock que cargues queda en el Kárdex de cada producto como "Stock inicial importado desde archivo".
 - Las columnas que el sistema no reconoce (por ejemplo una de "notas") se ignoran y te avisa cuáles fueron.
 
+### Colores
+
+Los colores de la app están elegidos para leerse bien también con daltonismo (paleta Okabe-Ito en los gráficos y contraste alto en textos y avisos). Los avisos no dependen solo del color: el stock bajo, por ejemplo, lleva un ícono de alerta y la palabra "bajo".
+
 ## Clientes
 
 En **Clientes**, busca por nombre o teléfono, o explora la lista completa si no buscas nada. Toca **Nuevo cliente** para registrar uno. Dentro de la ficha de cada cliente puedes ver su historial de compras y de órdenes de trabajo, y editar sus datos.
 
-## Comprar a un proveedor
+## Comprar a los distribuidores
 
-En **Compras**, elige un proveedor de la lista (o crea uno nuevo ahí mismo), busca el producto, pon cantidad y precio unitario. Si marcas "Pagar de la caja activa", el sistema descuenta el monto de tu caja del día — para eso necesitas tener la caja abierta.
+### La lista de compras
+
+En **Compras → Lista de compras** armas lo que hay que ir a comprar. El botón **Agregar** suma de una vez todo lo que está en stock bajo, con una cantidad sugerida (lo que falta para llegar al doble del mínimo), y con el buscador agregas cualquier otro producto. Cambia las cantidades a mano: por ejemplo, `1000` llaves.
+
+Con **Enviar por WhatsApp** la mandas a tu celular o a quien vaya a comprar, y con **Copiar** la pegas donde quieras. La lista se guarda en el equipo donde la armaste (no se comparte entre la PC y el celular).
+
+### Registrar lo que compraste
+
+Al volver, toca **Ya compré: registrar la compra** en la lista: se abre **Registrar compra** con los productos y cantidades ya puestos. También puedes entrar directo a **Compras** y agregar los productos con el buscador.
+
+Elige el distribuidor (o crea uno nuevo ahí mismo), revisa cantidad y precio unitario de cada producto (el precio viene del precio de compra del producto) y toca **Registrar compra**. Todo se guarda junto: si algo falla, no se guarda nada. Lo comprado sale solo de la lista de compras. Si marcas "Pagar de la caja activa", el total sale de tu caja del día — para eso necesitas tener la caja abierta.
 
 ## Cerrar caja
 

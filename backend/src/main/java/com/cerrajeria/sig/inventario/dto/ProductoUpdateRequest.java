@@ -25,6 +25,8 @@ public record ProductoUpdateRequest(
     String llaveDisenoTematica,
     String productoModelo,
     String productoTamano,
-    String productoMaterial
+    String productoMaterial,
+    /** Solo llaves: lo que se cobra por el duplicado. Vacio: no aparece en "Duplicado de llave". */
+    @PositiveOrZero(message = "El precio del duplicado no puede ser negativo") BigDecimal precioDuplicado
 ) {
 }

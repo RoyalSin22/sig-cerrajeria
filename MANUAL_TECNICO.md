@@ -37,6 +37,10 @@ Todo lo demás en el sistema es CRUD normal. Estas tres son las que realmente de
 
 La importación de inventario desde CSV (`ImportacionProductosService`, `POST /api/v1/productos/importar`) no es una excepción a la regla 2: crea cada producto con `ProductoService.crear()`, así que el stock inicial entra al Kárdex con el motivo "Stock inicial importado desde archivo". Es todo o nada (una transacción, y con un solo error de validación no se crea nada), con `confirmar=false` solo revisa el archivo, y no actualiza productos existentes: un código repetido es un error. El CSV lo lee `LectorCsv`, que tolera lo que produce Excel según la PC (UTF-8 con BOM o Windows-1252, coma o punto y coma, línea `sep=`).
 
+La planilla de cantidades (`PlanillaStockService`, `GET`/`POST /api/v1/productos/planilla`) tampoco: cada fila con cantidad pasa por `ProductoService.ajustarStock()` con el motivo "Conteo físico (planilla)" (modo `CONTEO`, reemplaza el stock) o "Mercadería recibida (planilla)" (modo `ENTRADA`, lo suma), todo o nada y con revisión previa como la importación. La descarga va en Windows-1252 con `sep=;` para que Excel la abra en columnas con cualquier configuración regional, y el código como `="..."` para que Excel no lo convierta en número o fecha.
+
+Las compras de varios productos (`POST /api/v1/compras/lote`) registran cada línea con `CompraService.crear()` dentro de una sola transacción.
+
 Los tests unitarios en `src/test/java/.../{caja,inventario,ordenes}` verifican estas tres reglas por separado, con mocks — no dependen de una base de datos levantada. `ventas/`, `compras/` y `domicilio/` cubren cómo cada módulo las respeta: la anulación de ventas, las compras pagadas de caja y el cobro de servicios a domicilio.
 
 Otras operaciones con dinero, todas con la regla 1:
@@ -63,6 +67,7 @@ Base de datos: Flyway controla el esquema (`ddl-auto: validate` — Hibernate nu
 - `V7` — Yape, Plin y tarjeta por separado en `cajas_diarias` (el cierre se cuadra solo contra el efectivo)
 - `V8` — fecha de cambio de contraseña (invalida las sesiones anteriores)
 - `V9` — cobro de servicios a domicilio, estado `CANCELADO` en órdenes y pagos `DEVOLUCION`
+- `V10` — `productos.precio_duplicado` (material + corte, aparte del precio de la llave sola; `NULL` = no se ofrece como duplicado, y a las `LLAVE_VIRGEN` existentes se les copió su precio de venta) y `detalle_ventas.es_duplicado`. `ItemVentaRequest.duplicado` elige qué precio cobra `VentaService`
 
 Una migración nueva nunca edita una anterior: Flyway valida el checksum de las ya aplicadas y la app no arranca si cambian.
 
