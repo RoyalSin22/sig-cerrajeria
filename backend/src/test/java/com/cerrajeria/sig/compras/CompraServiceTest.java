@@ -5,6 +5,7 @@ import com.cerrajeria.sig.caja.CajaService;
 import com.cerrajeria.sig.common.MetodoPago;
 import com.cerrajeria.sig.common.exception.CajaNoAbiertaException;
 import com.cerrajeria.sig.compras.dto.CompraCreateRequest;
+import com.cerrajeria.sig.compras.dto.CompraLoteRequest;
 import com.cerrajeria.sig.inventario.Producto;
 import com.cerrajeria.sig.inventario.ProductoService;
 import com.cerrajeria.sig.inventario.ReferenciaTipo;
@@ -22,8 +23,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -97,5 +100,22 @@ class CompraServiceTest {
         assertThatThrownBy(() -> compraService.crear(new CompraCreateRequest(1L, 9L, 4, BigDecimal.TEN, true)))
             .isInstanceOf(CajaNoAbiertaException.class);
         verify(productoService, never()).incrementarStock(anyLong(), anyInt(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Compra de varios productos: cada uno entra por el Kárdex y la caja paga cada línea")
+    void compraDeVarios() {
+        CajaDiaria caja = new CajaDiaria();
+        when(cajaService.obtenerCajaAbiertaEntidad()).thenReturn(caja);
+
+        var respuestas = compraService.crearLote(new CompraLoteRequest(1L, List.of(
+            new CompraLoteRequest.Item(9L, 100, new BigDecimal("0.80")),
+            new CompraLoteRequest.Item(12L, 3, new BigDecimal("18.00"))), true));
+
+        assertThat(respuestas).hasSize(2);
+        verify(productoService).incrementarStock(9L, 100, ReferenciaTipo.COMPRA, null);
+        verify(productoService).incrementarStock(12L, 3, ReferenciaTipo.COMPRA, null);
+        verify(cajaService).sumarEgresoACajaActiva(caja, new BigDecimal("80.00"), MetodoPago.EFECTIVO);
+        verify(cajaService).sumarEgresoACajaActiva(caja, new BigDecimal("54.00"), MetodoPago.EFECTIVO);
     }
 }

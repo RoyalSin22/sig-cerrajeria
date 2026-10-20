@@ -119,11 +119,7 @@ public class ImportacionProductosService {
         if (archivo == null || archivo.length == 0) {
             throw new IllegalArgumentException("El archivo está vacío");
         }
-        if (archivo.length >= 2 && archivo[0] == 'P' && archivo[1] == 'K') {
-            // .xlsx/.ods son ZIP: se reconocen por la firma "PK" del inicio
-            throw new IllegalArgumentException(
-                "Es un libro de Excel, no un CSV. En Excel usa Archivo → Guardar como → \"CSV UTF-8\" y sube ese archivo.");
-        }
+        LectorCsv.rechazarLibroExcel(archivo);
 
         List<List<String>> registros = LectorCsv.leer(archivo);
         int indiceCabecera = 0;

@@ -22,6 +22,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     Page<Producto> findByActivoTrueAndTipoProductoOrderByNombreAsc(TipoProducto tipoProducto, Pageable pageable);
 
+    /** Todo el catalogo activo, para descargarlo como planilla. */
+    List<Producto> findByActivoTrueOrderByTipoProductoAscNombreAsc();
+
+    List<Producto> findByCodigoIn(java.util.Collection<String> codigos);
+
     /**
      * Busqueda instantanea (RF-46), aprovechando los indices GIN + pg_trgm
      * creados en la Fase 6 sobre nombre y codigo. Se mantiene acotada a 20

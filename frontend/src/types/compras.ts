@@ -21,6 +21,12 @@ export interface CompraCreateRequest {
   pagarDeCaja: boolean
 }
 
+export interface CompraLoteRequest {
+  proveedorId: number
+  items: { productoId: number; cantidad: number; precioUnitario: number }[]
+  pagarDeCaja: boolean
+}
+
 export interface CompraResponse {
   id: number
   proveedor: string

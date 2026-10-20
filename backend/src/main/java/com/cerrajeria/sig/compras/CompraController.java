@@ -1,6 +1,7 @@
 package com.cerrajeria.sig.compras;
 
 import com.cerrajeria.sig.compras.dto.CompraCreateRequest;
+import com.cerrajeria.sig.compras.dto.CompraLoteRequest;
 import com.cerrajeria.sig.compras.dto.CompraResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +25,13 @@ public class CompraController {
     @Operation(summary = "Registrar una compra a proveedor (RF-27 a RF-29)")
     public ResponseEntity<CompraResponse> crear(@Valid @RequestBody CompraCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(compraService.crear(request));
+    }
+
+    @PostMapping("/lote")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Registrar varios productos comprados al mismo proveedor, todos o ninguno")
+    public ResponseEntity<java.util.List<CompraResponse>> crearLote(@Valid @RequestBody CompraLoteRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(compraService.crearLote(request));
     }
 
     @GetMapping

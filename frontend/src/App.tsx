@@ -16,6 +16,7 @@ const Clientes = lazy(() => import('./pages/Clientes').then((m) => ({ default: m
 const Taller = lazy(() => import('./pages/Taller').then((m) => ({ default: m.Taller })))
 const Domicilio = lazy(() => import('./pages/Domicilio').then((m) => ({ default: m.Domicilio })))
 const Compras = lazy(() => import('./pages/Compras').then((m) => ({ default: m.Compras })))
+const ListaCompras = lazy(() => import('./pages/ListaCompras').then((m) => ({ default: m.ListaCompras })))
 const HistorialCompras = lazy(() => import('./pages/HistorialCompras').then((m) => ({ default: m.HistorialCompras })))
 const Proveedores = lazy(() => import('./pages/Proveedores').then((m) => ({ default: m.Proveedores })))
 const Reportes = lazy(() => import('./pages/Reportes').then((m) => ({ default: m.Reportes })))
@@ -47,6 +48,7 @@ export default function App() {
       <Route path="/clientes" element={<ConLayout><Clientes /></ConLayout>} />
       <Route path="/compras" element={<ConLayout><Compras /></ConLayout>} />
       <Route path="/compras/historial" element={<ConLayout><HistorialCompras /></ConLayout>} />
+      <Route path="/compras/lista" element={<ConLayout><ListaCompras /></ConLayout>} />
       <Route path="/proveedores" element={<ConLayout><Proveedores /></ConLayout>} />
       <Route path="/caja" element={<ConLayout><Caja /></ConLayout>} />
       <Route path="/caja/historial" element={<ConLayout><HistorialCaja /></ConLayout>} />

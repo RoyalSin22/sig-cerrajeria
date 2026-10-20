@@ -3,6 +3,7 @@ import type { Pagina } from '../types/pagina'
 import type {
   ProductoResponse, ProductoCreateRequest, ProductoUpdateRequest,
   AjusteStockRequest, MovimientoInventarioResponse, TipoProducto, ImportacionResultado,
+  ActualizacionStockResultado, ModoPlanilla,
 } from '../types/productos'
 
 export const productosApi = {
@@ -34,6 +35,17 @@ export const productosApi = {
     formData.append('archivo', archivo)
     return axiosClient
       .post<ImportacionResultado>('/productos/importar', formData, { params: { confirmar } })
+      .then(r => r.data)
+  },
+  /** Todo el inventario como CSV para Excel, con la columna "cantidad" vacia. */
+  descargarPlanilla: () =>
+    axiosClient.get<Blob>('/productos/planilla', { responseType: 'blob' }).then(r => r.data),
+  /** CONTEO reemplaza el stock, ENTRADA lo suma. Con confirmar=false solo revisa. */
+  subirPlanilla: (archivo: File, modo: ModoPlanilla, confirmar: boolean) => {
+    const formData = new FormData()
+    formData.append('archivo', archivo)
+    return axiosClient
+      .post<ActualizacionStockResultado>('/productos/planilla', formData, { params: { modo, confirmar } })
       .then(r => r.data)
   },
 }

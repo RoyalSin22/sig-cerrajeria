@@ -69,6 +69,19 @@ Toca un producto para ver su ficha: ahí puedes subir o cambiar su foto, editar 
 
 Para dar de alta un producto nuevo, toca **Nuevo producto** arriba. Los campos que te pide cambian según el tipo que elijas (una llave virgen pide "perfil", un candado pide "tamaño", etc.).
 
+### Cambiar muchas cantidades con Excel
+
+Para no ajustar producto por producto, el Administrador toca **Cantidades (Excel)** en Inventario:
+
+1. **Descarga el inventario**: baja un archivo con todos los productos (código, nombre, tipo, marca y stock actual) y una columna **cantidad** vacía.
+2. Ábrelo en Excel y escribe la cantidad solo en las filas que quieras cambiar. Las vacías no se tocan.
+3. Guárdalo (Ctrl+S, como CSV) y súbelo eligiendo qué significa el número:
+   - **Lo que conté (reemplaza)**: el número pasa a ser el stock. Sirve para el inventario físico.
+   - **Lo que llegó (se suma)**: el número se suma al stock. Sirve cuando llega mercadería; si además quieres registrar lo que gastaste, usa **Compras** en vez de esto.
+4. Antes de guardar ves cada cambio (por ejemplo `200 → 1200`). Si hay un problema, como un código que no existe o una cantidad con decimales, no se cambia nada hasta que lo corrijas.
+
+Cada cambio queda en el Kárdex del producto con el motivo "Conteo físico (planilla)" o "Mercadería recibida (planilla)".
+
 ### Cargar muchos productos de una vez (Importar)
 
 Si tienes tu inventario en Excel, el Administrador puede cargarlo todo junto con el botón **Importar**:
@@ -102,9 +115,19 @@ Los colores de la app están elegidos para leerse bien también con daltonismo (
 
 En **Clientes**, busca por nombre o teléfono, o explora la lista completa si no buscas nada. Toca **Nuevo cliente** para registrar uno. Dentro de la ficha de cada cliente puedes ver su historial de compras y de órdenes de trabajo, y editar sus datos.
 
-## Comprar a un proveedor
+## Comprar a los distribuidores
 
-En **Compras**, elige un proveedor de la lista (o crea uno nuevo ahí mismo), busca el producto, pon cantidad y precio unitario. Si marcas "Pagar de la caja activa", el sistema descuenta el monto de tu caja del día — para eso necesitas tener la caja abierta.
+### La lista de compras
+
+En **Compras → Lista de compras** armas lo que hay que ir a comprar. El botón **Agregar** suma de una vez todo lo que está en stock bajo, con una cantidad sugerida (lo que falta para llegar al doble del mínimo), y con el buscador agregas cualquier otro producto. Cambia las cantidades a mano: por ejemplo, `1000` llaves.
+
+Con **Enviar por WhatsApp** la mandas a tu celular o a quien vaya a comprar, y con **Copiar** la pegas donde quieras. La lista se guarda en el equipo donde la armaste (no se comparte entre la PC y el celular).
+
+### Registrar lo que compraste
+
+Al volver, toca **Ya compré: registrar la compra** en la lista: se abre **Registrar compra** con los productos y cantidades ya puestos. También puedes entrar directo a **Compras** y agregar los productos con el buscador.
+
+Elige el distribuidor (o crea uno nuevo ahí mismo), revisa cantidad y precio unitario de cada producto (el precio viene del precio de compra del producto) y toca **Registrar compra**. Todo se guarda junto: si algo falla, no se guarda nada. Lo comprado sale solo de la lista de compras. Si marcas "Pagar de la caja activa", el total sale de tu caja del día — para eso necesitas tener la caja abierta.
 
 ## Cerrar caja
 

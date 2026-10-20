@@ -5,6 +5,7 @@ import com.cerrajeria.sig.caja.CajaDiaria;
 import com.cerrajeria.sig.caja.CajaService;
 import com.cerrajeria.sig.common.exception.RecursoNoEncontradoException;
 import com.cerrajeria.sig.compras.dto.CompraCreateRequest;
+import com.cerrajeria.sig.compras.dto.CompraLoteRequest;
 import com.cerrajeria.sig.compras.dto.CompraResponse;
 import com.cerrajeria.sig.inventario.Producto;
 import com.cerrajeria.sig.inventario.ProductoService;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /** RF-27 a RF-29: toda compra actualiza el inventario y genera Kardex (regla de negocio 2). */
 @Service
@@ -35,6 +37,8 @@ public class CompraService {
 
         Compra compra = new Compra();
         compra.setProveedor(proveedor);
+        // producto_id es NOT NULL: va antes del primer save (con IDENTITY el INSERT es inmediato)
+        compra.setProducto(productoService.buscarEntidadPorId(request.productoId()));
         compra.setCantidad(request.cantidad());
         compra.setPrecioUnitario(request.precioUnitario());
         compra.setUsuario(usuarioActual());
@@ -53,10 +57,17 @@ public class CompraService {
         // Regla de negocio 2: toda entrada de stock genera Kardex.
         Producto producto = productoService.incrementarStock(
             request.productoId(), request.cantidad(), ReferenciaTipo.COMPRA, compra.getId());
-        compra.setProducto(producto);
-        compra = compraRepository.save(compra);
 
         return toResponse(compra, proveedor.getNombre(), producto.getNombre(), total);
+    }
+
+    /** Varias compras al mismo proveedor en una transaccion: todas o ninguna. */
+    @Transactional
+    public List<CompraResponse> crearLote(CompraLoteRequest request) {
+        return request.items().stream()
+            .map(i -> crear(new CompraCreateRequest(
+                request.proveedorId(), i.productoId(), i.cantidad(), i.precioUnitario(), request.pagarDeCaja())))
+            .toList();
     }
 
     /** Listado paginado de compras. */

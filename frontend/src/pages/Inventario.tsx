@@ -17,6 +17,7 @@ import { formatearSoles, formatearFechaHora, urlImagen } from '../utils/format'
 import {
   ETIQUETA_TIPO_PRODUCTO, type ProductoResponse, type MovimientoInventarioResponse,
   type ProductoCreateRequest, type TipoProducto, type ImportacionResultado,
+  type ActualizacionStockResultado, type ModoPlanilla,
 } from '../types/productos'
 
 type Filtro = 'TODAS' | 'STOCK_BAJO'
@@ -25,6 +26,7 @@ export function Inventario() {
   const { notificar } = useToast()
   const { usuario } = useAuth()
   const [mostrarImportar, setMostrarImportar] = useState(false)
+  const [mostrarPlanilla, setMostrarPlanilla] = useState(false)
   const [productos, setProductos] = useState<ProductoResponse[]>([])
   const [termino, setTermino] = useState('')
   const [filtro, setFiltro] = useState<Filtro>('TODAS')
@@ -67,9 +69,12 @@ export function Inventario() {
   return (
     <div className="flex flex-col gap-4">
       <PullToRefreshIndicator distancia={distancia} refrescando={refrescando} umbral={umbral} />
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-heading text-2xl font-semibold">Inventario</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {usuario?.role === 'ROLE_ADMIN' && (
+            <Button variant="secondary" onClick={() => setMostrarPlanilla(true)}>Cantidades (Excel)</Button>
+          )}
           {usuario?.role === 'ROLE_ADMIN' && (
             <Button variant="secondary" onClick={() => setMostrarImportar(true)}>Importar</Button>
           )}
@@ -136,6 +141,16 @@ export function Inventario() {
           notificar('Producto creado: ' + p.nombre)
           setProductos((prev) => [p, ...prev])
           setMostrarAlta(false)
+        }}
+      />
+
+      <PlanillaCantidades
+        abierto={mostrarPlanilla}
+        onCerrar={() => setMostrarPlanilla(false)}
+        onAplicada={(actualizados) => {
+          notificar(actualizados === 1 ? '1 producto actualizado' : `${actualizados} productos actualizados`)
+          setMostrarPlanilla(false)
+          cargar(0, false)
         }}
       />
 
@@ -679,6 +694,169 @@ function ImportarInventario({
         {listo && (
           <Button onClick={confirmar} disabled={trabajando}>
             {trabajando ? 'Importando…' : `Importar ${revision.productos.length} productos`}
+          </Button>
+        )}
+      </div>
+    </BottomSheet>
+  )
+}
+
+/**
+ * Planilla de cantidades: se descarga todo el inventario, se llena la columna
+ * "cantidad" en Excel y se sube. "Conteo" reemplaza el stock (lo que hay en el
+ * estante) y "Llegó mercadería" lo suma. Cada cambio queda en el Kárdex.
+ */
+function PlanillaCantidades({
+  abierto, onCerrar, onAplicada,
+}: { abierto: boolean; onCerrar: () => void; onAplicada: (actualizados: number) => void }) {
+  const [modo, setModo] = useState<ModoPlanilla>('CONTEO')
+  const [archivo, setArchivo] = useState<File | null>(null)
+  const [revision, setRevision] = useState<ActualizacionStockResultado | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [trabajando, setTrabajando] = useState(false)
+
+  function cerrar() {
+    setArchivo(null)
+    setRevision(null)
+    setError(null)
+    onCerrar()
+  }
+
+  async function descargar() {
+    setError(null)
+    try {
+      const blob = await productosApi.descargarPlanilla()
+      const url = URL.createObjectURL(blob)
+      const enlace = document.createElement('a')
+      enlace.href = url
+      enlace.download = 'inventario.csv'
+      enlace.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    }
+  }
+
+  async function revisar(elegido: File, modoElegido: ModoPlanilla) {
+    setRevision(null)
+    setError(null)
+    setTrabajando(true)
+    try {
+      setRevision(await productosApi.subirPlanilla(elegido, modoElegido, false))
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setTrabajando(false)
+    }
+  }
+
+  function elegirArchivo(e: ChangeEvent<HTMLInputElement>) {
+    const elegido = e.target.files?.[0]
+    e.target.value = '' // permite volver a elegir el mismo archivo tras corregirlo
+    if (!elegido) return
+    setArchivo(elegido)
+    revisar(elegido, modo)
+  }
+
+  function cambiarModo(nuevo: ModoPlanilla) {
+    setModo(nuevo)
+    if (archivo) revisar(archivo, nuevo) // la vista previa depende del modo
+  }
+
+  async function confirmar() {
+    if (!archivo) return
+    setTrabajando(true)
+    setError(null)
+    try {
+      const resultado = await productosApi.subirPlanilla(archivo, modo, true)
+      if (resultado.errores.length > 0) {
+        setRevision(resultado)
+      } else {
+        setArchivo(null)
+        setRevision(null)
+        onAplicada(resultado.actualizados)
+      }
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setTrabajando(false)
+    }
+  }
+
+  const listo = revision !== null && revision.errores.length === 0 && revision.cambios.length > 0
+
+  return (
+    <BottomSheet abierto={abierto} onCerrar={cerrar} titulo="Cantidades con Excel">
+      <div className="flex flex-col gap-4 text-sm">
+        <ol className="list-decimal space-y-1 pl-5 text-sub">
+          <li>
+            <button type="button" onClick={descargar} className="text-steel underline">Descarga el inventario</button>{' '}
+            y ábrelo en Excel.
+          </li>
+          <li>Escribe en la columna <b>cantidad</b> solo lo que quieras cambiar; las filas vacías no se tocan.</li>
+          <li>Guarda (Ctrl+S, como CSV) y elige el archivo: primero ves los cambios y nada se guarda hasta que confirmes.</li>
+        </ol>
+
+        <div className="flex flex-col gap-1">
+          <span className="font-medium">El número de la columna cantidad es…</span>
+          <div className="flex flex-wrap gap-2">
+            <Chip activo={modo === 'CONTEO'} onClick={() => cambiarModo('CONTEO')}>Lo que conté (reemplaza)</Chip>
+            <Chip activo={modo === 'ENTRADA'} onClick={() => cambiarModo('ENTRADA')}>Lo que llegó (se suma)</Chip>
+          </div>
+          <p className="text-xs text-sub">
+            {modo === 'CONTEO'
+              ? 'Ej.: hay 200 y escribes 850 → el stock queda en 850.'
+              : 'Ej.: hay 200 y escribes 1000 → el stock queda en 1200. Para registrar el gasto, usa Compras.'}
+          </p>
+        </div>
+
+        <label className="cursor-pointer self-start">
+          <span className="inline-flex min-h-11 items-center rounded-md border border-line px-4 py-2.5 font-medium hover:bg-hair">
+            {trabajando && !revision ? 'Revisando…' : archivo ? 'Elegir otro archivo' : 'Elegir archivo CSV'}
+          </span>
+          <input type="file" accept=".csv,text/csv" className="hidden" disabled={trabajando} onChange={elegirArchivo} />
+        </label>
+        {archivo && <p className="text-xs text-sub">{archivo.name}</p>}
+
+        {revision && (
+          revision.errores.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <p className="font-medium text-danger">
+                {revision.errores.length === 1 ? 'Hay 1 problema' : `Hay ${revision.errores.length} problemas`}.
+                Corrígelos en Excel y vuelve a elegir el archivo (no se cambió nada):
+              </p>
+              <ul className="max-h-60 overflow-y-auto rounded-md border border-hair">
+                {revision.errores.slice(0, 100).map((e, i) => (
+                  <li key={i} className="border-b border-hair px-3 py-1.5 last:border-0">
+                    {e.fila > 0 && <span className="font-medium">Fila {e.fila}: </span>}
+                    {e.mensaje}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p className="font-medium">
+                {revision.cambios.length === 1 ? '1 producto cambia' : `${revision.cambios.length} productos cambian`}
+                {revision.sinCambio > 0 && <span className="font-normal text-sub"> · {revision.sinCambio} ya estaban bien</span>}
+              </p>
+              <ul className="max-h-60 overflow-y-auto rounded-md border border-hair">
+                {revision.cambios.slice(0, 100).map((c) => (
+                  <li key={c.fila} className="flex items-center justify-between gap-2 border-b border-hair px-3 py-1.5 last:border-0">
+                    <span className="min-w-0 truncate"><span className="text-sub">{c.codigo}</span> · {c.nombre}</span>
+                    <span className="shrink-0 font-medium">{c.stockAnterior} → {c.stockNuevo}</span>
+                  </li>
+                ))}
+              </ul>
+              {revision.cambios.length > 100 && <p className="text-xs text-sub">…y {revision.cambios.length - 100} más.</p>}
+            </div>
+          )
+        )}
+
+        {error && <p className="text-danger">{error}</p>}
+        {listo && (
+          <Button onClick={confirmar} disabled={trabajando}>
+            {trabajando ? 'Guardando…' : `Actualizar ${revision.cambios.length} productos`}
           </Button>
         )}
       </div>

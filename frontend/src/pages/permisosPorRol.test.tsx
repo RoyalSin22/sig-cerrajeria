@@ -3,6 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { Inventario } from './Inventario'
 import { Compras } from './Compras'
+import { ListaCompras } from './ListaCompras'
 
 /**
  * El backend rechaza con 403 lo que es solo del administrador; el frontend no
@@ -20,7 +21,9 @@ vi.mock('../api/productos', () => ({
   productosApi: {
     listar: vi.fn().mockResolvedValue({ content: [], page: { number: 0, size: 20, totalElements: 0, totalPages: 0 } }),
     buscar: vi.fn().mockResolvedValue([]),
-    stockBajo: vi.fn().mockResolvedValue([]),
+    stockBajo: vi.fn().mockResolvedValue([{
+      id: 7, codigo: 'KW1', nombre: 'Llave KW1', cantidadStock: 30, stockMinimo: 100, precioCompra: 0.8,
+    }]),
   },
 }))
 vi.mock('../api/compras', () => ({
@@ -41,6 +44,7 @@ describe('permisos por rol', () => {
     renderizar(<Inventario />)
     expect(await screen.findByRole('button', { name: 'Nuevo producto' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Importar' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Cantidades (Excel)' })).toBeTruthy()
   })
 
   it('Inventario: el empleado no los ve', async () => {
@@ -49,6 +53,7 @@ describe('permisos por rol', () => {
     expect(await screen.findByRole('heading', { name: 'Inventario' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Nuevo producto' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Importar' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Cantidades (Excel)' })).toBeNull()
   })
 
   it('Compras: el administrador ve el formulario de registro', async () => {
@@ -61,5 +66,20 @@ describe('permisos por rol', () => {
     renderizar(<Compras />)
     expect(await screen.findByText(/Solo el administrador registra compras/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Registrar compra' })).toBeNull()
+  })
+
+  it('Lista de compras: ofrece lo que está en stock bajo; solo el administrador pasa a registrar la compra', async () => {
+    localStorage.clear()
+    renderizar(<ListaCompras />)
+    ;(await screen.findByRole('button', { name: 'Agregar' })).click()
+    const cantidad = await screen.findByLabelText('Cantidad a comprar de Llave KW1')
+    expect((cantidad as HTMLInputElement).value).toBe('170') // hasta el doble del mínimo
+    expect(screen.getByRole('button', { name: /registrar la compra/ })).toBeTruthy()
+
+    cleanup()
+    rol = 'ROLE_EMPLOYEE'
+    renderizar(<ListaCompras />)
+    expect(await screen.findByLabelText('Cantidad a comprar de Llave KW1')).toBeTruthy() // quedó guardada
+    expect(screen.queryByRole('button', { name: /registrar la compra/ })).toBeNull()
   })
 })

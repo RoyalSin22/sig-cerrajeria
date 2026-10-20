@@ -90,3 +90,14 @@ export interface ImportacionResultado {
   errores: { fila: number; mensaje: string }[]
   columnasIgnoradas: string[]
 }
+
+export type ModoPlanilla = 'CONTEO' | 'ENTRADA'
+
+/** Refleja inventario.dto.ActualizacionStockResultado */
+export interface ActualizacionStockResultado {
+  filasConCantidad: number
+  actualizados: number
+  sinCambio: number
+  cambios: { fila: number; codigo: string; nombre: string; stockAnterior: number; stockNuevo: number }[]
+  errores: { fila: number; mensaje: string }[]
+}
