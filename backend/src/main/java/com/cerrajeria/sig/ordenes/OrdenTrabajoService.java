@@ -7,6 +7,12 @@ import com.cerrajeria.sig.clientes.ClienteRepository;
 import com.cerrajeria.sig.common.MetodoPago;
 import com.cerrajeria.sig.common.audit.AuditAccion;
 import com.cerrajeria.sig.common.audit.AuditLogService;
+import com.cerrajeria.sig.common.audit.DetalleAuditoria;
+import com.cerrajeria.sig.inventario.ProductoService;
+import com.cerrajeria.sig.inventario.ReferenciaTipo;
+import com.cerrajeria.sig.ordenes.dto.GarantiaRequest;
+import com.cerrajeria.sig.ordenes.dto.MaterialOrdenRequest;
+import com.cerrajeria.sig.ordenes.dto.MaterialOrdenResponse;
 import com.cerrajeria.sig.common.exception.RecursoNoEncontradoException;
 import com.cerrajeria.sig.common.exception.SaldoPendienteException;
 import com.cerrajeria.sig.usuarios.Usuario;
@@ -39,6 +45,7 @@ public class OrdenTrabajoService {
     private final UsuarioRepository usuarioRepository;
     private final CajaService cajaService;
     private final AuditLogService auditLogService;
+    private final ProductoService productoService;
 
     @Transactional
     public OrdenTrabajoResponse crear(OrdenTrabajoCreateRequest request) {
@@ -119,12 +126,14 @@ public class OrdenTrabajoService {
                     + ". Use el endpoint de entrega con liquidación.");
         }
 
+        EstadoOrden anterior = orden.getEstado();
         orden.setEstado(nuevoEstado);
         if (nuevoEstado == EstadoOrden.ENTREGADO) {
             orden.setFechaEntrega(java.time.LocalDateTime.now());
         }
         orden = ordenTrabajoRepository.save(orden);
-        auditLogService.registrar(usuarioActual(), AuditAccion.CAMBIO_ESTADO, "OrdenTrabajo", orden.getId());
+        auditLogService.registrar(usuarioActual(), AuditAccion.CAMBIO_ESTADO, "OrdenTrabajo", orden.getId(),
+            DetalleAuditoria.de("Orden " + orden.getNumeroOrden()).cambio("estado", anterior, nuevoEstado));
         return toResponse(orden);
     }
 
@@ -158,10 +167,14 @@ public class OrdenTrabajoService {
             registrarPago(orden, pagoOpcional.monto(), TipoPagoOrden.LIQUIDACION, parseMetodoPago(pagoOpcional.metodoPago()));
         }
 
+        EstadoOrden anterior = orden.getEstado();
         orden.setEstado(EstadoOrden.ENTREGADO);
         orden.setFechaEntrega(java.time.LocalDateTime.now());
         orden = ordenTrabajoRepository.save(orden);
-        auditLogService.registrar(usuarioActual(), AuditAccion.CAMBIO_ESTADO, "OrdenTrabajo", orden.getId());
+        auditLogService.registrar(usuarioActual(), AuditAccion.CAMBIO_ESTADO, "OrdenTrabajo", orden.getId(),
+            DetalleAuditoria.de("Orden " + orden.getNumeroOrden() + " entregada"
+                    + (saldo.signum() > 0 ? " liquidando S/ " + saldo : ""))
+                .cambio("estado", anterior, EstadoOrden.ENTREGADO));
         return toResponse(orden);
     }
 
@@ -195,11 +208,70 @@ public class OrdenTrabajoService {
             cajaService.sumarEgresoACajaActiva(caja, pagado, metodo);
         }
 
+        EstadoOrden anterior = orden.getEstado();
         orden.setEstado(EstadoOrden.CANCELADO);
         orden.setMotivoCancelacion(request.motivo().trim());
         orden = ordenTrabajoRepository.save(orden);
-        auditLogService.registrar(usuarioActual(), AuditAccion.CAMBIO_ESTADO, "OrdenTrabajo", orden.getId());
+        auditLogService.registrar(usuarioActual(), AuditAccion.CAMBIO_ESTADO, "OrdenTrabajo", orden.getId(),
+            DetalleAuditoria.de("Orden " + orden.getNumeroOrden() + " cancelada"
+                    + (request.devolverAdelanto() && pagado.signum() > 0 ? ", devolviendo S/ " + pagado : ""))
+                .motivo(orden.getMotivoCancelacion())
+                .cambio("estado", anterior, EstadoOrden.CANCELADO));
         return toResponse(orden);
+    }
+
+    /**
+     * El cliente vuelve porque algo fallo: se abre una orden nueva sin cobro,
+     * ligada a la original ya entregada. Precio 0, asi que no pide caja ni
+     * mueve dinero; el material que se use sale del stock con
+     * {@link #usarMaterial} como en cualquier orden.
+     */
+    @Transactional
+    public OrdenTrabajoResponse abrirGarantia(Long id, GarantiaRequest request) {
+        OrdenTrabajo original = buscarPorId(id);
+        if (original.getEstado() != EstadoOrden.ENTREGADO) {
+            throw new IllegalArgumentException(
+                "Solo se abre una garantía sobre una orden entregada (" + original.getNumeroOrden() + " está "
+                    + original.getEstado().name().toLowerCase().replace('_', ' ') + ")");
+        }
+
+        OrdenTrabajo garantia = new OrdenTrabajo();
+        garantia.setCliente(original.getCliente());
+        garantia.setNumeroOrden("OT-" + String.format("%06d", ordenTrabajoRepository.siguienteNumeroSecuencia()));
+        garantia.setProductoRecibido(original.getProductoRecibido());
+        garantia.setProblema(request.problema().trim());
+        garantia.setObservaciones(request.observaciones());
+        garantia.setPrecioTotal(BigDecimal.ZERO);
+        garantia.setGarantia(true);
+        garantia.setOrdenOrigen(original);
+        garantia.setUsuario(usuarioActual());
+        garantia = ordenTrabajoRepository.save(garantia);
+
+        long dias = java.time.temporal.ChronoUnit.DAYS.between(
+            original.getFechaEntrega() != null ? original.getFechaEntrega() : original.getFechaIngreso(),
+            java.time.LocalDateTime.now());
+        auditLogService.registrar(garantia.getUsuario(), AuditAccion.GARANTIA, "OrdenTrabajo", garantia.getId(),
+            DetalleAuditoria.de("Garantía " + garantia.getNumeroOrden() + " de la orden " + original.getNumeroOrden()
+                + ", entregada hace " + dias + (dias == 1 ? " día" : " días")).motivo(garantia.getProblema()));
+        return toResponse(garantia);
+    }
+
+    /** Material del inventario usado en la orden: sale del stock por el Kardex (regla de negocio 2). */
+    @Transactional
+    public List<MaterialOrdenResponse> usarMaterial(Long id, MaterialOrdenRequest request) {
+        OrdenTrabajo orden = buscarPorId(id);
+        exigirNoFinal(orden);
+        productoService.descontarStock(request.productoId(), request.cantidad(), ReferenciaTipo.ORDEN_TRABAJO, orden.getId());
+        return materiales(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MaterialOrdenResponse> materiales(Long id) {
+        buscarPorId(id);
+        return productoService.movimientosDe(ReferenciaTipo.ORDEN_TRABAJO, id).stream()
+            .map(m -> new MaterialOrdenResponse(m.getProducto().getId(), m.getProducto().getCodigo(),
+                m.getProducto().getNombre(), -m.getCantidad(), m.getUsuario().getNombre(), m.getFechaHora()))
+            .toList();
     }
 
     private static void exigirNoCancelada(OrdenTrabajo orden) {
@@ -249,7 +321,9 @@ public class OrdenTrabajoService {
             orden.getFechaPrometida(),
             orden.getFechaEntrega(),
             orden.getObservaciones(),
-            orden.getMotivoCancelacion()
+            orden.getMotivoCancelacion(),
+            orden.isGarantia(),
+            orden.getOrdenOrigen() == null ? null : orden.getOrdenOrigen().getNumeroOrden()
         );
     }
 

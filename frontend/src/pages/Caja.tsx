@@ -14,6 +14,7 @@ export function Caja() {
   const { notificar } = useToast()
   const [montoApertura, setMontoApertura] = useState('')
   const [montoContado, setMontoContado] = useState('')
+  const [observacion, setObservacion] = useState('')
   const [resultadoCierre, setResultadoCierre] = useState<CierreCajaResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
@@ -40,18 +41,24 @@ export function Caja() {
     setError(null)
     setCargando(true)
     try {
-      const body: CierreCajaRequest = { montoContado: Number(montoContado) }
+      const body: CierreCajaRequest = { montoContado: Number(montoContado), observacion: observacion.trim() || undefined }
       const res = await axiosClient.post<CierreCajaResponse>('/caja/cerrar', body)
       setResultadoCierre(res.data)
       await refrescarCaja()
       notificar('Caja cerrada')
       setMontoContado('')
+      setObservacion('')
     } catch (err) {
       setError(extraerMensajeError(err))
     } finally {
       setCargando(false)
     }
   }
+
+  // Se calcula mientras se escribe: si no cuadra, el backend exige explicar por que
+  const diferencia = montoContado !== '' && caja
+    ? Math.round((Number(montoContado) - caja.efectivoEsperado) * 100) / 100
+    : null
 
   if (!cajaAbierta) {
     return (
@@ -123,6 +130,29 @@ export function Caja() {
               className="w-full rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel"
             />
           </div>
+          {diferencia !== null && (
+            diferencia === 0 ? (
+              <p className="text-sm font-medium text-success">Cuadra con el efectivo esperado.</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-warning">
+                  {diferencia < 0 ? 'Faltan' : 'Sobran'} {formatearSoles(Math.abs(diferencia))} respecto al efectivo esperado
+                  ({formatearSoles(caja!.efectivoEsperado)}).
+                </p>
+                <label className="flex flex-col gap-1 text-sm font-medium">
+                  ¿Qué pasó?
+                  <textarea
+                    required
+                    rows={2}
+                    value={observacion}
+                    onChange={(e) => setObservacion(e.target.value)}
+                    placeholder="Ej.: se dio mal un vuelto, se pagó un delivery del cajón…"
+                    className="rounded-md border border-line bg-paper px-3 py-2 text-sm font-normal outline-none focus:border-steel"
+                  />
+                </label>
+              </div>
+            )
+          )}
           {error && <p className="text-sm text-danger">{error}</p>}
           <Button type="submit" variant="danger" disabled={cargando} className="w-full">
             {cargando ? 'Cerrando…' : 'Cerrar caja'}

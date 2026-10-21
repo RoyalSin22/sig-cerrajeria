@@ -68,6 +68,27 @@ public class OrdenTrabajoController {
         return ResponseEntity.ok(ordenTrabajoService.cancelar(id, request));
     }
 
+    @PostMapping("/{id}/garantia")
+    @Operation(summary = "Abrir una garantía (orden sin cobro) sobre una orden entregada")
+    public ResponseEntity<OrdenTrabajoResponse> garantia(
+            @PathVariable Long id, @Valid @RequestBody com.cerrajeria.sig.ordenes.dto.GarantiaRequest request) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+            .body(ordenTrabajoService.abrirGarantia(id, request));
+    }
+
+    @GetMapping("/{id}/materiales")
+    @Operation(summary = "Material del inventario usado en la orden")
+    public ResponseEntity<List<com.cerrajeria.sig.ordenes.dto.MaterialOrdenResponse>> materiales(@PathVariable Long id) {
+        return ResponseEntity.ok(ordenTrabajoService.materiales(id));
+    }
+
+    @PostMapping("/{id}/materiales")
+    @Operation(summary = "Registrar material usado en la orden: sale del stock por el Kárdex")
+    public ResponseEntity<List<com.cerrajeria.sig.ordenes.dto.MaterialOrdenResponse>> usarMaterial(
+            @PathVariable Long id, @Valid @RequestBody com.cerrajeria.sig.ordenes.dto.MaterialOrdenRequest request) {
+        return ResponseEntity.ok(ordenTrabajoService.usarMaterial(id, request));
+    }
+
     @PostMapping("/{id}/entregar")
     @Operation(summary = "Entregar la orden; si hay saldo pendiente, exige liquidarlo en la misma llamada (regla de negocio 3)")
     public ResponseEntity<OrdenTrabajoResponse> entregar(

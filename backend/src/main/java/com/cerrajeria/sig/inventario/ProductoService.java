@@ -2,6 +2,7 @@ package com.cerrajeria.sig.inventario;
 
 import com.cerrajeria.sig.common.audit.AuditAccion;
 import com.cerrajeria.sig.common.audit.AuditLogService;
+import com.cerrajeria.sig.common.audit.DetalleAuditoria;
 import com.cerrajeria.sig.common.exception.RecursoNoEncontradoException;
 import com.cerrajeria.sig.common.exception.StockInsuficienteException;
 import com.cerrajeria.sig.inventario.dto.AjusteStockRequest;
@@ -35,6 +36,7 @@ public class ProductoService {
     private final ProductoMapper productoMapper;
     private final MovimientoInventarioMapper movimientoInventarioMapper;
     private final AuditLogService auditLogService;
+    private final jakarta.persistence.EntityManager entityManager;
 
     @org.springframework.beans.factory.annotation.Value("${sig.uploads-dir}")
     private String uploadsDir;
@@ -70,6 +72,13 @@ public class ProductoService {
             registrarMovimiento(producto, TipoMovimiento.ENTRADA, request.cantidadStock(),
                 0, request.cantidadStock(), ReferenciaTipo.AJUSTE, null, motivoStockInicial);
         }
+        auditLogService.registrar(usuarioActual(), AuditAccion.CREAR, "Producto", producto.getId(),
+            DetalleAuditoria.de("Producto creado: " + producto.getCodigo() + " · " + producto.getNombre())
+                .motivo(motivoStockInicial)
+                .cambio("stock", null, producto.getCantidadStock())
+                .cambio("precioCompra", null, producto.getPrecioCompra())
+                .cambio("precioVenta", null, producto.getPrecioVenta())
+                .cambio("precioDuplicado", null, producto.getPrecioDuplicado()));
 
         return productoMapper.toResponse(producto);
     }
@@ -108,12 +117,25 @@ public class ProductoService {
     @Transactional
     public ProductoResponse actualizar(Long id, ProductoUpdateRequest request) {
         Producto producto = buscarPorId(id);
+        DetalleAuditoria detalle = DetalleAuditoria.de("Producto editado: " + producto.getCodigo())
+            .cambio("nombre", producto.getNombre(), request.nombre())
+            .cambio("marca", producto.getMarca(), request.marca())
+            .cambio("stockMinimo", producto.getStockMinimo(),
+                request.stockMinimo() != null ? request.stockMinimo() : producto.getStockMinimo())
+            .cambio("precioCompra", producto.getPrecioCompra(), request.precioCompra())
+            .cambio("precioVenta", producto.getPrecioVenta(), request.precioVenta())
+            .cambio("precioDuplicado", producto.getPrecioDuplicado(),
+                request.tipoProducto().esLlave() ? request.precioDuplicado() : null);
         aplicarCamposComunes(producto, request.nombre(), request.tipoProducto(), request.marca(),
             request.stockMinimo(), request.precioCompra(), request.precioVenta(), request.imagenUrl(),
             request.llavePerfil(), request.llaveColor(), request.llaveDisenoTematica(),
             request.productoModelo(), request.productoTamano(), request.productoMaterial());
         producto.setPrecioDuplicado(request.tipoProducto().esLlave() ? request.precioDuplicado() : null);
-        return productoMapper.toResponse(productoRepository.save(producto));
+        producto = productoRepository.save(producto);
+        if (!detalle.sinCambios()) {
+            auditLogService.registrar(usuarioActual(), AuditAccion.EDITAR, "Producto", producto.getId(), detalle);
+        }
+        return productoMapper.toResponse(producto);
     }
 
     @Transactional
@@ -121,8 +143,8 @@ public class ProductoService {
         Producto producto = buscarPorId(id);
         producto.setActivo(false);
         productoRepository.save(producto);
-        auditLogService.registrar(usuarioActual(), com.cerrajeria.sig.common.audit.AuditAccion.ELIMINAR,
-            "Producto", producto.getId());
+        auditLogService.registrar(usuarioActual(), AuditAccion.ELIMINAR, "Producto", producto.getId(),
+            DetalleAuditoria.de("Producto dado de baja: " + producto.getCodigo() + " · " + producto.getNombre()));
     }
 
     @Transactional(readOnly = true)
@@ -138,7 +160,7 @@ public class ProductoService {
             throw new IllegalArgumentException("La cantidad de ajuste no puede ser cero");
         }
 
-        Producto producto = buscarPorId(id);
+        Producto producto = bloquearParaStock(id);
         int saldoAnterior = producto.getCantidadStock();
         int saldoNuevo = saldoAnterior + request.cantidad();
 
@@ -152,8 +174,10 @@ public class ProductoService {
 
         registrarMovimiento(producto, TipoMovimiento.AJUSTE, request.cantidad(),
             saldoAnterior, saldoNuevo, ReferenciaTipo.AJUSTE, null, request.motivo());
-        auditLogService.registrar(usuarioActual(), com.cerrajeria.sig.common.audit.AuditAccion.AJUSTE_INVENTARIO,
-            "Producto", producto.getId());
+        auditLogService.registrar(usuarioActual(), AuditAccion.AJUSTE_INVENTARIO, "Producto", producto.getId(),
+            DetalleAuditoria.de("Ajuste de stock: " + producto.getCodigo() + " · " + producto.getNombre())
+                .motivo(request.motivo())
+                .cambio("stock", saldoAnterior, saldoNuevo));
 
         return productoMapper.toResponse(producto);
     }
@@ -164,8 +188,13 @@ public class ProductoService {
      */
     @Transactional
     public void actualizarPrecios(Long id, java.math.BigDecimal precioCompra, java.math.BigDecimal precioVenta,
-                                  java.math.BigDecimal precioDuplicado) {
+                                  java.math.BigDecimal precioDuplicado, String motivo) {
         Producto producto = buscarPorId(id);
+        DetalleAuditoria detalle = DetalleAuditoria.de("Precios cambiados: " + producto.getCodigo() + " · " + producto.getNombre())
+            .motivo(motivo);
+        if (precioCompra != null) detalle.cambio("precioCompra", producto.getPrecioCompra(), precioCompra);
+        if (precioVenta != null) detalle.cambio("precioVenta", producto.getPrecioVenta(), precioVenta);
+        if (precioDuplicado != null) detalle.cambio("precioDuplicado", producto.getPrecioDuplicado(), precioDuplicado);
         if (precioCompra != null) producto.setPrecioCompra(precioCompra);
         if (precioVenta != null) producto.setPrecioVenta(precioVenta);
         if (precioDuplicado != null) {
@@ -175,6 +204,9 @@ public class ProductoService {
             producto.setPrecioDuplicado(precioDuplicado);
         }
         productoRepository.save(producto);
+        if (!detalle.sinCambios()) {
+            auditLogService.registrar(usuarioActual(), AuditAccion.EDITAR, "Producto", producto.getId(), detalle);
+        }
     }
 
     /**
@@ -184,7 +216,7 @@ public class ProductoService {
      */
     @Transactional
     public Producto descontarStock(Long productoId, int cantidad, ReferenciaTipo referenciaTipo, Long referenciaId) {
-        Producto producto = buscarPorId(productoId);
+        Producto producto = bloquearParaStock(productoId);
         int saldoAnterior = producto.getCantidadStock();
         int saldoNuevo = saldoAnterior - cantidad;
         if (saldoNuevo < 0) {
@@ -203,7 +235,7 @@ public class ProductoService {
      */
     @Transactional
     public Producto incrementarStock(Long productoId, int cantidad, ReferenciaTipo referenciaTipo, Long referenciaId) {
-        Producto producto = buscarPorId(productoId);
+        Producto producto = bloquearParaStock(productoId);
         int saldoAnterior = producto.getCantidadStock();
         int saldoNuevo = saldoAnterior + cantidad;
         producto.setCantidadStock(saldoNuevo);
@@ -254,6 +286,12 @@ public class ProductoService {
         return productoMapper.toResponse(producto);
     }
 
+    /** Movimientos de Kardex de una operacion (ej. el material usado en una orden de taller). */
+    public List<MovimientoInventario> movimientosDe(ReferenciaTipo referenciaTipo, Long referenciaId) {
+        return movimientoInventarioRepository.findByReferenciaTipoAndReferenciaIdOrderByFechaHoraAsc(
+            referenciaTipo, referenciaId);
+    }
+
     public Producto buscarEntidadPorId(Long id) {
         return buscarPorId(id);
     }
@@ -302,6 +340,22 @@ public class ProductoService {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return usuarioRepository.findByUsername(username)
             .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + username));
+    }
+
+    /**
+     * Lee el producto bloqueando su fila (SELECT ... FOR UPDATE) hasta que
+     * termine la transaccion. Sin esto, dos ventas simultaneas del mismo
+     * producto (PC y celular) leen el mismo stock y una de las dos restas se
+     * pierde: el Kardex tiene ambas salidas pero el stock solo una. El flush
+     * previo guarda lo que esta misma transaccion ya cambio (ej. una venta con
+     * la misma llave como duplicado y como llave sola), para que el refresh
+     * no lo descarte.
+     */
+    private Producto bloquearParaStock(Long id) {
+        Producto producto = buscarPorId(id);
+        entityManager.flush();
+        entityManager.refresh(producto, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        return producto;
     }
 
     private Producto buscarPorId(Long id) {

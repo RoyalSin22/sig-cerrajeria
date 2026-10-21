@@ -7,6 +7,7 @@ import com.cerrajeria.sig.clientes.ClienteRepository;
 import com.cerrajeria.sig.common.MetodoPago;
 import com.cerrajeria.sig.common.audit.AuditAccion;
 import com.cerrajeria.sig.common.audit.AuditLogService;
+import com.cerrajeria.sig.common.audit.DetalleAuditoria;
 import com.cerrajeria.sig.common.exception.RecursoNoEncontradoException;
 import com.cerrajeria.sig.inventario.Producto;
 import com.cerrajeria.sig.inventario.ProductoService;
@@ -182,7 +183,11 @@ public class VentaService {
         venta.setFechaAnulacion(LocalDateTime.now());
         venta = ventaRepository.save(venta);
 
-        auditLogService.registrar(usuarioActual(), AuditAccion.ANULACION, "Venta", venta.getId());
+        auditLogService.registrar(usuarioActual(), AuditAccion.ANULACION, "Venta", venta.getId(),
+            DetalleAuditoria.de("Venta #" + venta.getId() + " anulada: S/ " + venta.getMontoTotal() + " ("
+                + venta.getMetodoPago().name().toLowerCase() + "), "
+                + venta.getDetalles().stream().map(d -> d.getCantidad() + " × " + d.getProducto().getNombre())
+                    .collect(java.util.stream.Collectors.joining(", "))));
 
         return mapearAResponse(venta);
     }

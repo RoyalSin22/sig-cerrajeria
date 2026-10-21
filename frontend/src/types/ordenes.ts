@@ -42,6 +42,24 @@ export interface OrdenTrabajoResponse {
   fechaEntrega: string | null
   observaciones: string | null
   motivoCancelacion: string | null
+  /** Reparacion sin cobro sobre una orden ya entregada. */
+  garantia: boolean
+  /** Numero de la orden original, si es una garantia. */
+  numeroOrdenOrigen: string | null
+}
+
+export interface GarantiaRequest {
+  problema: string
+  observaciones?: string
+}
+
+export interface MaterialOrdenResponse {
+  productoId: number
+  codigo: string
+  nombre: string
+  cantidad: number
+  usuario: string
+  fechaHora: string
 }
 
 export interface CancelarOrdenRequest {

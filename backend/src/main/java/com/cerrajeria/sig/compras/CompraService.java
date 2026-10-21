@@ -1,6 +1,9 @@
 package com.cerrajeria.sig.compras;
 
 import com.cerrajeria.sig.common.MetodoPago;
+import com.cerrajeria.sig.common.audit.AuditAccion;
+import com.cerrajeria.sig.common.audit.AuditLogService;
+import com.cerrajeria.sig.common.audit.DetalleAuditoria;
 import com.cerrajeria.sig.caja.CajaDiaria;
 import com.cerrajeria.sig.caja.CajaService;
 import com.cerrajeria.sig.common.exception.RecursoNoEncontradoException;
@@ -30,6 +33,7 @@ public class CompraService {
     private final ProductoService productoService;
     private final UsuarioRepository usuarioRepository;
     private final CajaService cajaService;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public CompraResponse crear(CompraCreateRequest request) {
@@ -58,6 +62,10 @@ public class CompraService {
         Producto producto = productoService.incrementarStock(
             request.productoId(), request.cantidad(), ReferenciaTipo.COMPRA, compra.getId());
 
+        auditLogService.registrar(compra.getUsuario(), AuditAccion.CREAR, "Compra", compra.getId(),
+            DetalleAuditoria.de("Compra a " + proveedor.getNombre() + ": " + request.cantidad() + " × "
+                    + producto.getNombre() + " a S/ " + request.precioUnitario() + " = S/ " + total
+                    + (request.pagarDeCaja() ? " (pagada de caja)" : "")));
         return toResponse(compra, proveedor.getNombre(), producto.getNombre(), total);
     }
 

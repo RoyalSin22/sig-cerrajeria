@@ -44,6 +44,7 @@ class ServicioDomicilioServiceTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private ServicioDomicilioMapper mapper;
     @Mock private CajaService cajaService;
+    @Mock private com.cerrajeria.sig.common.audit.AuditLogService auditLogService;
 
     @InjectMocks
     private ServicioDomicilioService service;

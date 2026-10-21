@@ -23,6 +23,7 @@ public class DashboardService {
     private final ServicioDomicilioRepository servicioDomicilioRepository;
     private final ProductoRepository productoRepository;
     private final AuditLogRepository auditLogRepository;
+    private final tools.jackson.databind.ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public DashboardResponse obtener() {
@@ -47,7 +48,7 @@ public class DashboardService {
         // RF-09: ultimos movimientos, a partir del registro de auditoria (RF-47)
         var ultimosMovimientos = auditLogRepository.findTop10ByOrderByFechaHoraDesc().stream()
             .map(log -> new DashboardResponse.MovimientoReciente(
-                descripcionAccion(log.getAccion(), log.getEntidad(), log.getEntidadId()),
+                descripcion(log),
                 log.getUsuario().getNombre(),
                 log.getFechaHora()
             ))
@@ -56,6 +57,15 @@ public class DashboardService {
         return new DashboardResponse(
             ventasHoy, ventasMes, pendientes, listos,
             (long) serviciosProximos, (long) productosStockBajo.size(), alertas, ultimosMovimientos);
+    }
+
+    /** La descripcion guardada en el detalle (V11); los registros antiguos no la tienen. */
+    private String descripcion(com.cerrajeria.sig.common.audit.AuditLog log) {
+        if (log.getDetalle() != null) {
+            String texto = objectMapper.readTree(log.getDetalle()).path("descripcion").asString("");
+            if (!texto.isBlank()) return texto;
+        }
+        return descripcionAccion(log.getAccion(), log.getEntidad(), log.getEntidadId());
     }
 
     private String descripcionAccion(com.cerrajeria.sig.common.audit.AuditAccion accion, String entidad, Long entidadId) {
@@ -70,6 +80,8 @@ public class DashboardService {
             case ELIMINAR -> "Eliminación de " + sujeto;
             case ANULACION -> "Anulación de " + sujeto;
             case CAMBIO_PASSWORD -> "Cambio de contraseña de " + sujeto;
+            case MOVIMIENTO_CAJA -> "Movimiento manual de caja";
+            case GARANTIA -> "Garantía en " + sujeto;
         };
     }
 }

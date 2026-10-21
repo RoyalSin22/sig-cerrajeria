@@ -262,7 +262,7 @@ public class PlanillaStockService {
                     Map<String, BigDecimal> nuevos = c.precios().stream()
                         .collect(Collectors.toMap(CambioPrecio::precio, CambioPrecio::nuevo));
                     productoService.actualizarPrecios(p.getId(), nuevos.get(Precio.COMPRA.etiqueta),
-                        nuevos.get(Precio.VENTA.etiqueta), nuevos.get(Precio.DUPLICADO.etiqueta));
+                        nuevos.get(Precio.VENTA.etiqueta), nuevos.get(Precio.DUPLICADO.etiqueta), "Planilla de Excel");
                 }
                 actualizados++;
             }

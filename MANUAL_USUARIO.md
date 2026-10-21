@@ -62,6 +62,10 @@ Las órdenes se ven organizadas en columnas según su estado: Recibido, En repar
 
 Una orden cancelada ya no se puede cobrar ni cambiar de estado, y aparece en su propia columna "Cancelado".
 
+**Material usado.** En una orden en curso, en **Material usado**, busca la pieza del inventario (un cilindro, un resorte), pon la cantidad y toca **Usar**: sale del stock y queda en el Kárdex con el número de la orden. Esto no cambia el precio de la orden: el precio lo pones tú al crearla.
+
+**Garantía.** Si el cliente vuelve porque el trabajo falló, abre la orden original (columna **Entregado**) y toca **Garantía**. Escribe qué falló y se crea una orden nueva **sin cobro**, marcada "Garantía de OT-…", que sigue el mismo camino (en reparación, listo, entregado). No pide caja ni mueve dinero. Si usas una pieza, regístrala en **Material usado** para que salga del stock.
+
 ## Agendar un servicio a domicilio
 
 En **Domicilio**, toca **Agendar servicio**. Busca al cliente, pon la dirección, fecha, hora y qué tipo de trabajo es (por ejemplo "Cambio de chapa"). La pantalla tiene vista por semana o por mes — cambia con los botones "Semana" / "Mes" arriba.
@@ -140,7 +144,9 @@ Elige el distribuidor (o crea uno nuevo ahí mismo), revisa cantidad y precio un
 
 ## Cerrar caja
 
-Al final del turno, entra a **Caja**. Vas a ver el resumen: monto de apertura, ingresos, egresos, lo cobrado por Yape y por Plin, y el **efectivo esperado en caja**. Yape y Plin no están en el cajón, así que no se cuentan. Cuenta solo el efectivo real que tienes y ponlo en "Efectivo contado". El sistema te muestra la diferencia — si sobra, falta, o cuadra exacto.
+Al final del turno, entra a **Caja**. Vas a ver el resumen: monto de apertura, ingresos, egresos, lo cobrado por Yape y por Plin, y el **efectivo esperado en caja**. Yape y Plin no están en el cajón, así que no se cuentan. Cuenta solo el efectivo real que tienes y ponlo en "Efectivo contado". Mientras escribes, el sistema te dice si cuadra, cuánto sobra o cuánto falta.
+
+**Si no cuadra**, tienes que escribir qué pasó (por ejemplo "se dio mal un vuelto" o "se pagó un delivery con plata del cajón") antes de poder cerrar. La diferencia y tu explicación quedan guardadas en **Historial de caja** y en la auditoría, para revisarlas después.
 
 ## Reportes
 
@@ -170,4 +176,4 @@ Si un empleado olvida su contraseña, el Administrador entra a **Ajustes → Usu
 
 ## Administrador vs. Empleado
 
-El Administrador puede, además de todo lo anterior: crear y desactivar usuarios, restablecer contraseñas, anular ventas, ver el registro de auditoría (quién hizo qué y cuándo), crear y editar productos, ajustar el stock, cambiar fotos, importar el inventario desde Excel y registrar compras. Un Empleado puede vender, atender órdenes, agendar y cobrar servicios a domicilio, registrar clientes, consultar el inventario y ver el historial de compras. Los botones de administración no le aparecen.
+El Administrador puede, además de todo lo anterior: crear y desactivar usuarios, restablecer contraseñas, anular ventas, ver el registro de auditoría (quién hizo qué, cuándo, qué cambió —por ejemplo un precio de S/ 2.00 a S/ 2.50— y por qué), crear y editar productos, ajustar el stock, cambiar fotos, importar el inventario desde Excel y registrar compras. Un Empleado puede vender, atender órdenes, agendar y cobrar servicios a domicilio, registrar clientes, consultar el inventario y ver el historial de compras. Los botones de administración no le aparecen.

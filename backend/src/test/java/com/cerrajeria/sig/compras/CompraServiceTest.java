@@ -49,6 +49,7 @@ class CompraServiceTest {
     @Mock private ProductoService productoService;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private CajaService cajaService;
+    @Mock private com.cerrajeria.sig.common.audit.AuditLogService auditLogService;
 
     @InjectMocks
     private CompraService compraService;

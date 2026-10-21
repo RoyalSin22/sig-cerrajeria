@@ -17,6 +17,8 @@ public record CajaDiariaResponse(
     BigDecimal montoTarjeta,
     BigDecimal saldoEsperado,
     BigDecimal efectivoEsperado,
-    String estado
+    String estado,
+    BigDecimal diferenciaCierre,
+    String observacionCierre
 ) {
 }

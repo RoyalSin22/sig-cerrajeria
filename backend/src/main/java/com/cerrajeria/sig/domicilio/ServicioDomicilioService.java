@@ -6,6 +6,9 @@ import com.cerrajeria.sig.common.exception.RecursoNoEncontradoException;
 import com.cerrajeria.sig.caja.CajaDiaria;
 import com.cerrajeria.sig.caja.CajaService;
 import com.cerrajeria.sig.common.MetodoPago;
+import com.cerrajeria.sig.common.audit.AuditAccion;
+import com.cerrajeria.sig.common.audit.AuditLogService;
+import com.cerrajeria.sig.common.audit.DetalleAuditoria;
 import com.cerrajeria.sig.domicilio.dto.CambiarEstadoServicioRequest;
 import com.cerrajeria.sig.domicilio.dto.RealizarServicioRequest;
 import com.cerrajeria.sig.domicilio.dto.ServicioDomicilioRequest;
@@ -31,6 +34,7 @@ public class ServicioDomicilioService {
     private final UsuarioRepository usuarioRepository;
     private final ServicioDomicilioMapper mapper;
     private final CajaService cajaService;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public ServicioDomicilioResponse crear(ServicioDomicilioRequest request) {
@@ -114,7 +118,12 @@ public class ServicioDomicilioService {
         servicio.setRealizadoPor(usuarioActual());
         servicio.setFechaRealizado(LocalDateTime.now());
         servicio.setEstado(EstadoServicio.REALIZADO);
-        return mapper.toResponse(servicioDomicilioRepository.save(servicio));
+        servicio = servicioDomicilioRepository.save(servicio);
+        auditLogService.registrar(servicio.getRealizadoPor(), AuditAccion.CAMBIO_ESTADO, "ServicioDomicilio", servicio.getId(),
+            DetalleAuditoria.de("Servicio a domicilio realizado: " + servicio.getTipoServicio()
+                + (monto.signum() > 0 ? ", cobrado S/ " + monto + " (" + servicio.getMetodoPago().name().toLowerCase() + ")"
+                    : ", sin cobro")));
+        return mapper.toResponse(servicio);
     }
 
     /** Un servicio realizado ya cobro: cambiarlo descuadraria la caja de quien lo cobro. */

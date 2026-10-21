@@ -48,6 +48,7 @@ class OrdenTrabajoServiceTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private com.cerrajeria.sig.caja.CajaService cajaService;
     @Mock private AuditLogService auditLogService;
+    @Mock private com.cerrajeria.sig.inventario.ProductoService productoService;
 
     @InjectMocks
     private OrdenTrabajoService ordenTrabajoService;

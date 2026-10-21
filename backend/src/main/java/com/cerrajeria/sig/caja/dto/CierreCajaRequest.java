@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 public record CierreCajaRequest(
     @NotNull(message = "El monto contado es obligatorio")
     @PositiveOrZero(message = "El monto contado no puede ser negativo")
-    BigDecimal montoContado
+    BigDecimal montoContado,
+    /** Obligatoria si el contado no coincide con el efectivo esperado. */
+    String observacion
 ) {
 }

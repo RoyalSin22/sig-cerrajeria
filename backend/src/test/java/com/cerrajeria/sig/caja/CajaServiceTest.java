@@ -38,6 +38,7 @@ class CajaServiceTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private CajaMapper cajaMapper;
     @Mock private AuditLogService auditLogService;
+    @Mock private jakarta.persistence.EntityManager entityManager;
 
     @InjectMocks
     private CajaService cajaService;
@@ -142,10 +143,30 @@ class CajaServiceTest {
         when(cajaDiariaRepository.findByUsuarioUsernameAndEstado("empleado1", EstadoCaja.ABIERTA))
             .thenReturn(Optional.of(caja));
 
-        CierreCajaResponse cierre = cajaService.cerrar(new CierreCajaRequest(new BigDecimal("73.00")));
+        CierreCajaResponse cierre = cajaService.cerrar(new CierreCajaRequest(new BigDecimal("73.00"), null));
 
         assertThat(cierre.diferencia()).isEqualByComparingTo("0.00");
         assertThat(caja.getEstado()).isEqualTo(EstadoCaja.CERRADA);
+    }
+
+    @Test
+    @DisplayName("Si el cajón no cuadra, exige explicación y guarda la diferencia")
+    void cierre_conDiferencia_exigeExplicacion() {
+        CajaDiaria caja = cajaAbierta("50.00");
+        caja.sumarIngreso(new BigDecimal("30.00"), MetodoPago.EFECTIVO);
+        when(cajaDiariaRepository.findByUsuarioUsernameAndEstado("empleado1", EstadoCaja.ABIERTA))
+            .thenReturn(Optional.of(caja));
+
+        assertThatThrownBy(() -> cajaService.cerrar(new CierreCajaRequest(new BigDecimal("70.00"), "  ")))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("faltan S/ 10.00");
+        assertThat(caja.getEstado()).isEqualTo(EstadoCaja.ABIERTA);
+
+        cajaService.cerrar(new CierreCajaRequest(new BigDecimal("70.00"), "Vuelto mal dado a un cliente"));
+
+        assertThat(caja.getEstado()).isEqualTo(EstadoCaja.CERRADA);
+        assertThat(caja.getDiferenciaCierre()).isEqualByComparingTo("-10.00");
+        assertThat(caja.getObservacionCierre()).isEqualTo("Vuelto mal dado a un cliente");
     }
 
     private CajaDiaria cajaAbierta(String montoApertura) {

@@ -158,7 +158,7 @@ class PlanillaStockServiceTest {
                 assertThat(p.nuevo()).isEqualByComparingTo("2.50");
             });
         });
-        verify(productoService).actualizarPrecios(1L, null, null, new java.math.BigDecimal("2.50"));
+        verify(productoService).actualizarPrecios(1L, null, null, new java.math.BigDecimal("2.50"), "Planilla de Excel");
         verify(productoService, never()).ajustarStock(anyLong(), any());
 
         ResultadoPlanilla conError = planilla.actualizar(
