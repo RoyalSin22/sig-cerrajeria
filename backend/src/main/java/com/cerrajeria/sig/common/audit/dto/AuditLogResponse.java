@@ -8,6 +8,8 @@ public record AuditLogResponse(
     String accion,
     String entidad,
     Long entidadId,
+    /** JSON tal cual se guardo: {descripcion, motivo?, cambios?: {campo: {antes, despues}}} */
+    tools.jackson.databind.JsonNode detalle,
     LocalDateTime fechaHora
 ) {
 }

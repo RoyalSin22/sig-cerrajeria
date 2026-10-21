@@ -20,6 +20,9 @@ export interface CajaDiariaResponse {
   /** Lo que deberia haber en el cajon; contra esto se cuadra el cierre. */
   efectivoEsperado: number
   estado: EstadoCaja
+  /** Contado - esperado al cerrar; negativo = falto dinero. null si sigue abierta o es anterior a V11. */
+  diferenciaCierre: number | null
+  observacionCierre: string | null
 }
 
 export interface AperturaCajaRequest {
@@ -28,6 +31,8 @@ export interface AperturaCajaRequest {
 
 export interface CierreCajaRequest {
   montoContado: number
+  /** Obligatoria si el contado no coincide con el efectivo esperado. */
+  observacion?: string
 }
 
 export interface CierreCajaResponse {

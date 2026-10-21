@@ -3,7 +3,7 @@ import { auditoriaApi } from '../api/auditoria'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
-import { formatearFechaHora } from '../utils/format'
+import { formatearFechaHora, formatearSoles } from '../utils/format'
 import type { AuditLogResponse } from '../types/auditoria'
 
 const ETIQUETA_ACCION: Record<string, string> = {
@@ -16,6 +16,37 @@ const ETIQUETA_ACCION: Record<string, string> = {
   CAMBIO_PASSWORD: 'Cambio de contraseña',
   APERTURA_CAJA: 'Apertura de caja',
   CIERRE_CAJA: 'Cierre de caja',
+  MOVIMIENTO_CAJA: 'Movimiento manual de caja',
+  GARANTIA: 'Garantía',
+}
+
+/** Nombres legibles de los campos que guarda el backend en "cambios". */
+const ETIQUETA_CAMPO: Record<string, string> = {
+  stock: 'Stock',
+  precioCompra: 'Precio de compra',
+  precioVenta: 'Precio de venta',
+  precioDuplicado: 'Precio del duplicado',
+  stockMinimo: 'Stock mínimo',
+  nombre: 'Nombre',
+  marca: 'Marca',
+  estado: 'Estado',
+  activo: 'Activo',
+  rol: 'Rol',
+  montoApertura: 'Monto de apertura',
+  efectivoEsperado: 'Efectivo esperado',
+  efectivoContado: 'Efectivo contado',
+}
+
+const CAMPOS_EN_SOLES = new Set([
+  'precioCompra', 'precioVenta', 'precioDuplicado', 'montoApertura', 'efectivoEsperado', 'efectivoContado',
+])
+
+function valor(campo: string, texto: string | null) {
+  if (texto === null) return '—'
+  if (CAMPOS_EN_SOLES.has(campo)) return formatearSoles(Number(texto))
+  if (texto === 'true') return 'sí'
+  if (texto === 'false') return 'no'
+  return texto
 }
 
 /** RF-47: registro de auditoría, visible solo para ADMIN (ver ProtectedRoute en App.tsx). */
@@ -54,12 +85,24 @@ export function Auditoria() {
           <Card>
             <ul className="flex flex-col divide-y divide-hair text-sm">
               {registros.map((r) => (
-                <li key={r.id} className="flex items-center justify-between py-2.5">
-                  <div>
+                <li key={r.id} className="flex items-start justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
                     <p className="font-medium">{ETIQUETA_ACCION[r.accion] ?? r.accion}</p>
-                    <p className="text-xs text-sub">{r.entidad} #{r.entidadId}</p>
+                    <p className="text-xs text-sub">{r.detalle?.descripcion ?? `${r.entidad} #${r.entidadId}`}</p>
+                    {r.detalle?.motivo && <p className="text-xs"><span className="text-sub">Motivo:</span> {r.detalle.motivo}</p>}
+                    {r.detalle?.cambios && (
+                      <ul className="mt-0.5 text-xs">
+                        {Object.entries(r.detalle.cambios).map(([campo, c]) => (
+                          <li key={campo}>
+                            <span className="text-sub">{ETIQUETA_CAMPO[campo] ?? campo}:</span>{' '}
+                            {c.antes !== null && <>{valor(campo, c.antes)} → </>}
+                            <b>{valor(campo, c.despues)}</b>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  <div className="text-right text-xs text-sub">
+                  <div className="shrink-0 text-right text-xs text-sub">
                     <p>{r.usuario}</p>
                     <p>{formatearFechaHora(r.fechaHora)}</p>
                   </div>

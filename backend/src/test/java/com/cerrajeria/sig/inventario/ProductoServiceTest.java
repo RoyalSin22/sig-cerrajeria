@@ -43,6 +43,7 @@ class ProductoServiceTest {
     @Mock private ProductoMapper productoMapper;
     @Mock private MovimientoInventarioMapper movimientoInventarioMapper;
     @Mock private AuditLogService auditLogService;
+    @Mock private jakarta.persistence.EntityManager entityManager;
 
     @InjectMocks
     private ProductoService productoService;
@@ -140,7 +141,13 @@ class ProductoServiceTest {
         assertThat(producto.getCantidadStock()).isEqualTo(15);
         assertThat(respuesta.cantidadStock()).isEqualTo(15);
         verify(movimientoInventarioRepository).save(any(MovimientoInventario.class));
-        verify(auditLogService).registrar(any(Usuario.class), any(), eq("Producto"), eq(1L));
+        var detalle = org.mockito.ArgumentCaptor.forClass(com.cerrajeria.sig.common.audit.DetalleAuditoria.class);
+        verify(auditLogService).registrar(any(Usuario.class), any(), eq("Producto"), eq(1L), detalle.capture());
+        assertThat(detalle.getValue().getMotivo()).isEqualTo("Ingreso no facturado");
+        assertThat(detalle.getValue().getCambios().get("stock"))
+            .isEqualTo(new com.cerrajeria.sig.common.audit.DetalleAuditoria.Cambio("10", "15"));
+        // El stock se lee con la fila bloqueada (dos ventas simultaneas no pisan sus restas)
+        verify(entityManager).refresh(producto, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
     }
 
     private Usuario usuarioDePrueba() {

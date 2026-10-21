@@ -11,4 +11,7 @@ public interface MovimientoInventarioRepository extends JpaRepository<Movimiento
     // se carga en la misma consulta para evitar LazyInitializationException.
     @EntityGraph(attributePaths = "usuario")
     List<MovimientoInventario> findByProductoIdOrderByFechaHoraDesc(Long productoId);
+
+    List<MovimientoInventario> findByReferenciaTipoAndReferenciaIdOrderByFechaHoraAsc(
+        ReferenciaTipo referenciaTipo, Long referenciaId);
 }

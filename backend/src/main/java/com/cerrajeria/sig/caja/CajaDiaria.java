@@ -61,6 +61,14 @@ public class CajaDiaria {
     @Column(name = "monto_tarjeta", nullable = false, precision = 12, scale = 2)
     private BigDecimal montoTarjeta = BigDecimal.ZERO;
 
+    /** Contado - esperado al cerrar (V11). Negativo: falto dinero. */
+    @Column(name = "diferencia_cierre", precision = 12, scale = 2)
+    private BigDecimal diferenciaCierre;
+
+    /** Explicacion de quien cerro, obligatoria si la caja no cuadro (V11). */
+    @Column(name = "observacion_cierre", columnDefinition = "TEXT")
+    private String observacionCierre;
+
     /** Total de la caja, sumando todos los metodos de pago. */
     public BigDecimal saldoEsperado() {
         return montoApertura.add(montoIngresos).subtract(montoEgresos);

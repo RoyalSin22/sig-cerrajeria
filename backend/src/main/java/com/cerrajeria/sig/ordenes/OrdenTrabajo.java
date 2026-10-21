@@ -70,6 +70,14 @@ public class OrdenTrabajo {
     @Column(name = "motivo_cancelacion", columnDefinition = "TEXT")
     private String motivoCancelacion;
 
+    /** Reparacion sin cobro sobre una orden ya entregada (V11): precio 0, no mueve caja. */
+    @Column(name = "es_garantia", nullable = false)
+    private boolean garantia;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "orden_origen_id")
+    private OrdenTrabajo ordenOrigen;
+
     public BigDecimal getSaldoPendiente() {
         return precioTotal.subtract(montoPagado);
     }

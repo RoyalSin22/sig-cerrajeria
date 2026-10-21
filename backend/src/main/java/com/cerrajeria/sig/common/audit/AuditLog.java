@@ -34,6 +34,11 @@ public class AuditLog {
     @Column(name = "entidad_id", nullable = false)
     private Long entidadId;
 
+    /** JSON con descripcion, motivo y cambios (ver DetalleAuditoria); null en registros antiguos. */
+    @Column(columnDefinition = "jsonb")
+    @org.hibernate.annotations.ColumnTransformer(write = "?::jsonb")
+    private String detalle;
+
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora = LocalDateTime.now();
 }

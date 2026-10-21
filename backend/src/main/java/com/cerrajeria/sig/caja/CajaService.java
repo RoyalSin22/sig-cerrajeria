@@ -9,6 +9,7 @@ import com.cerrajeria.sig.caja.dto.MovimientoCajaRequest;
 import com.cerrajeria.sig.caja.dto.MovimientoCajaResponse;
 import com.cerrajeria.sig.common.audit.AuditAccion;
 import com.cerrajeria.sig.common.audit.AuditLogService;
+import com.cerrajeria.sig.common.audit.DetalleAuditoria;
 import com.cerrajeria.sig.common.exception.CajaNoAbiertaException;
 import com.cerrajeria.sig.common.exception.RecursoNoEncontradoException;
 import com.cerrajeria.sig.usuarios.Usuario;
@@ -37,6 +38,7 @@ public class CajaService {
     private final UsuarioRepository usuarioRepository;
     private final CajaMapper cajaMapper;
     private final AuditLogService auditLogService;
+    private final jakarta.persistence.EntityManager entityManager;
 
     @Transactional
     public CajaDiariaResponse abrir(AperturaCajaRequest request) {
@@ -52,7 +54,8 @@ public class CajaService {
         caja.setEstado(EstadoCaja.ABIERTA);
         caja = cajaDiariaRepository.save(caja);
 
-        auditLogService.registrar(usuario, AuditAccion.APERTURA_CAJA, "CajaDiaria", caja.getId());
+        auditLogService.registrar(usuario, AuditAccion.APERTURA_CAJA, "CajaDiaria", caja.getId(),
+            DetalleAuditoria.de("Apertura de caja").cambio("montoApertura", null, caja.getMontoApertura()));
         return cajaMapper.toResponse(caja);
     }
 
@@ -82,6 +85,8 @@ public class CajaService {
             throw new IllegalArgumentException("Tipo de movimiento inválido, use INGRESO o EGRESO");
         }
 
+        bloquear(caja);
+        BigDecimal efectivoAntes = caja.efectivoEsperado();
         if (tipo == TipoMovimientoCaja.INGRESO) {
             caja.sumarIngreso(request.monto());
         } else {
@@ -95,7 +100,13 @@ public class CajaService {
         movimiento.setMonto(request.monto());
         movimiento.setMotivo(request.motivo());
         movimiento.setUsuario(usuarioActual());
-        return cajaMapper.toResponse(movimientoCajaRepository.save(movimiento));
+        movimiento = movimientoCajaRepository.save(movimiento);
+        auditLogService.registrar(movimiento.getUsuario(), AuditAccion.MOVIMIENTO_CAJA, "CajaDiaria", caja.getId(),
+            DetalleAuditoria.de((tipo == TipoMovimientoCaja.INGRESO ? "Ingreso" : "Egreso") + " manual de S/ "
+                    + request.monto().setScale(2, java.math.RoundingMode.HALF_UP))
+                .motivo(request.motivo())
+                .cambio("efectivoEsperado", efectivoAntes, caja.efectivoEsperado()));
+        return cajaMapper.toResponse(movimiento);
     }
 
     /**
@@ -104,6 +115,7 @@ public class CajaService {
      */
     @Transactional
     public void sumarIngresoACajaActiva(CajaDiaria caja, BigDecimal monto, MetodoPago metodo) {
+        bloquear(caja);
         caja.sumarIngreso(monto, metodo);
         cajaDiariaRepository.save(caja);
     }
@@ -111,6 +123,7 @@ public class CajaService {
     /** Egreso con el metodo con que sale el dinero: EFECTIVO, o el del cobro que se devuelve. */
     @Transactional
     public void sumarEgresoACajaActiva(CajaDiaria caja, BigDecimal monto, MetodoPago metodo) {
+        bloquear(caja);
         caja.sumarEgreso(monto, metodo);
         cajaDiariaRepository.save(caja);
     }
@@ -118,16 +131,46 @@ public class CajaService {
     @Transactional
     public CierreCajaResponse cerrar(CierreCajaRequest request) {
         CajaDiaria caja = obtenerCajaAbiertaEntidad();
+        bloquear(caja); // un cobro en curso termina antes de calcular el esperado
         // Se cuenta el cajon: Yape, Plin y tarjeta no estan ahi y no entran al cuadre.
-        BigDecimal diferencia = request.montoContado().subtract(caja.efectivoEsperado());
+        BigDecimal esperado = caja.efectivoEsperado();
+        BigDecimal diferencia = request.montoContado().subtract(esperado);
+        String observacion = request.observacion() == null ? null : request.observacion().trim();
+        if (diferencia.signum() != 0 && (observacion == null || observacion.isEmpty())) {
+            throw new IllegalArgumentException("El cajón no cuadra (" + (diferencia.signum() > 0 ? "sobran" : "faltan")
+                + " S/ " + diferencia.abs().setScale(2, java.math.RoundingMode.HALF_UP)
+                + "): escribe qué pasó antes de cerrar");
+        }
 
         caja.setMontoCierre(request.montoContado());
+        caja.setDiferenciaCierre(diferencia);
+        caja.setObservacionCierre(observacion == null || observacion.isEmpty() ? null : observacion);
         caja.setFechaCierre(LocalDateTime.now());
         caja.setEstado(EstadoCaja.CERRADA);
         cajaDiariaRepository.save(caja);
 
-        auditLogService.registrar(caja.getUsuario(), AuditAccion.CIERRE_CAJA, "CajaDiaria", caja.getId());
+        auditLogService.registrar(caja.getUsuario(), AuditAccion.CIERRE_CAJA, "CajaDiaria", caja.getId(),
+            DetalleAuditoria.de(diferencia.signum() == 0 ? "Cierre de caja: cuadra"
+                    : "Cierre de caja con diferencia de S/ " + diferencia.setScale(2, java.math.RoundingMode.HALF_UP))
+                .motivo(caja.getObservacionCierre())
+                .cambio("efectivoEsperado", null, esperado)
+                .cambio("efectivoContado", null, request.montoContado()));
         return new CierreCajaResponse(cajaMapper.toResponse(caja), request.montoContado(), diferencia);
+    }
+
+    /**
+     * Bloquea la fila de la caja (SELECT ... FOR UPDATE) hasta el fin de la
+     * transaccion y la relee: dos cobros simultaneos de la misma caja (PC y
+     * celular) no pisan sus totales, y un cobro que llega justo despues del
+     * cierre se rechaza. El flush previo guarda lo que esta transaccion ya
+     * sumo (ej. las lineas de un pago mixto) para que el refresh no lo pierda.
+     */
+    private void bloquear(CajaDiaria caja) {
+        entityManager.flush();
+        entityManager.refresh(caja, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        if (caja.getEstado() != EstadoCaja.ABIERTA) {
+            throw new CajaNoAbiertaException("La caja ya se cerró. Abre una nueva para continuar.");
+        }
     }
 
     /** RF-37: historial de todas las sesiones de caja del usuario en sesion. */

@@ -21,6 +21,7 @@ import java.util.List;
 public class AuditLogController {
 
     private final AuditLogRepository auditLogRepository;
+    private final tools.jackson.databind.ObjectMapper objectMapper;
 
     @GetMapping
     @Operation(summary = "Registro de auditoría paginado, o filtrado por entidad específica (RF-47)")
@@ -42,6 +43,7 @@ public class AuditLogController {
     private AuditLogResponse toResponse(AuditLog l) {
         return new AuditLogResponse(
             l.getId(), l.getUsuario().getNombre(), l.getAccion().name(),
-            l.getEntidad(), l.getEntidadId(), l.getFechaHora());
+            l.getEntidad(), l.getEntidadId(),
+            l.getDetalle() == null ? null : objectMapper.readTree(l.getDetalle()), l.getFechaHora());
     }
 }

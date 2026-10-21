@@ -3,6 +3,7 @@ package com.cerrajeria.sig.usuarios;
 import com.cerrajeria.sig.usuarios.dto.RestablecerPasswordRequest;
 import com.cerrajeria.sig.usuarios.dto.CambiarPasswordRequest;
 import com.cerrajeria.sig.common.audit.AuditLogService;
+import com.cerrajeria.sig.common.audit.DetalleAuditoria;
 import com.cerrajeria.sig.common.audit.AuditAccion;
 import com.cerrajeria.sig.common.exception.RecursoNoEncontradoException;
 import com.cerrajeria.sig.usuarios.dto.CambiarEstadoUsuarioRequest;
@@ -45,8 +46,19 @@ public class UsuarioService {
         usuario.setNombre(request.nombre());
         usuario.setRole(role);
         usuario.setActivo(true);
+        usuario = usuarioRepository.save(usuario);
 
-        return toResponse(usuarioRepository.save(usuario));
+        auditLogService.registrar(usuarioEnSesion(), AuditAccion.CREAR, "Usuario", usuario.getId(),
+            DetalleAuditoria.de("Usuario creado: " + usuario.getUsername() + " (" + usuario.getNombre() + ")")
+                .cambio("rol", null, role.name()));
+        return toResponse(usuario);
+    }
+
+    private Usuario usuarioEnSesion() {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext()
+            .getAuthentication().getName();
+        return usuarioRepository.findByUsername(username)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + username));
     }
 
     @Transactional(readOnly = true)
@@ -63,8 +75,15 @@ public class UsuarioService {
         if (!request.activo() && usuario.getUsername().equals(usernameActual)) {
             throw new IllegalArgumentException("No puedes desactivar tu propio usuario");
         }
+        boolean antes = Boolean.TRUE.equals(usuario.getActivo());
         usuario.setActivo(request.activo());
-        return toResponse(usuarioRepository.save(usuario));
+        usuario = usuarioRepository.save(usuario);
+        if (antes != request.activo()) {
+            auditLogService.registrar(usuarioEnSesion(), AuditAccion.EDITAR, "Usuario", usuario.getId(),
+                DetalleAuditoria.de("Usuario " + usuario.getUsername() + (request.activo() ? " reactivado" : " desactivado"))
+                    .cambio("activo", antes, request.activo()));
+        }
+        return toResponse(usuario);
     }
 
     @Transactional

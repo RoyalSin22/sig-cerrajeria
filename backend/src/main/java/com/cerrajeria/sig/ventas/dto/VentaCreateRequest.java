@@ -10,8 +10,8 @@ public record VentaCreateRequest(
     Long clienteId,
     @NotBlank(message = "El método de pago es obligatorio") String metodoPago,
     @NotEmpty(message = "La venta debe tener al menos un producto")
-    @Valid List<ItemVentaRequest> items,
+    List<@Valid ItemVentaRequest> items,
     /** Obligatorio y debe sumar el total cuando metodoPago = MIXTO; ignorado en otro caso. */
-    @Valid List<DesglosePagoRequest> desglosePago
+    List<@Valid DesglosePagoRequest> desglosePago
 ) {
 }

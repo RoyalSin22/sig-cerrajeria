@@ -41,6 +41,10 @@ La planilla de cantidades y precios (`PlanillaStockService`, `GET`/`POST /api/v1
 
 Las compras de varios productos (`POST /api/v1/compras/lote`) registran cada línea con `CompraService.crear()` dentro de una sola transacción.
 
+**Concurrencia.** El stock y los totales de caja se actualizan leyendo, sumando y guardando, así que dos operaciones simultáneas (la PC y el celular) podían pisarse. `ProductoService` (descontar, incrementar y ajustar stock) y `CajaService` (ingresos, egresos, movimientos manuales y cierre) leen la fila con `SELECT … FOR UPDATE` (`entityManager.refresh(…, PESSIMISTIC_WRITE)`, con `flush()` previo para no descartar lo que la misma transacción ya cambió). `IntegridadIntegrationTest` lanza 30 ventas simultáneas de un producto con 30 unidades: con el bloqueo el stock queda en 0; sin él quedaba en 24. Si agregas otra operación que cambie stock o caja, pasa por esos métodos.
+
+**Auditoría.** `AuditLogService.registrar(…, DetalleAuditoria)` guarda qué cambió: ajustes de stock, cambios de precio (ficha y planilla), altas y bajas de productos, compras, anulaciones, apertura, cierre y movimientos manuales de caja, cambios de estado de órdenes, garantías, cobros a domicilio, y altas y desactivaciones de usuarios. Nunca guarda contraseñas ni tokens.
+
 Los tests unitarios en `src/test/java/.../{caja,inventario,ordenes}` verifican estas tres reglas por separado, con mocks — no dependen de una base de datos levantada. `ventas/`, `compras/` y `domicilio/` cubren cómo cada módulo las respeta: la anulación de ventas, las compras pagadas de caja y el cobro de servicios a domicilio.
 
 Otras operaciones con dinero, todas con la regla 1:
@@ -67,6 +71,7 @@ Base de datos: Flyway controla el esquema (`ddl-auto: validate` — Hibernate nu
 - `V7` — Yape, Plin y tarjeta por separado en `cajas_diarias` (el cierre se cuadra solo contra el efectivo)
 - `V8` — fecha de cambio de contraseña (invalida las sesiones anteriores)
 - `V9` — cobro de servicios a domicilio, estado `CANCELADO` en órdenes y pagos `DEVOLUCION`
+- `V11` — `audit_log.detalle` (JSONB que existía sin usarse) pasa a guardar descripción, motivo y cambios antes/después (`DetalleAuditoria`), con las acciones nuevas `MOVIMIENTO_CAJA` y `GARANTIA`; `cajas_diarias.diferencia_cierre` y `observacion_cierre` (obligatoria si no cuadra); `ordenes_trabajo.es_garantia` y `orden_origen_id`
 - `V10` — `productos.precio_duplicado` (material + corte, aparte del precio de la llave sola; `NULL` = no se ofrece como duplicado, y a las `LLAVE_VIRGEN` existentes se les copió su precio de venta) y `detalle_ventas.es_duplicado`. `ItemVentaRequest.duplicado` elige qué precio cobra `VentaService`
 
 Una migración nueva nunca edita una anterior: Flyway valida el checksum de las ya aplicadas y la app no arranca si cambian.

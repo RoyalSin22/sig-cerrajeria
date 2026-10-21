@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { ordenesApi } from '../api/ordenes'
 import { clientesApi } from '../api/clientes'
+import { productosApi } from '../api/productos'
 import { extraerMensajeError } from '../api/axiosClient'
 import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
@@ -14,6 +15,8 @@ import { formatearSoles } from '../utils/format'
 import { ESTADOS_ORDEN, ETIQUETA_ESTADO_ORDEN, type EstadoOrden, type OrdenTrabajoResponse } from '../types/ordenes'
 import { ETIQUETA_METODO_PAGO, METODOS_EN_USO, type MetodoPago } from '../types/ventas'
 import type { ClienteResponse } from '../types/clientes'
+import type { MaterialOrdenResponse } from '../types/ordenes'
+import type { ProductoResponse } from '../types/productos'
 
 const TONO_ESTADO: Record<EstadoOrden, 'neutral' | 'steel' | 'warning' | 'success' | 'dark'> = {
   RECIBIDO: 'neutral',
@@ -65,7 +68,10 @@ export function Taller() {
               {ordenes.filter((o) => o.estado === estado).map((o) => (
                 <button key={o.id} onClick={() => setSeleccionada(o)} className="text-left">
                   <Card className="flex flex-col gap-1">
-                    <span className="text-xs text-sub">{o.numeroOrden}</span>
+                    <span className="flex items-center justify-between gap-2 text-xs text-sub">
+                      {o.numeroOrden}
+                      {o.garantia && <Badge tono="steel">Garantía</Badge>}
+                    </span>
                     <span className="text-sm font-medium">{o.cliente}</span>
                     <span className="text-xs text-sub">{o.productoRecibido}</span>
                     {o.saldoPendiente > 0 && (
@@ -89,7 +95,17 @@ export function Taller() {
         }}
       />
 
-      <FichaOrden key={seleccionada?.id} orden={seleccionada} onCerrar={() => setSeleccionada(null)} onActualizada={actualizarEnLista} />
+      <FichaOrden
+        key={seleccionada?.id}
+        orden={seleccionada}
+        onCerrar={() => setSeleccionada(null)}
+        onActualizada={actualizarEnLista}
+        onGarantia={(g) => {
+          notificar(`Garantía abierta: ${g.numeroOrden}`)
+          setOrdenes((prev) => [g, ...prev])
+          setSeleccionada(g)
+        }}
+      />
     </div>
   )
 }
@@ -192,8 +208,13 @@ function FormularioOrden({
 }
 
 function FichaOrden({
-  orden, onCerrar, onActualizada,
-}: { orden: OrdenTrabajoResponse | null; onCerrar: () => void; onActualizada: (o: OrdenTrabajoResponse) => void }) {
+  orden, onCerrar, onActualizada, onGarantia,
+}: {
+  orden: OrdenTrabajoResponse | null
+  onCerrar: () => void
+  onActualizada: (o: OrdenTrabajoResponse) => void
+  onGarantia: (garantia: OrdenTrabajoResponse) => void
+}) {
   const { notificar } = useToast()
   const [error, setError] = useState<string | null>(null)
   const [procesando, setProcesando] = useState(false)
@@ -202,8 +223,26 @@ function FichaOrden({
   const [cancelando, setCancelando] = useState(false)
   const [motivo, setMotivo] = useState('')
   const [devolver, setDevolver] = useState(true)
+  const [abriendoGarantia, setAbriendoGarantia] = useState(false)
+  const [problemaGarantia, setProblemaGarantia] = useState('')
 
   if (!orden) return null
+
+  async function abrirGarantia() {
+    if (!problemaGarantia.trim()) {
+      setError('Describe qué falló')
+      return
+    }
+    setError(null)
+    setProcesando(true)
+    try {
+      onGarantia(await ordenesApi.garantia(orden!.id, { problema: problemaGarantia.trim() }))
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setProcesando(false)
+    }
+  }
 
   async function cancelarOrden() {
     if (!motivo.trim()) {
@@ -266,7 +305,10 @@ function FichaOrden({
   return (
     <BottomSheet abierto={!!orden} onCerrar={onCerrar} titulo={`${orden.numeroOrden} — ${orden.cliente}`}>
       <div className="flex flex-col gap-4 text-sm">
-        <Badge tono={TONO_ESTADO[orden.estado]}>{ETIQUETA_ESTADO_ORDEN[orden.estado]}</Badge>
+        <div className="flex flex-wrap gap-2">
+          <Badge tono={TONO_ESTADO[orden.estado]}>{ETIQUETA_ESTADO_ORDEN[orden.estado]}</Badge>
+          {orden.garantia && <Badge tono="steel">Garantía de {orden.numeroOrdenOrigen} · sin cobro</Badge>}
+        </div>
 
         <div><span className="text-sub">Producto</span><p>{orden.productoRecibido}</p></div>
         <div><span className="text-sub">Problema</span><p>{orden.problema}</p></div>
@@ -283,7 +325,33 @@ function FichaOrden({
           <div><span className="text-sub">Motivo de la cancelación</span><p>{orden.motivoCancelacion}</p></div>
         )}
 
+        <MaterialesOrden ordenId={orden.id} editable={orden.estado !== 'ENTREGADO' && orden.estado !== 'CANCELADO'} />
+
         {error && <p className="text-sm text-danger">{error}</p>}
+
+        {orden.estado === 'ENTREGADO' && (
+          <div className="flex flex-col gap-2 border-t border-hair pt-3">
+            {!abriendoGarantia ? (
+              <Button variant="secondary" onClick={() => setAbriendoGarantia(true)}>Garantía</Button>
+            ) : (
+              <div className="flex flex-col gap-2 rounded-md border border-line p-3">
+                <span className="font-medium">El cliente volvió: abrir garantía</span>
+                <p className="text-xs text-sub">
+                  Se crea una orden nueva sin cobro, ligada a esta. El material que uses sale del stock.
+                </p>
+                <textarea
+                  rows={2} value={problemaGarantia} onChange={(e) => setProblemaGarantia(e.target.value)} maxLength={1000}
+                  placeholder="¿Qué falló? (ej. la chapa volvió a trabarse)"
+                  className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel"
+                />
+                <div className="flex gap-2">
+                  <Button disabled={procesando} onClick={abrirGarantia}>Abrir garantía</Button>
+                  <Button variant="secondary" disabled={procesando} onClick={() => setAbriendoGarantia(false)}>Volver</Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {orden.estado !== 'ENTREGADO' && orden.estado !== 'CANCELADO' && (
           <div className="flex flex-col gap-2 border-t border-hair pt-3">
@@ -345,5 +413,93 @@ function FichaOrden({
         )}
       </div>
     </BottomSheet>
+  )
+}
+
+/**
+ * Material del inventario usado en la orden (una pieza, un cilindro): sale del
+ * stock por el Kárdex. En una garantía es la forma de registrar lo que se usó
+ * sin cobrarlo.
+ */
+function MaterialesOrden({ ordenId, editable }: { ordenId: number; editable: boolean }) {
+  const [materiales, setMateriales] = useState<MaterialOrdenResponse[]>([])
+  const [encontrados, setEncontrados] = useState<ProductoResponse[]>([])
+  const [elegido, setElegido] = useState<ProductoResponse | null>(null)
+  const [cantidad, setCantidad] = useState('1')
+  const [error, setError] = useState<string | null>(null)
+  const [guardando, setGuardando] = useState(false)
+
+  useEffect(() => {
+    ordenesApi.materiales(ordenId).then(setMateriales).catch(() => setMateriales([]))
+  }, [ordenId])
+
+  async function buscar(termino: string) {
+    setEncontrados(termino.trim().length >= 2 ? await productosApi.buscar(termino.trim()) : [])
+  }
+
+  async function usar() {
+    const n = Number.parseInt(cantidad, 10)
+    if (!elegido || !(n >= 1)) return
+    setError(null)
+    setGuardando(true)
+    try {
+      setMateriales(await ordenesApi.usarMaterial(ordenId, elegido.id, n))
+      setElegido(null)
+      setCantidad('1')
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  if (!editable && materiales.length === 0) return null
+
+  return (
+    <div className="flex flex-col gap-2 border-t border-hair pt-3">
+      <span className="font-medium">Material usado</span>
+      {materiales.length === 0 ? (
+        <p className="text-xs text-sub">Ninguno todavía.</p>
+      ) : (
+        <ul className="flex flex-col gap-1">
+          {materiales.map((m, i) => (
+            <li key={i} className="flex justify-between gap-2 text-xs">
+              <span>{m.cantidad} × {m.nombre} <span className="text-sub">({m.codigo})</span></span>
+              <span className="text-sub">{m.usuario}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {editable && (
+        elegido ? (
+          <div className="flex items-center gap-2">
+            <span className="min-w-0 flex-1 truncate text-xs">{elegido.nombre} · hay {elegido.cantidadStock}</span>
+            <input
+              type="number" min="1" inputMode="numeric" value={cantidad} onChange={(e) => setCantidad(e.target.value)}
+              aria-label="Cantidad usada"
+              className="w-16 rounded-md border border-line bg-paper px-2 py-1.5 text-right text-sm outline-none focus:border-steel"
+            />
+            <Button disabled={guardando} onClick={usar} className="px-3">Usar</Button>
+            <button type="button" onClick={() => setElegido(null)} className="text-xs text-steel underline">Cambiar</button>
+          </div>
+        ) : (
+          <>
+            <SearchInput placeholder="Agregar material del inventario…" onBuscar={buscar} />
+            {encontrados.length > 0 && (
+              <div className="flex flex-col gap-1">
+                {encontrados.slice(0, 6).map((p) => (
+                  <button key={p.id} type="button" onClick={() => { setElegido(p); setEncontrados([]) }}
+                    className="flex justify-between rounded-md border border-hair px-2 py-1.5 text-left text-xs hover:bg-hair">
+                    <span>{p.nombre}</span>
+                    <span className="text-sub">hay {p.cantidadStock}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )
+      )}
+      {error && <p className="text-xs text-danger">{error}</p>}
+    </div>
   )
 }
