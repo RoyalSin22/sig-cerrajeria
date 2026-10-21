@@ -78,18 +78,18 @@ Toca un producto para ver su ficha: ahí puedes subir o cambiar su foto, editar 
 
 Para dar de alta un producto nuevo, toca **Nuevo producto** arriba. Los campos que te pide cambian según el tipo que elijas (una llave virgen pide "perfil", un candado pide "tamaño", etc.).
 
-### Cambiar muchas cantidades con Excel
+### Cambiar muchas cantidades y precios con Excel
 
-Para no ajustar producto por producto, el Administrador toca **Cantidades (Excel)** en Inventario:
+Para no cambiar producto por producto, el Administrador toca **Cantidades y precios (Excel)** en Inventario:
 
-1. **Descarga el inventario**: baja un archivo con todos los productos (código, nombre, tipo, marca y stock actual) y una columna **cantidad** vacía.
-2. Ábrelo en Excel y escribe la cantidad solo en las filas que quieras cambiar. Las vacías no se tocan.
+1. **Descarga el inventario**: baja un archivo con todos los productos (código, nombre, tipo, marca y stock actual), una columna **cantidad** vacía y los precios actuales (**precio_compra**, **precio_venta** y **precio_duplicado**).
+2. Ábrelo en Excel y escribe la cantidad solo en las filas que quieras cambiar (las vacías no se tocan). Corrige los precios que quieras: por ejemplo, para poner el duplicado de todas las llaves de casa a S/ 2.50, escribe `2.50` en la primera y arrastra hacia abajo. El precio de duplicado solo va en llaves.
 3. Guárdalo (Ctrl+S, como CSV) y súbelo eligiendo qué significa el número:
    - **Lo que conté (reemplaza)**: el número pasa a ser el stock. Sirve para el inventario físico.
    - **Lo que llegó (se suma)**: el número se suma al stock. Sirve cuando llega mercadería; si además quieres registrar lo que gastaste, usa **Compras** en vez de esto.
-4. Antes de guardar ves cada cambio (por ejemplo `200 → 1200`). Si hay un problema, como un código que no existe o una cantidad con decimales, no se cambia nada hasta que lo corrijas.
+4. Antes de guardar ves cada cambio (por ejemplo `Stock 200 → 1200` o `Duplicado S/ 2.00 → S/ 2.50`). Si hay un problema, como un código que no existe, una cantidad con decimales o un precio de duplicado en algo que no es llave, no se cambia nada hasta que lo corrijas.
 
-Cada cambio queda en el Kárdex del producto con el motivo "Conteo físico (planilla)" o "Mercadería recibida (planilla)".
+Los precios se cambian tal cual, sin importar si elegiste "conté" o "llegó". Cada cambio de stock queda en el Kárdex del producto con el motivo "Conteo físico (planilla)" o "Mercadería recibida (planilla)".
 
 ### Cargar muchos productos de una vez (Importar)
 

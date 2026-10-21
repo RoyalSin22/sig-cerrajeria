@@ -17,7 +17,7 @@ import { formatearSoles, formatearFechaHora, urlImagen } from '../utils/format'
 import {
   ETIQUETA_TIPO_PRODUCTO, esLlave, type ProductoResponse, type MovimientoInventarioResponse,
   type ProductoCreateRequest, type TipoProducto, type ImportacionResultado,
-  type ActualizacionStockResultado, type ModoPlanilla,
+  type ResultadoPlanilla, type ModoPlanilla,
 } from '../types/productos'
 
 type Filtro = 'TODAS' | 'STOCK_BAJO'
@@ -73,7 +73,7 @@ export function Inventario() {
         <h1 className="font-heading text-2xl font-semibold">Inventario</h1>
         <div className="flex flex-wrap gap-2">
           {usuario?.role === 'ROLE_ADMIN' && (
-            <Button variant="secondary" onClick={() => setMostrarPlanilla(true)}>Cantidades (Excel)</Button>
+            <Button variant="secondary" onClick={() => setMostrarPlanilla(true)}>Cantidades y precios (Excel)</Button>
           )}
           {usuario?.role === 'ROLE_ADMIN' && (
             <Button variant="secondary" onClick={() => setMostrarImportar(true)}>Importar</Button>
@@ -742,17 +742,20 @@ function ImportarInventario({
   )
 }
 
+const ETIQUETA_PRECIO = { compra: 'Compra', venta: 'Venta', duplicado: 'Duplicado' } as const
+
 /**
- * Planilla de cantidades: se descarga todo el inventario, se llena la columna
- * "cantidad" en Excel y se sube. "Conteo" reemplaza el stock (lo que hay en el
- * estante) y "Llegó mercadería" lo suma. Cada cambio queda en el Kárdex.
+ * Planilla de cantidades y precios: se descarga todo el inventario, se cambia
+ * en Excel y se sube. En "cantidad", "Conteo" reemplaza el stock (lo que hay en
+ * el estante) y "Llegó mercadería" lo suma; cada cambio queda en el Kárdex.
+ * Los precios se cambian tal cual (ej. el duplicado de todas las llaves a 2.50).
  */
 function PlanillaCantidades({
   abierto, onCerrar, onAplicada,
 }: { abierto: boolean; onCerrar: () => void; onAplicada: (actualizados: number) => void }) {
   const [modo, setModo] = useState<ModoPlanilla>('CONTEO')
   const [archivo, setArchivo] = useState<File | null>(null)
-  const [revision, setRevision] = useState<ActualizacionStockResultado | null>(null)
+  const [revision, setRevision] = useState<ResultadoPlanilla | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [trabajando, setTrabajando] = useState(false)
 
@@ -827,19 +830,22 @@ function PlanillaCantidades({
   const listo = revision !== null && revision.errores.length === 0 && revision.cambios.length > 0
 
   return (
-    <BottomSheet abierto={abierto} onCerrar={cerrar} titulo="Cantidades con Excel">
+    <BottomSheet abierto={abierto} onCerrar={cerrar} titulo="Cantidades y precios con Excel">
       <div className="flex flex-col gap-4 text-sm">
         <ol className="list-decimal space-y-1 pl-5 text-sub">
           <li>
             <button type="button" onClick={descargar} className="text-steel underline">Descarga el inventario</button>{' '}
             y ábrelo en Excel.
           </li>
-          <li>Escribe en la columna <b>cantidad</b> solo lo que quieras cambiar; las filas vacías no se tocan.</li>
+          <li>
+            Escribe en <b>cantidad</b> solo lo que quieras cambiar (las vacías no se tocan) y corrige los precios
+            que quieras en <b>precio_compra</b>, <b>precio_venta</b> o <b>precio_duplicado</b> (solo llaves).
+          </li>
           <li>Guarda (Ctrl+S, como CSV) y elige el archivo: primero ves los cambios y nada se guarda hasta que confirmes.</li>
         </ol>
 
         <div className="flex flex-col gap-1">
-          <span className="font-medium">El número de la columna cantidad es…</span>
+          <span className="font-medium">El número de la columna cantidad es… <span className="font-normal text-sub">(los precios se cambian tal cual)</span></span>
           <div className="flex flex-wrap gap-2">
             <Chip activo={modo === 'CONTEO'} onClick={() => cambiarModo('CONTEO')}>Lo que conté (reemplaza)</Chip>
             <Chip activo={modo === 'ENTRADA'} onClick={() => cambiarModo('ENTRADA')}>Lo que llegó (se suma)</Chip>
@@ -883,9 +889,17 @@ function PlanillaCantidades({
               </p>
               <ul className="max-h-60 overflow-y-auto rounded-md border border-hair">
                 {revision.cambios.slice(0, 100).map((c) => (
-                  <li key={c.fila} className="flex items-center justify-between gap-2 border-b border-hair px-3 py-1.5 last:border-0">
+                  <li key={c.fila} className="flex flex-col gap-0.5 border-b border-hair px-3 py-1.5 last:border-0">
                     <span className="min-w-0 truncate"><span className="text-sub">{c.codigo}</span> · {c.nombre}</span>
-                    <span className="shrink-0 font-medium">{c.stockAnterior} → {c.stockNuevo}</span>
+                    <span className="flex flex-wrap gap-x-3 text-xs">
+                      {c.stockNuevo != null && <span>Stock <b>{c.stockAnterior} → {c.stockNuevo}</b></span>}
+                      {c.precios.map((p) => (
+                        <span key={p.precio}>
+                          {ETIQUETA_PRECIO[p.precio]}{' '}
+                          <b>{p.anterior == null ? '—' : formatearSoles(p.anterior)} → {formatearSoles(p.nuevo)}</b>
+                        </span>
+                      ))}
+                    </span>
                   </li>
                 ))}
               </ul>

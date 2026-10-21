@@ -44,7 +44,7 @@ describe('permisos por rol', () => {
     renderizar(<Inventario />)
     expect(await screen.findByRole('button', { name: 'Nuevo producto' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Importar' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Cantidades (Excel)' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Cantidades y precios (Excel)' })).toBeTruthy()
   })
 
   it('Inventario: el empleado no los ve', async () => {
@@ -53,7 +53,7 @@ describe('permisos por rol', () => {
     expect(await screen.findByRole('heading', { name: 'Inventario' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Nuevo producto' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Importar' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Cantidades (Excel)' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Cantidades y precios (Excel)' })).toBeNull()
   })
 
   it('Compras: el administrador ve el formulario de registro', async () => {

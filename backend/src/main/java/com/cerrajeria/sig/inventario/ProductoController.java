@@ -1,6 +1,6 @@
 package com.cerrajeria.sig.inventario;
 
-import com.cerrajeria.sig.inventario.dto.ActualizacionStockResultado;
+import com.cerrajeria.sig.inventario.dto.ResultadoPlanilla;
 import com.cerrajeria.sig.inventario.dto.AjusteStockRequest;
 import com.cerrajeria.sig.inventario.dto.ImportacionResultado;
 import com.cerrajeria.sig.inventario.dto.MovimientoInventarioResponse;
@@ -64,8 +64,8 @@ public class ProductoController {
 
     @PostMapping(value = "/planilla", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Actualizar stock desde la planilla: CONTEO reemplaza, ENTRADA suma (revisar con confirmar=false)")
-    public ResponseEntity<ActualizacionStockResultado> subirPlanilla(
+    @Operation(summary = "Actualizar stock y precios desde la planilla: en la cantidad CONTEO reemplaza, ENTRADA suma (revisar con confirmar=false)")
+    public ResponseEntity<ResultadoPlanilla> subirPlanilla(
             @RequestParam("archivo") org.springframework.web.multipart.MultipartFile archivo,
             @RequestParam PlanillaStockService.Modo modo,
             @RequestParam(defaultValue = "false") boolean confirmar) throws java.io.IOException {

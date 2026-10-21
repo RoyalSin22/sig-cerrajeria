@@ -1,6 +1,6 @@
 package com.cerrajeria.sig.inventario;
 
-import com.cerrajeria.sig.inventario.dto.ActualizacionStockResultado;
+import com.cerrajeria.sig.inventario.dto.ResultadoPlanilla;
 import com.cerrajeria.sig.inventario.dto.AjusteStockRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +43,9 @@ class PlanillaStockServiceTest {
         p.setNombre(nombre);
         p.setTipoProducto(TipoProducto.LLAVE_VIRGEN);
         p.setCantidadStock(stock);
+        p.setActivo(true);
+        p.setPrecioCompra(new java.math.BigDecimal("0.90"));
+        p.setPrecioVenta(new java.math.BigDecimal("1.50"));
         return p;
     }
 
@@ -59,8 +62,9 @@ class PlanillaStockServiceTest {
 
         String csv = new String(planilla.exportar(), Charset.forName("windows-1252"));
 
-        assertThat(csv).startsWith("sep=;\r\ncodigo;nombre;tipo;marca;stock_actual;cantidad\r\n");
-        assertThat(csv).contains("=\"001\";Llave de diseño;llave virgen;\"Cantol; S.A.\";250;\r\n");
+        assertThat(csv).startsWith(
+            "sep=;\r\ncodigo;nombre;tipo;marca;stock_actual;cantidad;precio_compra;precio_venta;precio_duplicado\r\n");
+        assertThat(csv).contains("=\"001\";Llave de diseño;llave virgen;\"Cantol; S.A.\";250;;=\"0.90\";=\"1.50\";\r\n");
     }
 
     @Test
@@ -68,10 +72,10 @@ class PlanillaStockServiceTest {
     void idaYVuelta() {
         Producto llave = producto(1, "001", "Llave de diseño", 250);
         when(productoRepository.findByActivoTrueOrderByTipoProductoAscNombreAsc()).thenReturn(List.of(llave));
-        String llenado = new String(planilla.exportar(), Charset.forName("windows-1252")).replace("250;\r\n", "250;300\r\n");
+        String llenado = new String(planilla.exportar(), Charset.forName("windows-1252")).replace("250;;", "250;300;");
         when(productoRepository.findByCodigoIn(anyCollection())).thenReturn(List.of(llave));
 
-        ActualizacionStockResultado r = planilla.actualizar(
+        ResultadoPlanilla r = planilla.actualizar(
             llenado.getBytes(Charset.forName("windows-1252")), PlanillaStockService.Modo.CONTEO, false);
 
         assertThat(r.errores()).isEmpty();
@@ -87,11 +91,11 @@ class PlanillaStockServiceTest {
         when(productoRepository.findByCodigoIn(anyCollection())).thenReturn(List.of(
             producto(1, "KW1", "Llave KW1", 200), producto(2, "YA1", "Llave YA1", 40)));
 
-        ActualizacionStockResultado r = planilla.actualizar(
+        ResultadoPlanilla r = planilla.actualizar(
             utf8("codigo,cantidad\nKW1,150\nYA1,40\nSIN,\n"), PlanillaStockService.Modo.CONTEO, true);
 
         assertThat(r.errores()).isEmpty();
-        assertThat(r.filasConCantidad()).isEqualTo(2);
+        assertThat(r.filasLeidas()).isEqualTo(2);
         assertThat(r.sinCambio()).isEqualTo(1);
         assertThat(r.actualizados()).isEqualTo(1);
         verify(productoService).ajustarStock(1L, new AjusteStockRequest(-50, PlanillaStockService.MOTIVO_CONTEO));
@@ -103,7 +107,7 @@ class PlanillaStockServiceTest {
     void entrada_suma() {
         when(productoRepository.findByCodigoIn(anyCollection())).thenReturn(List.of(producto(1, "KW1", "Llave KW1", 200)));
 
-        ActualizacionStockResultado r = planilla.actualizar(
+        ResultadoPlanilla r = planilla.actualizar(
             utf8("codigo;cantidad\nKW1;\"1,000\"\n"), PlanillaStockService.Modo.ENTRADA, true);
 
         assertThat(r.errores()).isEmpty();
@@ -116,7 +120,7 @@ class PlanillaStockServiceTest {
     void conError_noCambiaNada() {
         when(productoRepository.findByCodigoIn(anyCollection())).thenReturn(List.of(producto(1, "KW1", "Llave KW1", 200)));
 
-        ActualizacionStockResultado r = planilla.actualizar(
+        ResultadoPlanilla r = planilla.actualizar(
             utf8("codigo,cantidad\nKW1,300\nNOEXISTE,5\nKW1,2\n"), PlanillaStockService.Modo.CONTEO, true);
 
         assertThat(r.errores()).extracting(e -> e.fila()).containsExactly(3, 4);
@@ -131,5 +135,34 @@ class PlanillaStockServiceTest {
         assertThat(PlanillaStockService.cantidad("2.5")).isNull();
         assertThat(PlanillaStockService.cantidad("1.000")).isEqualTo(1000);
         assertThat(PlanillaStockService.cantidad(" 120 ")).isEqualTo(120);
+    }
+
+    @Test
+    @DisplayName("Precios: cambia solo lo escrito y distinto; el duplicado solo en llaves")
+    void precios() {
+        Producto llave = producto(1, "CASA-1", "Llave casa", 300);
+        llave.setPrecioDuplicado(new java.math.BigDecimal("2.00"));
+        Producto candado = producto(2, "CAN-1", "Candado", 5);
+        candado.setTipoProducto(TipoProducto.CANDADO);
+        when(productoRepository.findByCodigoIn(anyCollection())).thenReturn(List.of(llave, candado));
+
+        ResultadoPlanilla r = planilla.actualizar(
+            utf8("codigo;cantidad;precio_compra;precio_duplicado\nCASA-1;;0,90;2,50\nCAN-1;;;\n"),
+            PlanillaStockService.Modo.CONTEO, true);
+
+        assertThat(r.errores()).isEmpty();
+        assertThat(r.cambios()).singleElement().satisfies(c -> {
+            assertThat(c.stockNuevo()).as("sin cantidad no toca el stock").isNull();
+            assertThat(c.precios()).singleElement().satisfies(p -> {
+                assertThat(p.precio()).isEqualTo("duplicado");
+                assertThat(p.nuevo()).isEqualByComparingTo("2.50");
+            });
+        });
+        verify(productoService).actualizarPrecios(1L, null, null, new java.math.BigDecimal("2.50"));
+        verify(productoService, never()).ajustarStock(anyLong(), any());
+
+        ResultadoPlanilla conError = planilla.actualizar(
+            utf8("codigo;precio_duplicado\nCAN-1;2.50\n"), PlanillaStockService.Modo.CONTEO, false);
+        assertThat(conError.errores()).singleElement().satisfies(e -> assertThat(e.mensaje()).contains("no es una llave"));
     }
 }

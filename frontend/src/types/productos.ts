@@ -101,11 +101,19 @@ export interface ImportacionResultado {
 
 export type ModoPlanilla = 'CONTEO' | 'ENTRADA'
 
-/** Refleja inventario.dto.ActualizacionStockResultado */
-export interface ActualizacionStockResultado {
-  filasConCantidad: number
+/** Refleja inventario.dto.ResultadoPlanilla */
+export interface ResultadoPlanilla {
+  filasLeidas: number
   actualizados: number
   sinCambio: number
-  cambios: { fila: number; codigo: string; nombre: string; stockAnterior: number; stockNuevo: number }[]
+  cambios: {
+    fila: number
+    codigo: string
+    nombre: string
+    /** null si la fila no cambia el stock */
+    stockAnterior: number | null
+    stockNuevo: number | null
+    precios: { precio: 'compra' | 'venta' | 'duplicado'; anterior: number | null; nuevo: number }[]
+  }[]
   errores: { fila: number; mensaje: string }[]
 }
