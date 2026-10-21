@@ -157,7 +157,9 @@ class ImportacionInventarioIntegrationTest {
         String planilla = new String(descarga.getResponse().getContentAsByteArray(), ansi);
         assertThat(planilla).contains("=\"PLA-001\";Planilla llave Yale;llave virgen;;200;");
 
-        String llena = planilla.replace("Planilla llave Yale;llave virgen;;200;", "Planilla llave Yale;llave virgen;;200;1000");
+        String fila = "Planilla llave Yale;llave virgen;;200;;=\"1.00\";=\"3.00\";\r\n";
+        assertThat(planilla).contains(fila);
+        String llena = planilla.replace(fila, "Planilla llave Yale;llave virgen;;200;1000;=\"1.00\";=\"3.00\";2,50\r\n");
         MvcResult subida = mockMvc.perform(multipart("/api/v1/productos/planilla")
                 .file(new MockMultipartFile("archivo", "inventario.csv", "text/csv", llena.getBytes(ansi)))
                 .param("modo", "CONTEO").param("confirmar", "true")
@@ -171,6 +173,8 @@ class ImportacionInventarioIntegrationTest {
         JsonNode llave = objectMapper.readTree(mockMvc.perform(get("/api/v1/productos/buscar").param("q", "PLA-001")
             .header("Authorization", admin)).andReturn().getResponse().getContentAsString()).get(0);
         assertThat(llave.get("cantidadStock").asInt()).isEqualTo(1000);
+        assertThat(llave.get("precioDuplicado").decimalValue()).isEqualByComparingTo("2.50");
+        assertThat(llave.get("precioVenta").decimalValue()).as("sin cambio").isEqualByComparingTo("3.00");
         JsonNode kardex = objectMapper.readTree(mockMvc.perform(get("/api/v1/productos/" + llave.get("id").asLong() + "/kardex")
             .header("Authorization", admin)).andReturn().getResponse().getContentAsString());
         assertThat(kardex.get(0).get("cantidad").asInt()).isEqualTo(800);

@@ -3,7 +3,7 @@ import type { Pagina } from '../types/pagina'
 import type {
   ProductoResponse, ProductoCreateRequest, ProductoUpdateRequest,
   AjusteStockRequest, MovimientoInventarioResponse, TipoProducto, ImportacionResultado,
-  ActualizacionStockResultado, ModoPlanilla,
+  ResultadoPlanilla, ModoPlanilla,
 } from '../types/productos'
 
 export const productosApi = {
@@ -47,7 +47,7 @@ export const productosApi = {
     const formData = new FormData()
     formData.append('archivo', archivo)
     return axiosClient
-      .post<ActualizacionStockResultado>('/productos/planilla', formData, { params: { modo, confirmar } })
+      .post<ResultadoPlanilla>('/productos/planilla', formData, { params: { modo, confirmar } })
       .then(r => r.data)
   },
 }

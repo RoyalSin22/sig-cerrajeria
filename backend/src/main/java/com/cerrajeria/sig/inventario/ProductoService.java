@@ -159,6 +159,25 @@ public class ProductoService {
     }
 
     /**
+     * Cambia solo los precios indicados (null = sin cambio). No toca el stock.
+     * El precio de duplicado solo aplica a llaves.
+     */
+    @Transactional
+    public void actualizarPrecios(Long id, java.math.BigDecimal precioCompra, java.math.BigDecimal precioVenta,
+                                  java.math.BigDecimal precioDuplicado) {
+        Producto producto = buscarPorId(id);
+        if (precioCompra != null) producto.setPrecioCompra(precioCompra);
+        if (precioVenta != null) producto.setPrecioVenta(precioVenta);
+        if (precioDuplicado != null) {
+            if (!producto.getTipoProducto().esLlave()) {
+                throw new IllegalArgumentException(producto.getNombre() + " no es una llave: no tiene precio de duplicado");
+            }
+            producto.setPrecioDuplicado(precioDuplicado);
+        }
+        productoRepository.save(producto);
+    }
+
+    /**
      * Descuenta stock por una venta u otra referencia de salida, generando el
      * movimiento de Kardex correspondiente (regla de negocio 2). Reutilizable
      * desde VentaService y OrdenTrabajoService.
