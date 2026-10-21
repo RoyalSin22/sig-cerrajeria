@@ -8,6 +8,7 @@ import { PullToRefreshIndicator } from '../components/ui/PullToRefreshIndicator'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
+import { Campo } from '../components/ui/Campo'
 import { BottomSheet } from '../components/ui/BottomSheet'
 import { SearchInput } from '../components/ui/SearchInput'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -65,7 +66,7 @@ export function Domicilio() {
     <div className="flex flex-col gap-4">
       <PullToRefreshIndicator distancia={distancia} refrescando={refrescando} umbral={umbral} />
       <div className="flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-semibold">Domicilio</h1>
+        <h1 className="font-heading text-3xl font-bold">Domicilio</h1>
         <Button onClick={() => setMostrarAlta(true)}>Agendar servicio</Button>
       </div>
 
@@ -230,22 +231,22 @@ function FormularioServicio({
           </div>
         )}
 
-        <input required value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Dirección"
-          className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel" />
-        <input required value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Teléfono"
-          className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel" />
+        <Campo etiqueta="Dirección"><input required value={direccion} onChange={(e) => setDireccion(e.target.value)}
+          className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel" /></Campo>
+        <Campo etiqueta="Teléfono"><input required type="tel" inputMode="tel" autoComplete="off" value={telefono} onChange={(e) => setTelefono(e.target.value)}
+          className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel" /></Campo>
         <div className="flex gap-2">
           <input required type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
             className="flex-1 rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel" />
           <input required type="time" value={hora} onChange={(e) => setHora(e.target.value)}
             className="flex-1 rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel" />
         </div>
-        <input required value={tipoServicio} onChange={(e) => setTipoServicio(e.target.value)}
-          placeholder="Tipo de servicio (ej. Cambio de chapa)"
-          className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel" />
+        <Campo etiqueta="¿Qué servicio?"><input required value={tipoServicio} onChange={(e) => setTipoServicio(e.target.value)}
+          placeholder="Ej.: cambio de chapa"
+          className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel" /></Campo>
 
-        {error && <p className="text-sm text-danger">{error}</p>}
-        <Button type="submit" disabled={guardando}>{guardando ? 'Agendando…' : 'Agendar'}</Button>
+        {error && <p className="text-base font-semibold text-danger">{error}</p>}
+        <Button type="submit" tamano="lg" disabled={guardando}>{guardando ? 'Agendando…' : 'Agendar'}</Button>
       </form>
     </BottomSheet>
   )
@@ -318,8 +319,8 @@ function RealizarServicio({
             ? 'El cobro entra en tu caja: tienes que tenerla abierta, aunque estés fuera del local.'
             : 'Sin cobro (garantía o cortesía): no pasa por la caja.'}
         </p>
-        {error && <p className="text-danger">{error}</p>}
-        <Button type="submit" disabled={!valido || guardando}>
+        {error && <p className="text-base font-semibold text-danger">{error}</p>}
+        <Button type="submit" tamano="lg" disabled={!valido || guardando}>
           {guardando ? 'Guardando…' : montoNumero > 0 ? `Cobrar ${formatearSoles(montoNumero)}` : 'Marcar realizado'}
         </Button>
       </form>

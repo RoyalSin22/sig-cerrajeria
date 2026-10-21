@@ -9,6 +9,7 @@ export function Login() {
   const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [verPassword, setVerPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
 
@@ -29,14 +30,12 @@ export function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-paper px-4">
       <div className="w-full max-w-sm">
-        <h1 className="font-heading mb-1 text-center text-3xl font-bold tracking-wide text-steel-dark">
-          SIG-CERRAJERÍA
-        </h1>
-        <p className="mb-8 text-center text-sm text-sub">Sistema Integral de Gestión</p>
+        <h1 className="font-heading mb-1 text-center text-4xl font-bold text-steel-dark">Cerrajería</h1>
+        <p className="mb-8 text-center text-lg text-sub">Escribe tu usuario y tu contraseña</p>
 
         <form onSubmit={handleSubmit} className="panel-cepillado flex flex-col gap-4 rounded-lg p-6">
           <div>
-            <label htmlFor="username" className="mb-1 block text-sm font-medium text-ink">
+            <label htmlFor="username" className="mb-1 block text-lg font-semibold text-ink">
               Usuario
             </label>
             <input
@@ -44,29 +43,43 @@ export function Login() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="next"
               required
-              className="w-full rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel"
+              className="w-full rounded-lg border px-3 text-lg outline-none"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-ink">
+            <label htmlFor="password" className="mb-1 block text-lg font-semibold text-ink">
               Contraseña
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-              className="w-full rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel"
-            />
+            <div className="flex gap-2">
+              <input
+                id="password"
+                type={verPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="go"
+                required
+                className="w-full min-w-0 rounded-lg border px-3 text-lg outline-none"
+              />
+              {/* Ver lo escrito evita el error mas comun: una letra mal puesta */}
+              <Button type="button" variant="secondary" onClick={() => setVerPassword((v) => !v)} className="shrink-0">
+                {verPassword ? 'Ocultar' : 'Ver'}
+              </Button>
+            </div>
           </div>
 
-          {error && <p className="text-sm text-danger">{error}</p>}
+          {error && <p className="text-base font-semibold text-danger">{error}</p>}
 
-          <Button type="submit" disabled={cargando} className="w-full">
+          <Button type="submit" tamano="lg" disabled={cargando} className="w-full text-xl">
             {cargando ? 'Ingresando…' : 'Ingresar'}
           </Button>
         </form>

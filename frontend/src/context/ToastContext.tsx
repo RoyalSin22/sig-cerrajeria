@@ -21,17 +21,21 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => [...prev, { id, mensaje, tipo }])
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id))
-    }, 3000)
+    }, tipo === 'error' ? 7000 : 4500) // tiempo para leerlo con calma
   }, [])
 
   return (
     <ToastContext.Provider value={{ notificar }}>
       {children}
-      <div className="fixed bottom-20 left-1/2 z-50 flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 md:bottom-6">
+      <div
+        role="status"
+        aria-live="polite"
+        className="fixed left-1/2 top-16 z-[60] flex w-full max-w-md -translate-x-1/2 flex-col gap-2 px-4"
+      >
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`rounded-lg px-4 py-3 text-sm text-white shadow-lg animate-in fade-in slide-in-from-bottom-2 ${estilosPorTipo[t.tipo]}`}
+            className={`rounded-lg px-5 py-4 text-base font-semibold text-white shadow-lg animate-in fade-in slide-in-from-top-2 ${estilosPorTipo[t.tipo]}`}
           >
             {t.mensaje}
           </div>

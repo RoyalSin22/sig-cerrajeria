@@ -4,9 +4,18 @@ Esta es la guía para usar el sistema en el día a día del mostrador. No necesi
 
 ## Entrar al sistema
 
-Abre la dirección que te dieron (en la PC del local, o desde el celular si está en la red). Escribe tu usuario y contraseña, y toca **Ingresar**.
+Abre la dirección que te dieron (en la PC del local, o desde el celular si está en la red). Escribe tu usuario y contraseña, y toca **Ingresar**. Si no estás seguro de lo que escribiste en la contraseña, toca **Ver** para mostrarla.
 
-Vas a ver cinco pestañas arriba: **Inicio, Venta, Inventario, Taller, Domicilio**. Y un botón con tres rayitas (☰) a la izquierda, para todo lo demás: Clientes, Compras, Caja, Reportes, Ajustes.
+**Cómo moverse:**
+- **En la PC**, el menú está siempre a la izquierda: Inicio, Vender, Taller, Inventario, Domicilio, Caja, Clientes, Compras, Reportes y Ajustes.
+- **En el celular**, el menú está abajo, al alcance del pulgar: **Inicio, Vender, Taller, Stock** (el inventario) y **Más**, que abre el resto.
+- Arriba siempre se ve si la caja está **abierta** (verde) o **cerrada** (naranja). Tocándolo vas directo a Caja.
+
+La pantalla de **Inicio** tiene botones grandes para lo de todos los días: **Duplicado de llave**, **Vender**, **Recibir trabajo**, **Ver stock**, **Domicilio** y **Caja**. Debajo está el resumen del día.
+
+### Letra más grande o más chica
+
+En **Ajustes → Tamaño de la letra** elige **Normal**, **Grande** (viene así) o **Muy grande**. Cambia todo: textos, botones y campos. Cada equipo recuerda su tamaño, así que la PC y el celular pueden tener uno distinto.
 
 ### Instalarla en el celular
 
@@ -23,11 +32,13 @@ Se abre en pantalla completa, sin la barra del navegador, como cualquier app ins
 
 Antes de vender o cobrar cualquier cosa, tienes que abrir la caja. El sistema no te deja registrar una venta sin esto — es a propósito, para que nunca haya dinero sin cuenta.
 
-Entra a **Caja** (desde el menú ☰), pon el monto con el que arrancas el día (por ejemplo, `S/ 100.00`) y toca **Abrir caja**. Vas a ver un punto verde en la barra de arriba que dice "Caja abierta" mientras dure tu turno.
+Entra a **Caja** (tocando "Caja cerrada" arriba, o desde el menú), pon el monto con el que arrancas el día (por ejemplo, `S/ 100.00`) y toca **Abrir caja**. Vas a ver un punto verde en la barra de arriba que dice "Caja abierta" mientras dure tu turno.
 
 ## Vender
 
-Ve a la pestaña **Venta**. Busca el producto por nombre o código (por ejemplo "KW1" o "chapa yale") y tócalo para agregarlo. Puedes sumar o restar cantidad con los botones `+` y `−` o escribirla directamente (por ejemplo `25`), o quitar el producto del todo con el ícono de basura.
+Ve a **Vender**. Busca el producto por nombre o código (por ejemplo "KW1" o "chapa yale") y tócalo para agregarlo. Puedes sumar o restar cantidad con los botones `+` y `−` o escribirla directamente (por ejemplo `25`), o quitarlo con **Quitar**.
+
+Abajo ves el total. Toca cómo te pagan (**Efectivo**, **Yape**, **Plin** o **Mixto**) y el botón grande **Cobrar**, que muestra el monto a cobrar.
 
 Abajo aparece el total. Elige cómo te pagan (Efectivo, Yape, Plin, Tarjeta, o Mixto si es una combinación) y toca **Cobrar**.
 
@@ -35,7 +46,13 @@ Si eliges **Mixto**, el sistema te pide cuánto pagaron en cada método — por 
 
 ### Duplicado de llave (sin datos del cliente)
 
-Para un duplicado no hace falta registrar a nadie. Toca **Duplicado de llave** (arriba del buscador), elige la llave (puedes buscarla por nombre o código), pon cuántas copias son y toca **Agregar al carrito**. Se cobra como cualquier venta y una llave virgen sale del stock por cada copia.
+Para un duplicado no hace falta registrar a nadie. Son tres toques:
+
+1. **Duplicado de llave** (en Inicio o en Vender).
+2. La llave (puedes buscarla por nombre o código).
+3. Cuántas copias: **1**, **2**, **3** o **4** (cada botón muestra el total). Para otra cantidad, escríbela en "Otra cantidad".
+
+Después, **Cobrar**. Se cobra como cualquier venta y una llave virgen sale del stock por cada copia.
 
 Cada llave tiene dos precios, que el Administrador pone en su ficha (Inventario → la llave → Editar):
 
@@ -78,7 +95,12 @@ Un servicio realizado ya no se puede cambiar, para no descuadrar la caja de quie
 
 En **Inventario** puedes explorar todo el catálogo sin buscar nada (se muestra por página, con "Cargar más" abajo), o escribir para buscar un producto puntual. El chip "Stock bajo" te muestra solo lo que se está por acabar.
 
-Toca un producto para ver su ficha: ahí puedes subir o cambiar su foto, editar el precio o la marca, y ajustar el stock con los botones `+`/`−`, escribiendo la cantidad (por ejemplo `1000` si llegó un millar de llaves) o con los atajos **+100**, **+500** y **+1000**. Antes de guardar ves cuánto queda el stock. El sistema te va a pedir un motivo (por ejemplo "conteo físico" o "producto dañado") antes de guardar el ajuste, para que quede registrado por qué cambió.
+Toca un producto para ver su ficha: ahí puedes subir o cambiar su foto, editar el precio o la marca, y ajustar el stock:
+
+1. Elige **Entran** (llegó mercadería) o **Salen** (se dañó, se perdió).
+2. Escribe **cuántas** (por ejemplo `1000` si llegó un millar de llaves) o usa los atajos **+1**, **+10**, **+100**, **+500**, **+1000**.
+3. Ves cuántas **quedarán** antes de guardar.
+4. Toca un motivo (**Llegó mercadería**, **Conteo físico**, **Producto dañado**…) o escríbelo, y toca **Guardar**.
 
 Para dar de alta un producto nuevo, toca **Nuevo producto** arriba. Los campos que te pide cambian según el tipo que elijas (una llave virgen pide "perfil", un candado pide "tamaño", etc.).
 

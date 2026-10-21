@@ -74,7 +74,7 @@ export function Auditoria() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-heading text-2xl font-semibold">Auditoría</h1>
+      <h1 className="font-heading text-3xl font-bold">Auditoría</h1>
 
       {cargando && registros.length === 0 ? (
         <p className="text-sm text-sub">Cargando…</p>

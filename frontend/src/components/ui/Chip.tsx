@@ -4,16 +4,17 @@ interface Props {
   children: React.ReactNode
 }
 
-/** Fase 7 §5.0: chips de filtro horizontales, mas rapidos de tocar que un <select>. */
+/** Chips de filtro o atajo: grandes (44 px) y con el elegido bien marcado. */
 export function Chip({ activo, onClick, children }: Props) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors min-h-9 ${
+      aria-pressed={activo}
+      className={`min-h-11 shrink-0 rounded-full border-2 px-4 py-1.5 text-base font-semibold transition-colors ${
         activo
           ? 'border-steel-dark bg-steel-dark text-white'
-          : 'border-line text-sub hover:border-steel hover:text-steel'
+          : 'border-line bg-card text-ink hover:border-steel hover:text-steel'
       }`}
     >
       {children}

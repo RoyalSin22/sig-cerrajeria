@@ -6,6 +6,7 @@ import { extraerMensajeError } from '../api/axiosClient'
 import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
+import { Campo } from '../components/ui/Campo'
 import { useAuth } from '../context/useAuth'
 import { useTheme } from '../context/useTheme'
 import { useToast } from '../context/useToast'
@@ -13,12 +14,12 @@ import type { Rol, UsuarioResponse } from '../types/usuarios'
 
 export function Ajustes() {
   const { usuario } = useAuth()
-  const { tema, alternarTema } = useTheme()
+  const { tema, alternarTema, tamanoLetra, cambiarTamanoLetra } = useTheme()
   const navigate = useNavigate()
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-5">
-      <h1 className="font-heading text-2xl font-semibold">Ajustes</h1>
+      <h1 className="font-heading text-3xl font-bold">Ajustes</h1>
 
       <Card className="flex items-center justify-between">
         <div>
@@ -28,6 +29,34 @@ export function Ajustes() {
       </Card>
 
       <CambiarMiPassword />
+
+      <Card className="flex flex-col gap-3">
+        <div>
+          <p className="font-medium">Tamaño de la letra</p>
+          <p className="text-sm text-sub">Se guarda en este equipo. Elige el que se lea cómodo sin lentes.</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Tamaño de la letra">
+          {([
+            ['normal', 'Normal', 'text-base'],
+            ['grande', 'Grande', 'text-lg'],
+            ['muy-grande', 'Muy grande', 'text-xl'],
+          ] as const).map(([valor, etiqueta, clase]) => (
+            <button
+              key={valor}
+              type="button"
+              role="radio"
+              aria-checked={tamanoLetra === valor}
+              onClick={() => cambiarTamanoLetra(valor)}
+              className={`flex min-h-16 flex-col items-center justify-center rounded-lg border-2 px-2 py-2 font-semibold ${
+                tamanoLetra === valor ? 'border-steel-dark bg-tint-sky text-steel-dark' : 'border-line'
+              }`}
+            >
+              <span className={clase}>Aa</span>
+              <span className="text-sm">{etiqueta}</span>
+            </button>
+          ))}
+        </div>
+      </Card>
 
       <Card className="flex items-center justify-between">
         <div>
@@ -101,14 +130,14 @@ function CambiarMiPassword() {
       </div>
       {abierto && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <input required type="password" autoComplete="current-password" value={actual}
-            onChange={(e) => setActual(e.target.value)} placeholder="Contraseña actual" className={CLASE_INPUT} />
-          <input required type="password" autoComplete="new-password" minLength={6} value={nueva}
-            onChange={(e) => setNueva(e.target.value)} placeholder="Nueva contraseña (mínimo 6 caracteres)" className={CLASE_INPUT} />
-          <input required type="password" autoComplete="new-password" minLength={6} value={confirmacion}
-            onChange={(e) => setConfirmacion(e.target.value)} placeholder="Repite la nueva contraseña" className={CLASE_INPUT} />
-          {error && <p className="text-sm text-danger">{error}</p>}
-          <Button type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar nueva contraseña'}</Button>
+          <Campo etiqueta="Contraseña actual"><input required type="password" autoComplete="current-password" value={actual}
+            onChange={(e) => setActual(e.target.value)} className={CLASE_INPUT} /></Campo>
+          <Campo etiqueta="Nueva contraseña" ayuda="Mínimo 6 letras o números"><input required type="password" autoComplete="new-password" minLength={6} value={nueva}
+            onChange={(e) => setNueva(e.target.value)} className={CLASE_INPUT} /></Campo>
+          <Campo etiqueta="Repite la nueva contraseña"><input required type="password" autoComplete="new-password" minLength={6} value={confirmacion}
+            onChange={(e) => setConfirmacion(e.target.value)} className={CLASE_INPUT} /></Campo>
+          {error && <p className="text-base font-semibold text-danger">{error}</p>}
+          <Button type="submit" tamano="lg" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar nueva contraseña'}</Button>
         </form>
       )}
     </Card>
@@ -202,8 +231,8 @@ function GestionUsuarios() {
               <input required type="password" autoComplete="new-password" minLength={6} value={passwordTemporal}
                 onChange={(e) => setPasswordTemporal(e.target.value)}
                 placeholder={`Nueva contraseña para ${u.nombre} (mínimo 6)`} className={CLASE_INPUT} />
-              {errorRestablecer && <p className="text-sm text-danger">{errorRestablecer}</p>}
-              <Button type="submit">Restablecer</Button>
+              {errorRestablecer && <p className="text-base font-semibold text-danger">{errorRestablecer}</p>}
+              <Button type="submit" tamano="lg">Restablecer</Button>
             </form>
           )}
           </div>
@@ -237,20 +266,20 @@ function FormularioUsuario({ onCreado }: { onCreado: (u: UsuarioResponse) => voi
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 rounded-md border border-line p-3">
-      <input required value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre completo"
-        className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel" />
-      <input required value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Usuario"
-        className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel" />
-      <input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
-        placeholder="Contraseña (mínimo 6 caracteres)"
-        className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel" />
+      <Campo etiqueta="Nombre completo"><input required value={nombre} onChange={(e) => setNombre(e.target.value)}
+        className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel" /></Campo>
+      <Campo etiqueta="Usuario" ayuda="Con el que va a entrar, sin espacios"><input required value={username} onChange={(e) => setUsername(e.target.value)}
+        className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel" /></Campo>
+      <Campo etiqueta="Contraseña" ayuda="Mínimo 6 letras o números"><input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
+       
+        className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel" /></Campo>
       <select value={role} onChange={(e) => setRole(e.target.value as Rol)}
         className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel">
         <option value="ROLE_EMPLOYEE">Empleado</option>
         <option value="ROLE_ADMIN">Administrador</option>
       </select>
-      {error && <p className="text-sm text-danger">{error}</p>}
-      <Button type="submit" disabled={guardando}>{guardando ? 'Creando…' : 'Crear usuario'}</Button>
+      {error && <p className="text-base font-semibold text-danger">{error}</p>}
+      <Button type="submit" tamano="lg" disabled={guardando}>{guardando ? 'Creando…' : 'Crear usuario'}</Button>
     </form>
   )
 }

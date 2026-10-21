@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Bot, Send, X } from 'lucide-react'
 import { asistenteApi } from '../api/asistente'
 import { extraerMensajeError } from '../api/axiosClient'
@@ -27,6 +28,12 @@ export function AsistenteChat() {
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const finRef = useRef<HTMLDivElement>(null)
+  const [disponible, setDisponible] = useState(false)
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    asistenteApi.disponible().then(setDisponible)
+  }, [])
 
   useEffect(() => {
     finRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -56,20 +63,23 @@ export function AsistenteChat() {
     enviar(entrada)
   }
 
+  // Sin clave configurada no se muestra; en Venta tampoco, para no tapar el boton Cobrar
+  if (!disponible || pathname.startsWith('/venta')) return null
+
   return (
     <>
       {/* Botón flotante */}
       <button
         onClick={() => setAbierto((v) => !v)}
         aria-label={abierto ? 'Cerrar asistente' : 'Abrir asistente'}
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-steel-dark text-white shadow-lg transition-transform hover:scale-105 md:bottom-6"
+        className="fixed bottom-28 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-steel-dark text-white shadow-lg transition-transform hover:scale-105 md:bottom-6"
       >
         {abierto ? <X size={22} /> : <Bot size={22} />}
       </button>
 
       {/* Panel de chat */}
       {abierto && (
-        <div className="panel-cepillado fixed inset-x-3 bottom-36 z-40 flex h-[65vh] flex-col rounded-2xl shadow-xl md:inset-x-auto md:right-4 md:bottom-24 md:h-[32rem] md:w-96">
+        <div className="panel-cepillado fixed inset-x-3 bottom-44 z-40 flex h-[65vh] flex-col rounded-2xl shadow-xl md:inset-x-auto md:right-4 md:bottom-24 md:h-[32rem] md:w-96">
           <div className="flex items-center gap-2 border-b border-hair px-4 py-3">
             <Bot size={18} className="text-steel-dark" />
             <span className="font-heading font-semibold">Asistente</span>

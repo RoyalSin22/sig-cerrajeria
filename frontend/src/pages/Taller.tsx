@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ordenesApi } from '../api/ordenes'
 import { clientesApi } from '../api/clientes'
 import { productosApi } from '../api/productos'
@@ -10,6 +11,7 @@ import { BottomSheet } from '../components/ui/BottomSheet'
 import { PullToRefreshIndicator } from '../components/ui/PullToRefreshIndicator'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { SearchInput } from '../components/ui/SearchInput'
+import { Campo } from '../components/ui/Campo'
 import { useToast } from '../context/useToast'
 import { formatearSoles } from '../utils/format'
 import { ESTADOS_ORDEN, ETIQUETA_ESTADO_ORDEN, type EstadoOrden, type OrdenTrabajoResponse } from '../types/ordenes'
@@ -31,7 +33,10 @@ export function Taller() {
   const { notificar } = useToast()
   const [ordenes, setOrdenes] = useState<OrdenTrabajoResponse[]>([])
   const [seleccionada, setSeleccionada] = useState<OrdenTrabajoResponse | null>(null)
-  const [mostrarAlta, setMostrarAlta] = useState(false)
+  const [verTodas, setVerTodas] = useState(false)
+  // Desde Inicio, "Recibir trabajo" llega con ?nueva=1 y abre el formulario directo
+  const [params, setParams] = useSearchParams()
+  const [mostrarAlta, setMostrarAlta] = useState(params.get('nueva') === '1')
 
   async function cargar() {
     setOrdenes(await ordenesApi.listar())
@@ -52,42 +57,58 @@ export function Taller() {
     <div className="flex flex-col gap-4">
       <PullToRefreshIndicator distancia={distancia} refrescando={refrescando} umbral={umbral} />
       <div className="flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-semibold">Taller</h1>
-        <Button onClick={() => setMostrarAlta(true)}>Nueva orden</Button>
+        <h1 className="font-heading text-3xl font-bold">Taller</h1>
+        <Button tamano="lg" onClick={() => setMostrarAlta(true)}>Recibir trabajo</Button>
       </div>
 
-      {/* Kanban por estado (Fase 7 §5.6) */}
-      <div className="flex gap-3 overflow-x-auto pb-2">
-        {[...ESTADOS_ORDEN, ...(ordenes.some((o) => o.estado === 'CANCELADO') ? ['CANCELADO' as const] : [])].map((estado) => (
-          <div key={estado} className="w-64 shrink-0">
+      {/* Kanban por estado (Fase 7 §5.6). En el celular las columnas van una debajo
+          de otra: deslizar hacia abajo es mas facil que hacia el costado. */}
+      <div className="flex flex-col gap-5 md:flex-row md:gap-3 md:overflow-x-auto md:pb-2">
+        {[...ESTADOS_ORDEN, ...(ordenes.some((o) => o.estado === 'CANCELADO') ? ['CANCELADO' as const] : [])].map((estado) => {
+          const delEstado = ordenes.filter((o) => o.estado === estado)
+          // Las terminadas se acumulan: se muestran las 5 ultimas y el resto a pedido
+          const terminada = estado === 'ENTREGADO' || estado === 'CANCELADO'
+          const visibles = terminada && !verTodas ? delEstado.slice(0, 5) : delEstado
+          return (
+          <div key={estado} className="md:w-72 md:shrink-0">
             <div className="mb-2 flex items-center gap-2">
-              <span className="font-heading text-sm font-semibold">{ETIQUETA_ESTADO_ORDEN[estado]}</span>
-              <span className="text-xs text-sub">({ordenes.filter((o) => o.estado === estado).length})</span>
+              <span className="font-heading text-xl font-bold">{ETIQUETA_ESTADO_ORDEN[estado]}</span>
+              <span className="text-base text-sub">({delEstado.length})</span>
             </div>
             <div className="flex flex-col gap-2">
-              {ordenes.filter((o) => o.estado === estado).map((o) => (
+              {delEstado.length === 0 && <p className="text-base text-sub">Ninguna.</p>}
+              {visibles.map((o) => (
                 <button key={o.id} onClick={() => setSeleccionada(o)} className="text-left">
                   <Card className="flex flex-col gap-1">
                     <span className="flex items-center justify-between gap-2 text-xs text-sub">
                       {o.numeroOrden}
                       {o.garantia && <Badge tono="steel">Garantía</Badge>}
                     </span>
-                    <span className="text-sm font-medium">{o.cliente}</span>
-                    <span className="text-xs text-sub">{o.productoRecibido}</span>
+                    <span className="text-lg font-semibold">{o.cliente}</span>
+                    <span className="text-base text-sub">{o.productoRecibido}</span>
                     {o.saldoPendiente > 0 && (
-                      <Badge tono="warning">Saldo: {formatearSoles(o.saldoPendiente)}</Badge>
+                      <Badge tono="warning">Debe {formatearSoles(o.saldoPendiente)}</Badge>
                     )}
                   </Card>
                 </button>
               ))}
+              {visibles.length < delEstado.length && (
+                <Button variant="secondary" onClick={() => setVerTodas(true)}>
+                  Ver las {delEstado.length - visibles.length} anteriores
+                </Button>
+              )}
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       <FormularioOrden
         abierto={mostrarAlta}
-        onCerrar={() => setMostrarAlta(false)}
+        onCerrar={() => {
+          setMostrarAlta(false)
+          if (params.has('nueva')) setParams({}, { replace: true })
+        }}
         onCreada={(o) => {
           notificar('Orden creada: ' + o.numeroOrden)
           setOrdenes((prev) => [o, ...prev])
@@ -160,48 +181,63 @@ function FormularioOrden({
 
   return (
     <BottomSheet abierto={abierto} onCerrar={onCerrar} titulo="Nueva orden de trabajo">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        {!clienteId ? (
-          <>
-            <SearchInput placeholder="Buscar cliente…" onBuscar={buscarCliente} />
-            {clientesEncontrados.map((c) => (
-              <button
-                key={c.id} type="button"
-                onClick={() => { setClienteId(c.id); setClienteNombre(c.nombre) }}
-                className="rounded-md border border-line p-2 text-left text-sm hover:bg-hair"
-              >
-                {c.nombre} · {c.telefono}
-              </button>
-            ))}
-          </>
-        ) : (
-          <div className="flex items-center justify-between rounded-md bg-tint-sky p-2 text-sm">
-            <span>{clienteNombre}</span>
-            <button type="button" onClick={() => setClienteId(null)} className="text-steel underline">Cambiar</button>
-          </div>
-        )}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <span className="text-base font-semibold">1. Cliente</span>
+          {!clienteId ? (
+            <>
+              <SearchInput placeholder="Escribe el nombre o teléfono…" onBuscar={buscarCliente} />
+              {clientesEncontrados.map((c) => (
+                <button
+                  key={c.id} type="button"
+                  onClick={() => { setClienteId(c.id); setClienteNombre(c.nombre) }}
+                  className="min-h-12 rounded-lg border-2 border-hair bg-card px-3 py-2 text-left text-base hover:border-steel"
+                >
+                  <b>{c.nombre}</b> · {c.telefono}
+                </button>
+              ))}
+            </>
+          ) : (
+            <div className="flex items-center justify-between gap-2 rounded-lg bg-tint-sky p-3 text-lg font-semibold">
+              <span>{clienteNombre}</span>
+              <Button type="button" variant="secondary" onClick={() => setClienteId(null)}>Cambiar</Button>
+            </div>
+          )}
+        </div>
 
-        <input required value={productoRecibido} onChange={(e) => setProductoRecibido(e.target.value)}
-          placeholder="Producto recibido (ej. Chapa Yale puerta principal)"
-          className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel" />
-        <textarea required value={problema} onChange={(e) => setProblema(e.target.value)}
-          placeholder="Problema reportado" rows={2}
-          className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel" />
-        <input required type="number" step="0.01" min="0" value={precioTotal} onChange={(e) => setPrecioTotal(e.target.value)}
-          placeholder="Precio total (S/)"
-          className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel" />
-        <input type="number" step="0.01" min="0" value={adelanto} onChange={(e) => setAdelanto(e.target.value)}
-          placeholder="Adelanto (opcional, S/)"
-          className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel" />
+        <Campo etiqueta="2. ¿Qué trajo?">
+          <input required value={productoRecibido} onChange={(e) => setProductoRecibido(e.target.value)}
+            placeholder="Ej.: chapa Yale de la puerta principal" autoCapitalize="sentences"
+            className="rounded-lg border px-3 outline-none" />
+        </Campo>
+        <Campo etiqueta="3. ¿Qué problema tiene?">
+          <textarea required value={problema} onChange={(e) => setProblema(e.target.value)}
+            placeholder="Ej.: no gira la llave" rows={2} autoCapitalize="sentences"
+            className="rounded-lg border px-3 py-2 outline-none" />
+        </Campo>
+        <div className="grid grid-cols-2 items-end gap-3">
+          <Campo etiqueta="4. Precio (S/)">
+            <input required type="number" step="0.01" min="0" inputMode="decimal" value={precioTotal}
+              onChange={(e) => setPrecioTotal(e.target.value)}
+              className="rounded-lg border px-3 text-lg outline-none" />
+          </Campo>
+          <Campo etiqueta="Adelanto (S/)">
+            <input type="number" step="0.01" min="0" inputMode="decimal" value={adelanto}
+              onChange={(e) => setAdelanto(e.target.value)}
+              className="rounded-lg border px-3 text-lg outline-none" />
+          </Campo>
+        </div>
         {adelanto && (
-          <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value as MetodoPago)}
-            className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel">
-            {METODOS_EN_USO.map((m) => <option key={m} value={m}>{ETIQUETA_METODO_PAGO[m]}</option>)}
-          </select>
+          <Campo etiqueta="¿Cómo pagó el adelanto?">
+            <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value as MetodoPago)}
+              className="rounded-lg border px-3 outline-none">
+              {METODOS_EN_USO.map((m) => <option key={m} value={m}>{ETIQUETA_METODO_PAGO[m]}</option>)}
+            </select>
+          </Campo>
         )}
 
-        {error && <p className="text-sm text-danger">{error}</p>}
-        <Button type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Crear orden'}</Button>
+        {error && <p className="text-base font-semibold text-danger">{error}</p>}
+        <Button type="submit" tamano="lg" disabled={guardando}>{guardando ? 'Guardando…' : 'Crear orden'}</Button>
       </form>
     </BottomSheet>
   )
@@ -327,7 +363,7 @@ function FichaOrden({
 
         <MaterialesOrden ordenId={orden.id} editable={orden.estado !== 'ENTREGADO' && orden.estado !== 'CANCELADO'} />
 
-        {error && <p className="text-sm text-danger">{error}</p>}
+        {error && <p className="text-base font-semibold text-danger">{error}</p>}
 
         {orden.estado === 'ENTREGADO' && (
           <div className="flex flex-col gap-2 border-t border-hair pt-3">
@@ -365,7 +401,7 @@ function FichaOrden({
               <div className="flex flex-col gap-2 rounded-md border border-warning/40 bg-tint-peach p-3">
                 <span className="font-medium">Entregar con liquidación del saldo</span>
                 <input
-                  type="number" step="0.01" value={montoLiquidacion} onChange={(e) => setMontoLiquidacion(e.target.value)}
+                  type="number" inputMode="decimal" step="0.01" value={montoLiquidacion} onChange={(e) => setMontoLiquidacion(e.target.value)}
                   placeholder={`Monto (mínimo ${orden.saldoPendiente})`}
                   className="rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel"
                 />

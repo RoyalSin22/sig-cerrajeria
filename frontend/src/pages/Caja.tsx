@@ -63,22 +63,22 @@ export function Caja() {
   if (!cajaAbierta) {
     return (
       <div className="mx-auto flex max-w-sm flex-col gap-4">
-        <h1 className="font-heading text-2xl font-semibold">Abrir caja</h1>
+        <h1 className="font-heading text-3xl font-bold">Abrir caja</h1>
         <form onSubmit={handleAbrir} className="panel-cepillado flex flex-col gap-4 rounded-lg p-5">
           <div>
-            <label className="mb-1 block text-sm font-medium">Monto inicial (S/)</label>
+            <label className="mb-1 block text-lg font-semibold">¿Con cuánto sencillo empiezas? (S/)</label>
             <input
-              type="number"
+              type="number" inputMode="decimal"
               step="0.01"
               min="0"
               required
               value={montoApertura}
               onChange={(e) => setMontoApertura(e.target.value)}
-              className="w-full rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel"
+              className="w-full rounded-lg border px-3 text-2xl font-bold outline-none"
             />
           </div>
-          {error && <p className="text-sm text-danger">{error}</p>}
-          <Button type="submit" disabled={cargando} className="w-full">
+          {error && <p className="text-base font-semibold text-danger">{error}</p>}
+          <Button type="submit" tamano="lg" disabled={cargando} className="w-full">
             {cargando ? 'Abriendo…' : 'Abrir caja'}
           </Button>
         </form>
@@ -89,11 +89,11 @@ export function Caja() {
   return (
     <div className="mx-auto flex max-w-sm flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-semibold">Caja</h1>
-        <Button variant="ghost" onClick={() => navigate('/caja/historial')}>Ver historial</Button>
+        <h1 className="font-heading text-3xl font-bold">Caja</h1>
+        <Button variant="secondary" onClick={() => navigate('/caja/historial')}>Días anteriores</Button>
       </div>
 
-      <Card className="flex flex-col gap-2 text-sm">
+      <Card className="flex flex-col gap-2 text-base">
         <div className="flex justify-between"><span className="text-sub">Abierta desde</span><span>{caja && formatearFechaHora(caja.fechaApertura)}</span></div>
         <div className="flex justify-between"><span className="text-sub">Monto inicial</span><span>{formatearSoles(caja?.montoApertura)}</span></div>
         <div className="flex justify-between"><span className="text-sub">Ingresos</span><span>{formatearSoles(caja?.montoIngresos)}</span></div>
@@ -103,15 +103,15 @@ export function Caja() {
         {!!caja?.montoTarjeta && (
           <div className="flex justify-between"><span className="text-sub">Menos cobros con tarjeta</span><span>{formatearSoles(caja.montoTarjeta)}</span></div>
         )}
-        <div className="flex justify-between border-t border-hair pt-2 font-semibold"><span>Efectivo esperado en caja</span><span>{formatearSoles(caja?.efectivoEsperado)}</span></div>
-        <p className="text-xs text-sub">Yape y Plin no están en el cajón: el cierre se cuadra solo contra el efectivo.</p>
+        <div className="flex items-baseline justify-between border-t border-hair pt-2 text-lg font-bold"><span>Debe haber en el cajón</span><span className="font-heading text-2xl text-steel-dark">{formatearSoles(caja?.efectivoEsperado)}</span></div>
+        <p className="text-sm text-sub">Yape y Plin no están en el cajón: se cuenta solo el efectivo.</p>
       </Card>
 
       {resultadoCierre ? (
         <Card className={resultadoCierre.diferencia === 0 ? 'bg-tint-mint' : 'bg-tint-peach'}>
-          <p className="font-heading text-lg font-semibold">Caja cerrada</p>
-          <p className="text-sm">Contado: {formatearSoles(resultadoCierre.montoContado)}</p>
-          <p className="text-sm">
+          <p className="font-heading text-2xl font-bold">Caja cerrada</p>
+          <p className="text-lg">Contado: {formatearSoles(resultadoCierre.montoContado)}</p>
+          <p className="text-lg">
             Diferencia: {formatearSoles(resultadoCierre.diferencia)}{' '}
             {resultadoCierre.diferencia === 0 ? '(cuadrada)' : resultadoCierre.diferencia > 0 ? '(sobrante)' : '(faltante)'}
           </p>
@@ -119,15 +119,15 @@ export function Caja() {
       ) : (
         <form onSubmit={handleCerrar} className="panel-cepillado flex flex-col gap-4 rounded-lg p-5">
           <div>
-            <label className="mb-1 block text-sm font-medium">Efectivo contado (S/)</label>
+            <label className="mb-1 block text-lg font-semibold">Cuenta el efectivo del cajón (S/)</label>
             <input
-              type="number"
+              type="number" inputMode="decimal"
               step="0.01"
               min="0"
               required
               value={montoContado}
               onChange={(e) => setMontoContado(e.target.value)}
-              className="w-full rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel"
+              className="w-full rounded-lg border px-3 text-2xl font-bold outline-none"
             />
           </div>
           {diferencia !== null && (
@@ -153,8 +153,8 @@ export function Caja() {
               </div>
             )
           )}
-          {error && <p className="text-sm text-danger">{error}</p>}
-          <Button type="submit" variant="danger" disabled={cargando} className="w-full">
+          {error && <p className="text-base font-semibold text-danger">{error}</p>}
+          <Button type="submit" tamano="lg" variant="danger" disabled={cargando} className="w-full">
             {cargando ? 'Cerrando…' : 'Cerrar caja'}
           </Button>
         </form>
