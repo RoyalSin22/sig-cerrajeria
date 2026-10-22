@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
         name: 'Cerrajería Barrera',
         short_name: 'Barrera',
         description: 'Sistema Integral de Gestión para una cerrajería — inventario, ventas, órdenes de trabajo y caja.',
-        theme_color: '#ffc20e',
+        theme_color: '#2c455d',
         background_color: '#f6f7f8',
         display: 'standalone',
         start_url: '/',

@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   Search, LayoutGrid, ShoppingCart, Package, Wrench, Truck,
-  Users, ShoppingBag, Wallet, BarChart3, Settings, LogOut, MoreHorizontal, X, KeyRound,
+  Users, ShoppingBag, Wallet, BarChart3, Settings, LogOut, MoreHorizontal, X,
 } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
 import { useCaja } from '../context/useCaja'
@@ -45,10 +45,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen bg-paper">
       {/* PC: menu lateral siempre visible, sin tener que abrir nada */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-1 overflow-y-auto border-r border-hair bg-card p-3 md:flex">
-        {/* La marca: amarillo de fondo con letra negra, como la tarjeta */}
-        <span className="mb-2 flex items-center gap-2 rounded-xl bg-marca px-3 py-3 font-heading text-xl font-bold leading-tight text-[#1c1c1c]">
-          <KeyRound size={26} aria-hidden className="shrink-0" /> {negocio.nombre}
-        </span>
+        <span className="px-3 pb-3 pt-1 font-heading text-xl font-bold leading-tight text-steel-dark">{negocio.nombre}</span>
         {MENU.map((item) => (
           <EnlaceMenu key={item.to} item={item} />
         ))}
@@ -62,7 +59,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Barra superior: estado de la caja siempre a la vista (regla de negocio 1) */}
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-[#e0a800] bg-marca px-4 py-2 text-[#1c1c1c]">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-hair bg-paper/95 px-4 py-2 backdrop-blur">
           <button
             type="button"
             onClick={() => navigate('/caja')}
@@ -78,7 +75,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </button>
 
           <div className="flex items-center gap-2">
-            <span className="hidden font-semibold sm:inline">{usuario?.nombre}</span>
+            <span className="hidden font-semibold text-sub sm:inline">{usuario?.nombre}</span>
             <button
               type="button"
               onClick={() => navigate('/buscar')}

@@ -128,7 +128,7 @@ function Acceso({
       onClick={onClick}
       className={`flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border-2 p-3 text-center text-lg font-bold leading-tight transition-colors ${
         principal
-          ? 'border-[#1c1c1c] bg-marca text-[#1c1c1c] hover:brightness-95'
+          ? 'border-steel-dark bg-steel-dark text-white hover:opacity-90'
           : 'border-hair bg-card text-ink hover:border-steel'
       }`}
     >

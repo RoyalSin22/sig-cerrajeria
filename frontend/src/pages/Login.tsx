@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { extraerMensajeError } from '../api/axiosClient'
 import { Button } from '../components/ui/Button'
-import { KeyRound } from 'lucide-react'
 import { useNegocio } from '../hooks/useNegocio'
 
 export function Login() {
@@ -33,10 +32,7 @@ export function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-paper px-4">
       <div className="w-full max-w-sm">
-        <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-2xl bg-marca text-[#1c1c1c]">
-          <KeyRound size={44} aria-hidden />
-        </div>
-        <h1 className="font-heading mb-1 text-center text-4xl font-bold">{negocio.nombre}</h1>
+        <h1 className="font-heading mb-1 text-center text-4xl font-bold text-steel-dark">{negocio.nombre}</h1>
         <p className="mb-8 text-center text-lg text-sub">Escribe tu usuario y tu contraseña</p>
 
         <form onSubmit={handleSubmit} className="panel-cepillado flex flex-col gap-4 rounded-lg p-6">

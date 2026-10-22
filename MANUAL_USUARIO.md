@@ -152,7 +152,7 @@ Las cuchillas, vasos, empaques y demás repuestos se cargan con el tipo **Repues
 
 ### Colores
 
-Los colores de la app son los de la cerrajería: amarillo con negro. El amarillo va siempre de fondo con letra negra (amarillo sobre blanco no se lee). Además, están elegidos para leerse bien también con daltonismo (paleta Okabe-Ito en los gráficos y contraste alto en textos y avisos). Los avisos no dependen solo del color: el stock bajo, por ejemplo, lleva un ícono de alerta y la palabra "bajo".
+Los colores de la app están elegidos para leerse bien también con daltonismo (paleta Okabe-Ito en los gráficos y contraste alto en textos y avisos). Los avisos no dependen solo del color: el stock bajo, por ejemplo, lleva un ícono de alerta y la palabra "bajo".
 
 ## Clientes
 

@@ -21,14 +21,8 @@
   --color-line: #7b8794;
   --color-hair: #dde2e8;
 
-  /* Colores de Cerrajeria Barrera (la tarjeta): amarillo y negro.
-     - steel-dark: negro, fondo de botones con letra blanca (17:1) y precios.
-     - steel: dorado oscuro para enlaces y foco (7.7:1 sobre blanco).
-     - marca: el amarillo, SOLO de fondo con letra negra (10.5:1). Amarillo
-       como letra sobre blanco no se lee (1.6:1). */
-  --color-steel: #6b4e00;
-  --color-steel-dark: #1c1c1c;
-  --color-marca: #ffc20e;
+  --color-steel: #0b5cad;
+  --color-steel-dark: #0a3d73;
 
   --color-paper: #f3f5f7;
   /* Fondo de tarjetas y hojas: blanco sobre el gris del fondo, sin degradados */
@@ -38,7 +32,7 @@
   --color-warning: #9a4a00; /* naranja */
   --color-danger: #b42318; /* rojo */
 
-  --color-tint-sky: #fff0b3; /* seleccionado: amarillo claro, letra negra 14.9:1 */
+  --color-tint-sky: #d9eafb;
   --color-tint-mint: #d4f1e6;
   --color-tint-lilac: #e9e2f6;
   --color-tint-peach: #ffe7c7;
@@ -68,13 +62,12 @@
   --color-hair: #2c3236;
 
   /* Versiones claras de los estados para que se lean sobre fondo oscuro */
-  --color-steel: #ffd24d;
-  --color-steel-dark: #ffc20e; /* en oscuro los botones son amarillos con letra oscura */
+  --color-steel: #5aa9f0;
   --color-success: #3ccf9e;
   --color-warning: #f2a33a;
   --color-danger: #ff7b6b;
 
-  --color-tint-sky: #3a3000;
+  --color-tint-sky: #12324f;
   --color-tint-mint: #0e3a2e;
   --color-tint-lilac: #2c2342;
   --color-tint-peach: #45290a;
@@ -87,12 +80,7 @@
   color: var(--color-steel);
 }
 .dark .bg-tint-sky.text-steel-dark {
-  color: #ffe8a3;
-}
-/* Botones: en oscuro el fondo es amarillo, la letra blanca no se leeria */
-.dark .bg-steel-dark.text-white,
-.dark .bg-steel-dark {
-  color: #121518;
+  color: #cfe5fb;
 }
 
 /*
