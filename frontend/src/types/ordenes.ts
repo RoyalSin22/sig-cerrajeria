@@ -46,6 +46,8 @@ export interface OrdenTrabajoResponse {
   garantia: boolean
   /** Numero de la orden original, si es una garantia. */
   numeroOrdenOrigen: string | null
+  /** Para avisarle por WhatsApp. */
+  telefonoCliente: string
 }
 
 export interface GarantiaRequest {

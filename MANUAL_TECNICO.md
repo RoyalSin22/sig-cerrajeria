@@ -72,6 +72,7 @@ Base de datos: Flyway controla el esquema (`ddl-auto: validate` — Hibernate nu
 - `V8` — fecha de cambio de contraseña (invalida las sesiones anteriores)
 - `V9` — cobro de servicios a domicilio, estado `CANCELADO` en órdenes y pagos `DEVOLUCION`
 - `V11` — `audit_log.detalle` (JSONB que existía sin usarse) pasa a guardar descripción, motivo y cambios antes/después (`DetalleAuditoria`), con las acciones nuevas `MOVIMIENTO_CAJA` y `GARANTIA`; `cajas_diarias.diferencia_cierre` y `observacion_cierre` (obligatoria si no cuadra); `ordenes_trabajo.es_garantia` y `orden_origen_id`
+- `V12` — tipo `REPUESTO_LICUADORA`; `detalle_ventas.producto_id` pasa a ser opcional y se agrega `descripcion` (línea de servicio sin producto: no mueve stock, CHECK exige uno de los dos); tabla `negocio` (una sola fila, `id = 1`) con nombre, teléfono y dirección, que lee `GET /api/v1/negocio` sin sesión (pantalla de login) y edita el ADMIN con `PUT`
 - `V10` — `productos.precio_duplicado` (material + corte, aparte del precio de la llave sola; `NULL` = no se ofrece como duplicado, y a las `LLAVE_VIRGEN` existentes se les copió su precio de venta) y `detalle_ventas.es_duplicado`. `ItemVentaRequest.duplicado` elige qué precio cobra `VentaService`
 
 Una migración nueva nunca edita una anterior: Flyway valida el checksum de las ya aplicadas y la app no arranca si cambian.

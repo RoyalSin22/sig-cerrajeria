@@ -25,8 +25,12 @@ public class DetalleVenta {
     private Venta venta;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "producto_id", nullable = false)
+    /** null en un servicio rapido (abrir un candado): ahi va la descripcion (V12). */
+    @JoinColumn(name = "producto_id")
     private Producto producto;
+
+    @Column(length = 150)
+    private String descripcion;
 
     @Column(nullable = false)
     private Integer cantidad;
@@ -36,4 +40,9 @@ public class DetalleVenta {
 
     @Column(name = "es_duplicado", nullable = false)
     private boolean duplicado;
+
+    /** Lo que se muestra en el detalle: el producto, o la descripcion del servicio. */
+    public String nombreLinea() {
+        return producto != null ? producto.getNombre() : descripcion;
+    }
 }

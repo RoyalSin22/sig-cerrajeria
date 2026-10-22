@@ -68,6 +68,18 @@ public class VentaService {
         venta = ventaRepository.save(venta); // para obtener el id, usado como referenciaId del Kardex
 
         for (ItemVentaRequest item : request.items()) {
+            if (item.esServicio()) {
+                // Servicio rapido: no hay producto ni stock que mover
+                BigDecimal subtotal = item.precio().multiply(BigDecimal.valueOf(item.cantidad()));
+                total = total.add(subtotal);
+                DetalleVenta detalle = new DetalleVenta();
+                detalle.setVenta(venta);
+                detalle.setDescripcion(item.descripcion().trim());
+                detalle.setCantidad(item.cantidad());
+                detalle.setPrecioUnitario(item.precio());
+                venta.getDetalles().add(detalle);
+                continue;
+            }
             // Descuenta stock y genera el movimiento de Kardex (regla de negocio 2)
             Producto producto = productoService.descontarStock(
                 item.productoId(), item.cantidad(), ReferenciaTipo.VENTA, venta.getId());
@@ -166,6 +178,7 @@ public class VentaService {
         }
 
         for (DetalleVenta detalle : venta.getDetalles()) {
+            if (detalle.getProducto() == null) continue; // un servicio no devuelve stock
             productoService.incrementarStock(
                 detalle.getProducto().getId(), detalle.getCantidad(), ReferenciaTipo.VENTA, venta.getId());
         }
@@ -186,7 +199,7 @@ public class VentaService {
         auditLogService.registrar(usuarioActual(), AuditAccion.ANULACION, "Venta", venta.getId(),
             DetalleAuditoria.de("Venta #" + venta.getId() + " anulada: S/ " + venta.getMontoTotal() + " ("
                 + venta.getMetodoPago().name().toLowerCase() + "), "
-                + venta.getDetalles().stream().map(d -> d.getCantidad() + " × " + d.getProducto().getNombre())
+                + venta.getDetalles().stream().map(d -> d.getCantidad() + " × " + d.nombreLinea())
                     .collect(java.util.stream.Collectors.joining(", "))));
 
         return mapearAResponse(venta);
@@ -206,8 +219,8 @@ public class VentaService {
     private VentaResponse mapearAResponse(Venta venta) {
         List<DetalleVentaResponse> detalles = venta.getDetalles().stream()
             .map(d -> new DetalleVentaResponse(
-                d.getProducto().getId(),
-                d.getProducto().getNombre(),
+                d.getProducto() == null ? null : d.getProducto().getId(),
+                d.nombreLinea(),
                 d.getCantidad(),
                 d.getPrecioUnitario(),
                 d.getPrecioUnitario().multiply(BigDecimal.valueOf(d.getCantidad())),

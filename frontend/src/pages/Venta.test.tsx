@@ -54,4 +54,18 @@ describe('Venta: duplicado y llave sola', () => {
 
     expect(screen.getByRole('button', { name: /Cobrar S\/\s?7\.50/ })).toBeTruthy()
   })
+
+  it('servicio rápido sin producto: se elige, se pone el precio y se cobra', async () => {
+    vi.mocked(ventasApi.crear).mockClear()
+    render(<MemoryRouter><Venta /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: /^Servicio$/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir candado' }))
+    fireEvent.change(screen.getByLabelText(/Precio/), { target: { value: '10' } })
+    fireEvent.click(screen.getByRole('button', { name: /Agregar S\/\s?10\.00/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Cobrar S\/\s?10\.00/ }))
+
+    expect(ventasApi.crear).toHaveBeenCalledWith(expect.objectContaining({
+      items: [{ descripcion: 'Abrir candado', precio: 10, cantidad: 1 }],
+    }))
+  })
 })

@@ -57,6 +57,9 @@ const productos: ProductoResponse[] = [
   producto(11, 'CIL-40', 'Cilindro 40 mm', 'CILINDRO', 10, 3, 22, 38),
   producto(12, 'LLAVERO-METAL', 'Llavero metálico', 'LLAVERO', 40, 10, 1.5, 4),
   producto(13, 'ARGOLLA', 'Argolla de acero', 'ARGOLLA', 200, 50, 0.1, 0.5),
+  producto(14, 'OSTER-CUCH', 'Cuchilla Oster original', 'REPUESTO_LICUADORA', 6, 3, 14, 25, null, { marca: 'Oster' }),
+  producto(15, 'OSTER-VASO', 'Vaso de vidrio Oster', 'REPUESTO_LICUADORA', 2, 2, 28, 45, null, { marca: 'Oster' }),
+  producto(16, 'OSTER-EMPAQUE', 'Empaque de jebe Oster', 'REPUESTO_LICUADORA', 15, 5, 1.5, 4, null, { marca: 'Oster' }),
 ]
 
 const clientes: ClienteResponse[] = [
@@ -73,10 +76,12 @@ function orden(id: number, cliente: string, recibido: string, problema: string, 
     precioTotal: precio, montoPagado: pagado, saldoPendiente: precio - pagado, estado, fechaIngreso: haceMinutos(horas * 60),
     fechaPrometida: null, fechaEntrega: estado === 'ENTREGADO' ? haceMinutos(horas * 30) : null, observaciones: null,
     motivoCancelacion: null, garantia: false, numeroOrdenOrigen: null,
+    telefonoCliente: clientes.find((c) => c.nombre === cliente)?.telefono ?? '987654321',
   }
 }
 
 const ordenes: OrdenTrabajoResponse[] = [
+  orden(7, 'Jorge Huamán', 'Licuadora Oster', 'Hace ruido y no corta', 'RECIBIDO', 35, 15, 2),
   orden(6, 'Carmen Flores', 'Chapa de puerta principal', 'La llave no gira', 'RECIBIDO', 45, 0, 3),
   orden(5, 'Luis Ramos', 'Cerradura de cajón de escritorio', 'Perdió la llave', 'EN_REPARACION', 35, 15, 20),
   orden(4, 'Jorge Huamán', 'Cilindro de puerta de calle', 'Cambio de combinación', 'ESPERANDO_REPUESTO', 60, 30, 48),
@@ -90,10 +95,11 @@ const domicilio: ServicioDomicilioResponse[] = [
   { id: 2, cliente: 'Jorge Huamán', direccion: 'Calle Los Pinos 78', telefono: '945333444', fecha: dia(1), hora: '10:30',
     tipoServicio: 'Cambio de chapa', observaciones: null, estado: 'PROGRAMADO', montoCobrado: null, metodoPago: null, realizadoPor: null },
   { id: 3, cliente: 'Luis Ramos', direccion: 'Av. Arequipa 1230', telefono: '912345678', fecha: dia(-1), hora: '11:00',
-    tipoServicio: 'Instalación de cerrojo', observaciones: null, estado: 'REALIZADO', montoCobrado: 80, metodoPago: 'YAPE', realizadoPor: 'Don Julio' },
+    tipoServicio: 'Instalación de cerrojo', observaciones: null, estado: 'REALIZADO', montoCobrado: 80, metodoPago: 'YAPE', realizadoPor: 'Juan Barrera' },
 ]
 
-const USUARIO = 'Don Julio'
+const USUARIO = 'Juan Barrera'
+const negocio = { nombre: 'Cerrajería Barrera', telefono: '982616709', direccion: 'Av. Alfonso Ugarte N° 115, frente al Mercado N° 2, Surco' }
 
 function detalle(p: ProductoResponse, cantidad: number, dup: boolean): DetalleVentaResponse {
   const precio = dup ? p.precioDuplicado ?? p.precioVenta : p.precioVenta
@@ -124,7 +130,7 @@ const compras: CompraResponse[] = [
   { id: 1, proveedor: 'Distribuidora Lima Centro', producto: 'Llave de casa Yale', cantidad: 500, precioUnitario: 0.9, precioTotal: 450, fecha: dia(-7) },
 ]
 const usuarios: UsuarioResponse[] = [
-  { id: 1, username: 'julio', nombre: 'Don Julio', role: 'ROLE_ADMIN', activo: true },
+  { id: 1, username: 'julio', nombre: 'Juan Barrera', role: 'ROLE_ADMIN', activo: true },
   { id: 2, username: 'pedro', nombre: 'Pedro (ayudante)', role: 'ROLE_EMPLOYEE', activo: true },
 ]
 const kardex: Record<number, { id: number; tipoMovimiento: string; cantidad: number; saldoAnterior: number; saldoNuevo: number;
@@ -198,6 +204,8 @@ const rutas: [string, RegExp, Manejador][] = [
   ['POST', /^\/auth\/(refresh|login)$/, () => ({ accessToken: 'demo', username: 'julio', nombre: USUARIO, role: 'ROLE_ADMIN' })],
   ['POST', /^\/auth\/logout$/, () => ({})],
   ['GET', /^\/asistente\/estado$/, () => ({ disponible: false })],
+  ['GET', /^\/negocio$/, () => negocio],
+  ['PUT', /^\/negocio$/, (_m, b) => Object.assign(negocio, b, { telefono: String(b.telefono).replace(/[^0-9+]/g, '') })],
 
   ['GET', /^\/dashboard$/, () => {
     const bajos = productos.filter((p) => p.activo && p.stockBajo)
@@ -268,6 +276,12 @@ const rutas: [string, RegExp, Manejador][] = [
     const venta: VentaResponse = { id: nuevoId(), cliente: null, usuario: USUARIO, fechaHora: iso(new Date()), montoTotal: 0,
       metodoPago: b.metodoPago, detalles: [], anulada: false, desglosePago: b.desglosePago ?? [] }
     for (const item of b.items) {
+      if (item.productoId == null) {
+        // Servicio rapido: sin producto ni stock
+        venta.detalles.push({ productoId: null, nombreProducto: item.descripcion, cantidad: item.cantidad,
+          precioUnitario: Number(item.precio), subtotal: Number(item.precio) * item.cantidad, duplicado: false })
+        continue
+      }
       const p = producto_(item.productoId)
       moverStock(p, -item.cantidad, 'SALIDA', 'VENTA', venta.id, null)
       venta.detalles.push(detalle(p, item.cantidad, !!item.duplicado))
@@ -285,7 +299,7 @@ const rutas: [string, RegExp, Manejador][] = [
   ['POST', /^\/ventas\/(\d+)\/anular$/, (m) => {
     const v = ventas.find((x) => x.id === Number(m[1])) ?? fallar('Venta no encontrada', 404)
     if (v.anulada) fallar('La venta ya se encuentra anulada')
-    v.detalles.forEach((d) => moverStock(producto_(d.productoId), d.cantidad, 'ENTRADA', 'VENTA', v.id, null))
+    v.detalles.forEach((d) => { if (d.productoId != null) moverStock(producto_(d.productoId), d.cantidad, 'ENTRADA', 'VENTA', v.id, null) })
     ingreso(-v.montoTotal, v.metodoPago === 'MIXTO' ? 'EFECTIVO' : v.metodoPago)
     v.anulada = true
     return v

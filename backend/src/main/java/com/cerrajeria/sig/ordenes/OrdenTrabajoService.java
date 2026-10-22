@@ -323,7 +323,8 @@ public class OrdenTrabajoService {
             orden.getObservaciones(),
             orden.getMotivoCancelacion(),
             orden.isGarantia(),
-            orden.getOrdenOrigen() == null ? null : orden.getOrdenOrigen().getNumeroOrden()
+            orden.getOrdenOrigen() == null ? null : orden.getOrdenOrigen().getNumeroOrden(),
+            orden.getCliente().getTelefono()
         );
     }
 

@@ -1,9 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Moon, Sun } from 'lucide-react'
 import { usuariosApi } from '../api/usuarios'
 import { extraerMensajeError } from '../api/axiosClient'
 import { Card } from '../components/ui/Card'
+import { negocioApi, type Negocio } from '../api/negocio'
+import { useNegocio, actualizarNegocio } from '../hooks/useNegocio'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Campo } from '../components/ui/Campo'
@@ -78,6 +80,8 @@ export function Ajustes() {
           <Button variant="secondary" onClick={() => navigate('/auditoria')}>Ver</Button>
         </Card>
       )}
+
+      {usuario?.role === 'ROLE_ADMIN' && <DatosNegocio />}
 
       {usuario?.role === 'ROLE_ADMIN' && <GestionUsuarios />}
     </div>
@@ -281,5 +285,59 @@ function FormularioUsuario({ onCreado }: { onCreado: (u: UsuarioResponse) => voi
       {error && <p className="text-base font-semibold text-danger">{error}</p>}
       <Button type="submit" tamano="lg" disabled={guardando}>{guardando ? 'Creando…' : 'Crear usuario'}</Button>
     </form>
+  )
+}
+
+/**
+ * Nombre, telefono y direccion del negocio: salen en el menu, en la pantalla
+ * de ingreso y en los mensajes de WhatsApp a los clientes.
+ */
+function DatosNegocio() {
+  const actual = useNegocio()
+  const { notificar } = useToast()
+  const [datos, setDatos] = useState<Negocio | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [guardando, setGuardando] = useState(false)
+  const valores = datos ?? actual
+
+  async function guardar(e: FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setGuardando(true)
+    try {
+      const guardado = await negocioApi.guardar(valores)
+      actualizarNegocio(guardado)
+      setDatos(null)
+      notificar('Datos del negocio guardados')
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  const cambiar = (campo: keyof Negocio) => (e: ChangeEvent<HTMLInputElement>) =>
+    setDatos({ ...valores, [campo]: e.target.value })
+
+  return (
+    <Card>
+      <form onSubmit={guardar} className="flex flex-col gap-3">
+        <div>
+          <p className="font-medium">Datos del negocio</p>
+          <p className="text-sm text-sub">Salen en el menú y en los mensajes de WhatsApp a los clientes.</p>
+        </div>
+        <Campo etiqueta="Nombre">
+          <input required value={valores.nombre} onChange={cambiar('nombre')} maxLength={100} className="rounded-lg border px-3 outline-none" />
+        </Campo>
+        <Campo etiqueta="Teléfono / WhatsApp">
+          <input required type="tel" inputMode="tel" value={valores.telefono} onChange={cambiar('telefono')} className="rounded-lg border px-3 outline-none" />
+        </Campo>
+        <Campo etiqueta="Dirección">
+          <input required value={valores.direccion} onChange={cambiar('direccion')} maxLength={200} className="rounded-lg border px-3 outline-none" />
+        </Campo>
+        {error && <p className="text-base font-semibold text-danger">{error}</p>}
+        <Button type="submit" disabled={guardando || datos === null}>{guardando ? 'Guardando…' : 'Guardar'}</Button>
+      </form>
+    </Card>
   )
 }

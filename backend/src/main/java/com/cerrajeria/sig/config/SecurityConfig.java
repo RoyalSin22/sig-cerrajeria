@@ -68,6 +68,8 @@ public class SecurityConfig {
                     "/uploads/**",
                     "/api/v1/whatsapp/webhook"
                 ).permitAll()
+                // Nombre del negocio para la pantalla de ingreso (datos de la tarjeta, no privados)
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/negocio").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2

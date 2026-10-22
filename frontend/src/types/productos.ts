@@ -2,7 +2,7 @@
 
 export type TipoProducto =
   | 'LLAVE_VIRGEN' | 'LLAVE_COLOR' | 'LLAVE_DISENO' | 'CHAPA' | 'CILINDRO'
-  | 'CANDADO' | 'LLAVERO' | 'ARGOLLA' | 'ACCESORIO'
+  | 'CANDADO' | 'LLAVERO' | 'ARGOLLA' | 'ACCESORIO' | 'REPUESTO_LICUADORA'
 
 /** Las llaves se pueden ofrecer como duplicado (con su propio precio). */
 export function esLlave(tipo: TipoProducto): boolean {
@@ -19,6 +19,7 @@ export const ETIQUETA_TIPO_PRODUCTO: Record<TipoProducto, string> = {
   LLAVERO: 'Llavero',
   ARGOLLA: 'Argolla',
   ACCESORIO: 'Accesorio',
+  REPUESTO_LICUADORA: 'Repuesto de licuadora',
 }
 
 export interface ProductoResponse {

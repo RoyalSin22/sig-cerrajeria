@@ -21,6 +21,8 @@ public record OrdenTrabajoResponse(
     String motivoCancelacion,
     boolean garantia,
     /** Numero de la orden original si es una garantia (ej. OT-000012). */
-    String numeroOrdenOrigen
+    String numeroOrdenOrigen,
+    /** Para avisarle por WhatsApp (comprobante, trabajo listo). */
+    String telefonoCliente
 ) {
 }

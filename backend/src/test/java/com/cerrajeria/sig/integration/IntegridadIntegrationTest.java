@@ -218,4 +218,39 @@ class IntegridadIntegrationTest {
         assertThat(auditoria.get("content").get(0).path("detalle").path("descripcion").asString())
             .contains("anulada", "S/ 16", "2 × Producto ANU-1");
     }
+
+    @Test
+    @DisplayName("Servicio rápido sin producto, repuesto de licuadora y datos del negocio")
+    void servicioRepuestoYNegocio() throws Exception {
+        String token = usuarioConCaja("cajero_servicio", "0");
+        long cuchilla = llamar(token, post("/api/v1/productos"), """
+            {"codigo":"OSTER-CUCH","nombre":"Cuchilla Oster","tipoProducto":"REPUESTO_LICUADORA",
+             "cantidadStock":5,"precioCompra":12,"precioVenta":25}
+            """, status().isCreated()).get("id").asLong();
+
+        JsonNode venta = llamar(token, post("/api/v1/ventas"), """
+            {"metodoPago":"EFECTIVO","items":[
+              {"cantidad":1,"descripcion":"Abrir candado","precio":10},
+              {"productoId":%d,"cantidad":1}]}
+            """.formatted(cuchilla), status().isCreated());
+        assertThat(venta.get("montoTotal").decimalValue()).isEqualByComparingTo("35");
+        assertThat(venta.get("detalles").get(0).get("nombreProducto").asString()).isEqualTo("Abrir candado");
+        assertThat(venta.get("detalles").get(0).get("productoId").isNull()).isTrue();
+        // Una linea sin producto ni descripcion se rechaza
+        llamar(token, post("/api/v1/ventas"), "{\"metodoPago\":\"EFECTIVO\",\"items\":[{\"cantidad\":1}]}",
+            status().isBadRequest());
+        // Anular devuelve el stock de la cuchilla y no falla por la linea de servicio
+        llamar(token, post("/api/v1/ventas/" + venta.get("id").asLong() + "/anular"), null, status().isOk());
+        assertThat(llamar(token, get("/api/v1/productos/" + cuchilla), null, status().isOk())
+            .get("cantidadStock").asInt()).isEqualTo(5);
+
+        // Datos del negocio: se leen sin sesion (pantalla de ingreso) y los cambia el administrador
+        JsonNode negocio = objectMapper.readTree(mockMvc.perform(get("/api/v1/negocio"))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(negocio.get("nombre").asString()).isEqualTo("Cerrajería Barrera");
+        JsonNode cambiado = llamar(token, put("/api/v1/negocio"),
+            "{\"nombre\":\"Cerrajería Barrera\",\"telefono\":\"982 616 709\",\"direccion\":\"Av. Alfonso Ugarte 115\"}",
+            status().isOk());
+        assertThat(cambiado.get("telefono").asString()).isEqualTo("982616709");
+    }
 }
