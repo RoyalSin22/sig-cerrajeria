@@ -29,14 +29,14 @@ describe('Venta: duplicado y llave sola', () => {
 
   it('al buscar una llave ofrece el duplicado y la llave sola, cada uno con su precio', async () => {
     render(<MemoryRouter><Venta /></MemoryRouter>)
-    fireEvent.change(screen.getByPlaceholderText(/Buscar producto/), { target: { value: 'casa' } })
+    fireEvent.change(screen.getByPlaceholderText(/Buscar otro producto/), { target: { value: 'casa' } })
 
     fireEvent.click(await screen.findByRole('button', { name: /Duplicado S\/\s?2\.50/ }))
     fireEvent.click(screen.getByRole('button', { name: /Duplicado S\/\s?2\.50/ }))
     fireEvent.click(screen.getByRole('button', { name: /Sola S\/\s?0\.90/ }))
 
     expect(screen.getByText('Duplicado ·')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Cobrar' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Cobrar/ }))
 
     expect(ventasApi.crear).toHaveBeenCalledWith(expect.objectContaining({
       items: [
@@ -44,5 +44,14 @@ describe('Venta: duplicado y llave sola', () => {
         { productoId: 7, cantidad: 1, duplicado: false },
       ],
     }))
+  })
+
+  it('duplicado en tres toques: botón, llave y cantidad; el total aparece en el botón Cobrar', async () => {
+    render(<MemoryRouter><Venta /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: /Duplicado de llave/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Llave de casa/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^3\s*S\/\s?7\.50/ }))
+
+    expect(screen.getByRole('button', { name: /Cobrar S\/\s?7\.50/ })).toBeTruthy()
   })
 })

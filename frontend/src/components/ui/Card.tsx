@@ -24,12 +24,13 @@ export function StatCard({ label, value, hint, tint, className = '' }: StatCardP
   // Valores largos (montos) escalan con el ancho de la tarjeta (cqw) para caber en
   // una linea; los cortos (contadores) conservan la cifra grande.
   const esLargo = (typeof value === 'string' || typeof value === 'number') && String(value).length > 6
-  const tamano = esLargo ? 'text-[clamp(1rem,12cqw,2.25rem)]' : 'text-4xl'
+  // Los montos, grandes como los contadores pero sin desbordar la tarjeta
+  const tamano = esLargo ? 'text-[clamp(1.5rem,14cqw,2.25rem)]' : 'text-4xl'
   return (
     <Card className={`@container flex min-w-0 flex-col gap-1 ${tintClass} ${className}`}>
-      <span className="text-xs uppercase tracking-wide text-sub">{label}</span>
+      <span className="text-sm font-semibold text-sub">{label}</span>
       <span className={`whitespace-nowrap font-heading ${tamano} font-bold leading-none text-steel-dark`}>{value}</span>
-      {hint && <span className="text-xs text-sub">{hint}</span>}
+      {hint && <span className="text-sm text-sub">{hint}</span>}
     </Card>
   )
 }

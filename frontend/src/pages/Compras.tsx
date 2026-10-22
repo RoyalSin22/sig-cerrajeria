@@ -138,7 +138,7 @@ export function Compras() {
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-heading text-2xl font-semibold">Registrar compra</h1>
+        <h1 className="font-heading text-3xl font-bold">Registrar compra</h1>
         <div className="flex gap-2">
           <Button variant="ghost" onClick={() => navigate('/compras/historial')}>Historial</Button>
           <Button variant="ghost" onClick={() => navigate('/proveedores')}>Proveedores</Button>
@@ -240,8 +240,8 @@ export function Compras() {
           Pagar de la caja activa {!cajaAbierta && '(no tienes caja abierta)'}
         </label>
 
-        {error && <p className="text-sm text-danger">{error}</p>}
-        <Button type="submit" disabled={guardando}>{guardando ? 'Registrando…' : 'Registrar compra'}</Button>
+        {error && <p className="text-base font-semibold text-danger">{error}</p>}
+        <Button type="submit" tamano="lg" disabled={guardando}>{guardando ? 'Registrando…' : 'Registrar compra'}</Button>
       </form>
       )}
     </div>

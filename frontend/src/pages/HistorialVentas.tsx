@@ -54,7 +54,7 @@ export function HistorialVentas() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-heading text-2xl font-semibold">Historial de ventas</h1>
+      <h1 className="font-heading text-3xl font-bold">Historial de ventas</h1>
 
       {cargando && ventas.length === 0 ? (
         <p className="text-sm text-sub">Cargando…</p>

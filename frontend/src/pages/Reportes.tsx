@@ -57,7 +57,7 @@ export function Reportes() {
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="font-heading text-2xl font-semibold">Reportes</h1>
+      <h1 className="font-heading text-3xl font-bold">Reportes</h1>
 
       <Card className="flex flex-wrap items-end gap-3">
         <div>
@@ -73,7 +73,7 @@ export function Reportes() {
         <Button onClick={consultar} disabled={cargando}>{cargando ? 'Consultando…' : 'Consultar'}</Button>
       </Card>
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <p className="text-base font-semibold text-danger">{error}</p>}
 
       {ventas && (
         <>

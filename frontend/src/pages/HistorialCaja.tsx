@@ -32,7 +32,7 @@ export function HistorialCaja() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-heading text-2xl font-semibold">Historial de caja</h1>
+      <h1 className="font-heading text-3xl font-bold">Historial de caja</h1>
 
       {cargando && sesiones.length === 0 ? (
         <p className="text-sm text-sub">Cargando…</p>

@@ -81,7 +81,7 @@ export function ListaCompras() {
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-semibold">Lista de compras</h1>
+        <h1 className="font-heading text-3xl font-bold">Lista de compras</h1>
         <Button variant="ghost" onClick={() => navigate('/compras')}>Volver</Button>
       </div>
 

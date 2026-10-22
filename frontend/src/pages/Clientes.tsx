@@ -5,6 +5,7 @@ import { SearchInput } from '../components/ui/SearchInput'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
+import { Campo } from '../components/ui/Campo'
 import { BottomSheet } from '../components/ui/BottomSheet'
 import { PullToRefreshIndicator } from '../components/ui/PullToRefreshIndicator'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
@@ -63,7 +64,7 @@ export function Clientes() {
     <div className="flex flex-col gap-4">
       <PullToRefreshIndicator distancia={distancia} refrescando={refrescando} umbral={umbral} />
       <div className="flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-semibold">Clientes</h1>
+        <h1 className="font-heading text-3xl font-bold">Clientes</h1>
         <Button onClick={() => setMostrarAlta(true)}>Nuevo cliente</Button>
       </div>
 
@@ -152,20 +153,20 @@ function FormularioCliente({
   return (
     <BottomSheet abierto={abierto} onCerrar={onCerrar} titulo="Nuevo cliente">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <input
-          required value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre"
+        <Campo etiqueta="Nombre"><input
+          required value={nombre} onChange={(e) => setNombre(e.target.value)}
           className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel"
-        />
-        <input
-          required value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Teléfono"
+        /></Campo>
+        <Campo etiqueta="Teléfono"><input
+          required type="tel" inputMode="tel" autoComplete="off" value={telefono} onChange={(e) => setTelefono(e.target.value)}
           className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel"
-        />
-        <input
-          value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Dirección (opcional)"
+        /></Campo>
+        <Campo etiqueta="Dirección" opcional><input
+          value={direccion} onChange={(e) => setDireccion(e.target.value)}
           className="rounded-md border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-steel"
-        />
-        {error && <p className="text-sm text-danger">{error}</p>}
-        <Button type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar'}</Button>
+        /></Campo>
+        {error && <p className="text-base font-semibold text-danger">{error}</p>}
+        <Button type="submit" tamano="lg" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar'}</Button>
       </form>
     </BottomSheet>
   )
@@ -224,13 +225,13 @@ function FichaCliente({
     <BottomSheet abierto={!!cliente} onCerrar={onCerrar} titulo={cliente.nombre}>
       {editando ? (
         <form onSubmit={guardarEdicion} className="flex flex-col gap-3 text-sm">
-          <input required value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre" className={inputClase} />
-          <input required value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Teléfono" className={inputClase} />
-          <input value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Dirección" className={inputClase} />
-          <textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Observaciones" rows={2} className={inputClase} />
-          {error && <p className="text-danger">{error}</p>}
+          <Campo etiqueta="Nombre"><input required value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClase} /></Campo>
+          <Campo etiqueta="Teléfono"><input required type="tel" inputMode="tel" autoComplete="off" value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputClase} /></Campo>
+          <Campo etiqueta="Dirección" opcional><input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputClase} /></Campo>
+          <Campo etiqueta="Notas" opcional><textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} rows={2} className={inputClase} /></Campo>
+          {error && <p className="text-base font-semibold text-danger">{error}</p>}
           <div className="flex gap-2">
-            <Button type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar'}</Button>
+            <Button type="submit" tamano="lg" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar'}</Button>
             <Button type="button" variant="secondary" onClick={() => setEditando(false)}>Cancelar</Button>
           </div>
         </form>

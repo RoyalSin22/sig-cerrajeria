@@ -9,6 +9,7 @@ import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { BottomSheet } from '../components/ui/BottomSheet'
 import { Button } from '../components/ui/Button'
+import { Campo } from '../components/ui/Campo'
 import { PullToRefreshIndicator } from '../components/ui/PullToRefreshIndicator'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { useToast } from '../context/useToast'
@@ -70,7 +71,7 @@ export function Inventario() {
     <div className="flex flex-col gap-4">
       <PullToRefreshIndicator distancia={distancia} refrescando={refrescando} umbral={umbral} />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-heading text-2xl font-semibold">Inventario</h1>
+        <h1 className="font-heading text-3xl font-bold">Inventario</h1>
         <div className="flex flex-wrap gap-2">
           {usuario?.role === 'ROLE_ADMIN' && (
             <Button variant="secondary" onClick={() => setMostrarPlanilla(true)}>Cantidades y precios (Excel)</Button>
@@ -193,7 +194,10 @@ function FichaProducto({
   esAdmin: boolean
 }) {
   const [historial, setHistorial] = useState<MovimientoInventarioResponse[]>([])
-  const [cantidadAjuste, setCantidadAjuste] = useState(0)
+  // Entra o sale, y cuanto (siempre positivo): el teclado numerico del celular no tiene "-"
+  const [sentido, setSentido] = useState<'entra' | 'sale'>('entra')
+  const [cantidad, setCantidad] = useState(0)
+  const cantidadAjuste = sentido === 'entra' ? cantidad : -cantidad
   const [motivo, setMotivo] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
@@ -205,7 +209,8 @@ function FichaProducto({
 
   useEffect(() => {
     if (producto) {
-      setCantidadAjuste(0)
+      setCantidad(0)
+      setSentido('entra')
       setMotivo('')
       setError(null)
       setEditando(false)
@@ -263,7 +268,7 @@ function FichaProducto({
     try {
       const actualizado = await productosApi.ajustarStock(producto!.id, { cantidad: cantidadAjuste, motivo })
       notificar('Stock actualizado')
-      setCantidadAjuste(0)
+      setCantidad(0)
       setMotivo('')
       onActualizado(actualizado)
     } catch (err) {
@@ -315,25 +320,25 @@ function FichaProducto({
         </div>
         {editando ? (
           <form onSubmit={guardarEdicion} className="flex flex-col gap-3 text-sm">
-            <input required value={edicion?.nombre ?? ''} onChange={(e) => setEdicion((s) => s && { ...s, nombre: e.target.value })}
-              placeholder="Nombre" className="rounded-md border border-line bg-paper px-3 py-2 outline-none focus:border-steel" />
-            <input value={edicion?.marca ?? ''} onChange={(e) => setEdicion((s) => s && { ...s, marca: e.target.value })}
-              placeholder="Marca" className="rounded-md border border-line bg-paper px-3 py-2 outline-none focus:border-steel" />
+            <Campo etiqueta="Nombre"><input required value={edicion?.nombre ?? ''} onChange={(e) => setEdicion((s) => s && { ...s, nombre: e.target.value })}
+              className="rounded-md border border-line bg-paper px-3 py-2 outline-none focus:border-steel" /></Campo>
+            <Campo etiqueta="Marca" opcional><input value={edicion?.marca ?? ''} onChange={(e) => setEdicion((s) => s && { ...s, marca: e.target.value })}
+              className="rounded-md border border-line bg-paper px-3 py-2 outline-none focus:border-steel" /></Campo>
             <div className="flex gap-2">
-              <input type="number" min="0" value={edicion?.stockMinimo ?? 0}
+              <Campo etiqueta="Avisar cuando queden" className="flex-1"><input type="number" inputMode="numeric" min="0" value={edicion?.stockMinimo ?? 0}
                 onChange={(e) => setEdicion((s) => s && { ...s, stockMinimo: Number(e.target.value) })}
-                placeholder="Stock mínimo" className="flex-1 rounded-md border border-line bg-paper px-3 py-2 outline-none focus:border-steel" />
+                className="rounded-md border border-line bg-paper px-3 py-2 outline-none focus:border-steel" /></Campo>
             </div>
             <div className="flex gap-2">
               <label className="flex flex-1 flex-col gap-1 text-xs text-sub">
                 Precio compra (S/)
-                <input required type="number" step="0.01" min="0" value={edicion?.precioCompra ?? 0}
+                <input required type="number" inputMode="decimal" step="0.01" min="0" value={edicion?.precioCompra ?? 0}
                   onChange={(e) => setEdicion((s) => s && { ...s, precioCompra: Number(e.target.value) })}
                   className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-steel" />
               </label>
               <label className="flex flex-1 flex-col gap-1 text-xs text-sub">
                 {esLlave(producto.tipoProducto) ? 'Llave sola (S/)' : 'Precio venta (S/)'}
-                <input required type="number" step="0.01" min="0" value={edicion?.precioVenta ?? 0}
+                <input required type="number" inputMode="decimal" step="0.01" min="0" value={edicion?.precioVenta ?? 0}
                   onChange={(e) => setEdicion((s) => s && { ...s, precioVenta: Number(e.target.value) })}
                   className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-steel" />
               </label>
@@ -341,14 +346,14 @@ function FichaProducto({
             {esLlave(producto.tipoProducto) && (
               <label className="flex flex-col gap-1 text-xs text-sub">
                 Precio del duplicado (S/) · material + corte. Vacío: no aparece en "Duplicado de llave".
-                <input type="number" step="0.01" min="0" value={edicion?.precioDuplicado ?? ''}
+                <input type="number" inputMode="decimal" step="0.01" min="0" value={edicion?.precioDuplicado ?? ''}
                   onChange={(e) => setEdicion((s) => s && { ...s, precioDuplicado: e.target.value })}
                   className="rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-steel" />
               </label>
             )}
-            {error && <p className="text-danger">{error}</p>}
+            {error && <p className="text-base font-semibold text-danger">{error}</p>}
             <div className="flex gap-2">
-              <Button type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar'}</Button>
+              <Button type="submit" tamano="lg" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar'}</Button>
               <Button type="button" variant="secondary" onClick={() => setEditando(false)}>Cancelar</Button>
             </div>
           </form>
@@ -377,59 +382,72 @@ function FichaProducto({
 
         {esAdmin ? (
         <div className="panel-cepillado flex flex-col gap-3 rounded-lg p-4">
-          <span className="text-sm font-medium">Ajustar stock actual: {producto.cantidadStock} unidades</span>
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={() => setCantidadAjuste((c) => c - 1)}
-              aria-label="Restar uno"
-              className="flex h-11 w-11 items-center justify-center rounded-md border border-line hover:bg-hair"
-            >
-              <Minus size={18} />
-            </button>
-            {/* Se puede escribir la cantidad: las llaves se compran por cientos o millares */}
+          <span className="text-lg font-semibold">Hay {producto.cantidadStock} unidades. ¿Entran o salen?</span>
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Entran o salen">
+            {([['entra', 'Entran', Plus], ['sale', 'Salen', Minus]] as const).map(([valor, texto, Icono]) => (
+              <button
+                key={valor}
+                type="button"
+                role="radio"
+                aria-checked={sentido === valor}
+                onClick={() => setSentido(valor)}
+                className={`inline-flex min-h-14 items-center justify-center gap-2 rounded-lg border-2 text-lg font-bold ${
+                  sentido === valor ? 'border-steel-dark bg-steel-dark text-white' : 'border-line bg-card'
+                }`}
+              >
+                <Icono size={22} aria-hidden /> {texto}
+              </button>
+            ))}
+          </div>
+          {/* Se escribe la cantidad: las llaves se compran por cientos o millares */}
+          <Campo etiqueta="¿Cuántas?">
             <input
               type="number"
               inputMode="numeric"
+              min="0"
               step="1"
-              aria-label="Cantidad a sumar o restar"
-              value={cantidadAjuste === 0 ? '' : cantidadAjuste}
+              value={cantidad === 0 ? '' : cantidad}
               placeholder="0"
               onChange={(e) => {
                 const n = Number.parseInt(e.target.value, 10)
-                setCantidadAjuste(Number.isNaN(n) ? 0 : n)
+                setCantidad(Number.isNaN(n) ? 0 : Math.abs(n))
               }}
-              className="w-28 rounded-md border border-line bg-paper px-2 py-2 text-center font-heading text-2xl font-bold outline-none focus:border-steel"
+              className="rounded-lg border px-3 text-center font-heading text-3xl font-bold outline-none"
             />
-            <button
-              onClick={() => setCantidadAjuste((c) => c + 1)}
-              aria-label="Sumar uno"
-              className="flex h-11 w-11 items-center justify-center rounded-md border border-line hover:bg-hair"
-            >
-              <Plus size={18} />
-            </button>
-          </div>
+          </Campo>
           <div className="flex flex-wrap justify-center gap-2">
-            {[100, 500, 1000].map((n) => (
-              <Chip key={n} onClick={() => setCantidadAjuste((c) => c + n)}>+{n}</Chip>
+            {[1, 10, 100, 500, 1000].map((n) => (
+              <Chip key={n} onClick={() => setCantidad((c) => c + n)}>+{n}</Chip>
             ))}
           </div>
-          {cantidadAjuste !== 0 && (
-            <p className="text-center text-sm text-sub">
-              {cantidadAjuste > 0 ? 'Entran' : 'Salen'} {Math.abs(cantidadAjuste)} unidades · el stock queda en{' '}
-              <span className="font-semibold text-ink">{producto.cantidadStock + cantidadAjuste}</span>
+          {cantidad !== 0 && (
+            <p className="rounded-lg bg-tint-sky p-3 text-center text-lg">
+              {sentido === 'entra' ? 'Entran' : 'Salen'} {cantidad} · quedarán{' '}
+              <b className="text-2xl">{producto.cantidadStock + cantidadAjuste}</b>
             </p>
           )}
-          {cantidadAjuste !== 0 && (
+          {cantidad !== 0 && (
             <>
-              <input
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-                placeholder="Motivo del ajuste (obligatorio)"
-                className="w-full rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-steel"
-              />
-              {error && <p className="text-sm text-danger">{error}</p>}
-              <Button onClick={confirmarAjuste} disabled={guardando} className="w-full">
-                {guardando ? 'Guardando…' : 'Confirmar ajuste'}
+              <Campo etiqueta="¿Por qué?">
+                <input
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                  placeholder="Toca un motivo o escríbelo"
+                  autoCapitalize="sentences"
+                  className="w-full rounded-lg border px-3 outline-none"
+                />
+              </Campo>
+              <div className="flex flex-wrap gap-2">
+                {(sentido === 'entra'
+                  ? ['Llegó mercadería', 'Conteo físico', 'Devolución de cliente']
+                  : ['Conteo físico', 'Producto dañado', 'Se perdió', 'Uso en el local']
+                ).map((m) => (
+                  <Chip key={m} activo={motivo === m} onClick={() => setMotivo(m)}>{m}</Chip>
+                ))}
+              </div>
+              {error && <p className="text-base font-semibold text-danger">{error}</p>}
+              <Button tamano="lg" onClick={confirmarAjuste} disabled={guardando} className="w-full">
+                {guardando ? 'Guardando…' : 'Guardar'}
               </Button>
             </>
           )}
@@ -505,77 +523,77 @@ function FormularioProducto({
     <BottomSheet abierto={abierto} onCerrar={onCerrar} titulo="Nuevo producto">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <div className="flex gap-2">
-          <input required value={form.codigo} onChange={(e) => set('codigo', e.target.value)}
-            placeholder="Código" className={`flex-1 ${inputClase}`} />
+          <Campo etiqueta="Código" className="flex-1"><input required value={form.codigo} onChange={(e) => set('codigo', e.target.value)}
+            className={`${inputClase}`} /></Campo>
           <select value={form.tipoProducto} onChange={(e) => set('tipoProducto', e.target.value as TipoProducto)}
             className={`flex-1 ${inputClase}`}>
             {TIPOS_PRODUCTO.map((t) => <option key={t} value={t}>{ETIQUETA_TIPO_PRODUCTO[t]}</option>)}
           </select>
         </div>
 
-        <input required value={form.nombre} onChange={(e) => set('nombre', e.target.value)}
-          placeholder="Nombre" className={inputClase} />
-        <input value={form.marca} onChange={(e) => set('marca', e.target.value)}
-          placeholder="Marca (opcional)" className={inputClase} />
+        <Campo etiqueta="Nombre"><input required value={form.nombre} onChange={(e) => set('nombre', e.target.value)}
+          className={inputClase} /></Campo>
+        <Campo etiqueta="Marca" opcional><input value={form.marca} onChange={(e) => set('marca', e.target.value)}
+          className={inputClase} /></Campo>
 
         {/* Atributos especificos segun el tipo elegido (Fase 6 §3.5) */}
         {form.tipoProducto === 'LLAVE_VIRGEN' && (
-          <input value={form.llavePerfil} onChange={(e) => set('llavePerfil', e.target.value)}
-            placeholder="Perfil (ej. KW1, KW10, Yale, Cantol…)" className={inputClase} />
+          <Campo etiqueta="Perfil"><input value={form.llavePerfil} onChange={(e) => set('llavePerfil', e.target.value)}
+            placeholder="Ej.: KW1, Yale, Cantol" className={inputClase} /></Campo>
         )}
         {form.tipoProducto === 'LLAVE_COLOR' && (
-          <input value={form.llaveColor} onChange={(e) => set('llaveColor', e.target.value)}
-            placeholder="Color" className={inputClase} />
+          <Campo etiqueta="Color"><input value={form.llaveColor} onChange={(e) => set('llaveColor', e.target.value)}
+            className={inputClase} /></Campo>
         )}
         {form.tipoProducto === 'LLAVE_DISENO' && (
-          <input value={form.llaveDisenoTematica} onChange={(e) => set('llaveDisenoTematica', e.target.value)}
-            placeholder="Diseño / temática" className={inputClase} />
+          <Campo etiqueta="Diseño"><input value={form.llaveDisenoTematica} onChange={(e) => set('llaveDisenoTematica', e.target.value)}
+            className={inputClase} /></Campo>
         )}
         {['CHAPA', 'CILINDRO', 'CANDADO'].includes(form.tipoProducto) && (
-          <input value={form.productoModelo} onChange={(e) => set('productoModelo', e.target.value)}
-            placeholder="Modelo" className={inputClase} />
+          <Campo etiqueta="Modelo" opcional><input value={form.productoModelo} onChange={(e) => set('productoModelo', e.target.value)}
+            className={inputClase} /></Campo>
         )}
         {['CANDADO', 'ARGOLLA'].includes(form.tipoProducto) && (
-          <input value={form.productoTamano} onChange={(e) => set('productoTamano', e.target.value)}
-            placeholder="Tamaño" className={inputClase} />
+          <Campo etiqueta="Tamaño" opcional><input value={form.productoTamano} onChange={(e) => set('productoTamano', e.target.value)}
+            className={inputClase} /></Campo>
         )}
         {['LLAVERO', 'ARGOLLA'].includes(form.tipoProducto) && (
-          <input value={form.productoMaterial} onChange={(e) => set('productoMaterial', e.target.value)}
-            placeholder="Material" className={inputClase} />
+          <Campo etiqueta="Material" opcional><input value={form.productoMaterial} onChange={(e) => set('productoMaterial', e.target.value)}
+            className={inputClase} /></Campo>
         )}
 
         <div className="flex gap-2">
-          <input required type="number" min="0" value={form.cantidadStock}
+          <Campo etiqueta="Cantidad que hay" className="flex-1"><input required type="number" inputMode="numeric" min="0" value={form.cantidadStock}
             onChange={(e) => set('cantidadStock', Number(e.target.value))}
-            placeholder="Stock inicial" className={`flex-1 ${inputClase}`} />
-          <input type="number" min="0" value={form.stockMinimo}
+            className={`${inputClase}`} /></Campo>
+          <Campo etiqueta="Avisar cuando queden" className="flex-1"><input type="number" inputMode="numeric" min="0" value={form.stockMinimo}
             onChange={(e) => set('stockMinimo', Number(e.target.value))}
-            placeholder="Stock mínimo" className={`flex-1 ${inputClase}`} />
+            className={`${inputClase}`} /></Campo>
         </div>
 
         <div className="flex gap-2">
           <label className="flex flex-1 flex-col gap-1 text-xs text-sub">
             Precio compra (S/)
-            <input required type="number" step="0.01" min="0" value={form.precioCompra}
+            <input required type="number" inputMode="decimal" step="0.01" min="0" value={form.precioCompra}
               onChange={(e) => set('precioCompra', Number(e.target.value))} className={`text-sm text-ink ${inputClase}`} />
           </label>
           <label className="flex flex-1 flex-col gap-1 text-xs text-sub">
             {esLlave(form.tipoProducto) ? 'Llave sola (S/)' : 'Precio venta (S/)'}
-            <input required type="number" step="0.01" min="0" value={form.precioVenta}
+            <input required type="number" inputMode="decimal" step="0.01" min="0" value={form.precioVenta}
               onChange={(e) => set('precioVenta', Number(e.target.value))} className={`text-sm text-ink ${inputClase}`} />
           </label>
         </div>
         {esLlave(form.tipoProducto) && (
           <label className="flex flex-col gap-1 text-xs text-sub">
             Precio del duplicado (S/) · material + corte. Vacío: no aparece en "Duplicado de llave".
-            <input type="number" step="0.01" min="0" value={form.precioDuplicado ?? ''}
+            <input type="number" inputMode="decimal" step="0.01" min="0" value={form.precioDuplicado ?? ''}
               onChange={(e) => set('precioDuplicado', e.target.value === '' ? null : Number(e.target.value))}
               className={`text-sm text-ink ${inputClase}`} />
           </label>
         )}
 
-        {error && <p className="text-sm text-danger">{error}</p>}
-        <Button type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Crear producto'}</Button>
+        {error && <p className="text-base font-semibold text-danger">{error}</p>}
+        <Button type="submit" tamano="lg" disabled={guardando}>{guardando ? 'Guardando…' : 'Crear producto'}</Button>
       </form>
     </BottomSheet>
   )
@@ -731,7 +749,7 @@ function ImportarInventario({
           </div>
         )}
 
-        {error && <p className="text-danger">{error}</p>}
+        {error && <p className="text-base font-semibold text-danger">{error}</p>}
         {listo && (
           <Button onClick={confirmar} disabled={trabajando}>
             {trabajando ? 'Importando…' : `Importar ${revision.productos.length} productos`}
@@ -908,7 +926,7 @@ function PlanillaCantidades({
           )
         )}
 
-        {error && <p className="text-danger">{error}</p>}
+        {error && <p className="text-base font-semibold text-danger">{error}</p>}
         {listo && (
           <Button onClick={confirmar} disabled={trabajando}>
             {trabajando ? 'Guardando…' : `Actualizar ${revision.cambios.length} productos`}

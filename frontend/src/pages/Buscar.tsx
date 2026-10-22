@@ -34,7 +34,7 @@ export function Buscar() {
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="font-heading text-2xl font-semibold">Buscar</h1>
+      <h1 className="font-heading text-3xl font-bold">Buscar</h1>
       <SearchInput placeholder="Producto, cliente u orden…" onBuscar={handleBuscar} autoFocus />
 
       {!buscado && <EmptyState mensaje="Escribe al menos 2 caracteres para buscar en todo el sistema." />}

@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { KeyRound, Minus, Plus, Trash2 } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { KeyRound, Minus, Plus, Trash2, Wallet } from 'lucide-react'
 import { productosApi } from '../api/productos'
 import { ventasApi } from '../api/ventas'
 import { extraerMensajeError } from '../api/axiosClient'
 import { SearchInput } from '../components/ui/SearchInput'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Button } from '../components/ui/Button'
-import { Chip } from '../components/ui/Chip'
 import { BottomSheet } from '../components/ui/BottomSheet'
 import { useCaja } from '../context/useCaja'
 import { useToast } from '../context/useToast'
@@ -41,7 +40,9 @@ export function Venta() {
   })
   const [procesando, setProcesando] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [mostrarDuplicado, setMostrarDuplicado] = useState(false)
+  // Desde Inicio, "Duplicado de llave" llega con ?duplicado=1 y abre la hoja directo
+  const [params, setParams] = useSearchParams()
+  const [mostrarDuplicado, setMostrarDuplicado] = useState(params.get('duplicado') === '1')
 
   async function handleBuscar(termino: string) {
     if (termino.trim().length < 2) {
@@ -119,41 +120,44 @@ export function Venta() {
   // Regla de negocio 1: sin caja abierta, no se puede ni empezar a vender.
   if (!cajaAbierta) {
     return (
-      <div className="mx-auto max-w-sm py-10 text-center">
-        <p className="mb-4 text-sub">No tienes una caja abierta. Ábrela para poder registrar ventas.</p>
-        <Button onClick={() => (window.location.href = '/caja')}>Ir a Caja</Button>
+      <div className="mx-auto flex max-w-sm flex-col items-center gap-4 py-10 text-center">
+        <Wallet size={48} className="text-warning" aria-hidden />
+        <p className="text-lg">Para vender, primero abre la caja.</p>
+        <Button tamano="lg" onClick={() => navigate('/caja')} className="w-full">Abrir la caja</Button>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-28">
-      <div className="flex justify-end">
-        <button onClick={() => navigate('/venta/historial')} className="text-xs text-steel underline">
-          Ver historial de ventas
-        </button>
+    // Con productos en el carrito, abajo queda fija la zona de cobro: el espacio extra evita que tape el carrito
+    <div className={`flex flex-col gap-4 ${carrito.length > 0 ? 'pb-[26rem] md:pb-4' : ''}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="font-heading text-3xl font-bold">Vender</h1>
+        <Button variant="secondary" onClick={() => navigate('/venta/historial')}>Ventas de hoy</Button>
       </div>
-      <Button variant="secondary" onClick={() => setMostrarDuplicado(true)} className="flex items-center justify-center gap-2">
-        <KeyRound size={18} aria-hidden /> Duplicado de llave
+
+      {/* Lo mas comun en el mostrador: un boton grande, un toque */}
+      <Button tamano="lg" onClick={() => setMostrarDuplicado(true)} className="min-h-16 w-full text-xl">
+        <KeyRound size={26} aria-hidden /> Duplicado de llave
       </Button>
 
-      <SearchInput placeholder="Buscar producto por nombre o código…" onBuscar={handleBuscar} autoFocus />
+      <SearchInput placeholder="Buscar otro producto…" onBuscar={handleBuscar} />
 
       {resultados.length > 0 && (
         <div className="flex flex-col gap-2">
           {resultados.map((p) =>
             p.precioDuplicado != null ? (
               // Una llave casi siempre se cobra como duplicado: es la opcion principal, la llave sola va aparte
-              <div key={p.id} className="panel-cepillado flex items-center justify-between gap-2 rounded-lg p-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">{p.nombre}</p>
-                  <p className="text-xs text-sub">{p.codigo} · Stock: {p.cantidadStock}</p>
+              <div key={p.id} className="panel-cepillado flex flex-col gap-3 rounded-lg p-4">
+                <div>
+                  <p className="text-lg font-semibold">{p.nombre}</p>
+                  <p className="text-sm text-sub">{p.codigo} · Quedan {p.cantidadStock}</p>
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button onClick={() => agregarAlCarrito(p, 1, true)} className="px-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button onClick={() => agregarAlCarrito(p, 1, true)}>
                     Duplicado {formatearSoles(p.precioDuplicado)}
                   </Button>
-                  <Button variant="secondary" onClick={() => agregarAlCarrito(p)} className="px-3">
+                  <Button variant="secondary" onClick={() => agregarAlCarrito(p)}>
                     Sola {formatearSoles(p.precioVenta)}
                   </Button>
                 </div>
@@ -162,13 +166,13 @@ export function Venta() {
               <button
                 key={p.id}
                 onClick={() => agregarAlCarrito(p)}
-                className="panel-cepillado flex items-center justify-between rounded-lg p-3 text-left"
+                className="panel-cepillado flex min-h-16 items-center justify-between gap-3 rounded-lg p-4 text-left"
               >
-                <div>
-                  <p className="text-sm font-medium">{p.nombre}</p>
-                  <p className="text-xs text-sub">{p.codigo} · Stock: {p.cantidadStock}</p>
+                <div className="min-w-0">
+                  <p className="text-lg font-semibold">{p.nombre}</p>
+                  <p className="text-sm text-sub">{p.codigo} · Quedan {p.cantidadStock}</p>
                 </div>
-                <span className="font-heading font-semibold text-steel-dark">{formatearSoles(p.precioVenta)}</span>
+                <span className="shrink-0 font-heading text-xl font-bold text-steel-dark">{formatearSoles(p.precioVenta)}</span>
               </button>
             ),
           )}
@@ -176,26 +180,28 @@ export function Venta() {
       )}
 
       <div className="flex flex-col gap-2">
-        <span className="font-heading text-lg font-semibold">Carrito</span>
+        <span className="font-heading text-2xl font-bold">Lo que se lleva</span>
         {carrito.length === 0 ? (
-          <EmptyState mensaje="Busca un producto arriba para agregarlo a la venta." />
+          <EmptyState mensaje="Toca «Duplicado de llave» o busca un producto." />
         ) : (
           carrito.map((item) => (
-            <div key={clave(item)} className="flex items-center justify-between gap-2 border-b border-hair pb-2">
+            <div key={clave(item)} className="panel-cepillado flex flex-col gap-2 rounded-lg p-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
+                <p className="text-lg font-semibold">
                   {item.duplicado && <span className="text-steel-dark">Duplicado · </span>}
                   {item.producto.nombre}
                 </p>
-                <p className="text-xs text-sub">{formatearSoles(precioUnitario(item))} c/u</p>
+                <p className="text-sm text-sub">
+                  {formatearSoles(precioUnitario(item))} c/u · <b className="text-ink">{formatearSoles(precioUnitario(item) * item.cantidad)}</b>
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => cambiarCantidad(item, -1)}
-                  className="flex h-9 w-9 items-center justify-center rounded-md border border-line hover:bg-hair"
-                  aria-label="Restar"
+                  className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-line bg-card hover:bg-hair"
+                  aria-label="Uno menos"
                 >
-                  <Minus size={16} />
+                  <Minus size={22} />
                 </button>
                 <input
                   type="number"
@@ -205,21 +211,20 @@ export function Venta() {
                   aria-label={`Cantidad de ${item.producto.nombre}`}
                   value={item.cantidad}
                   onChange={(e) => fijarCantidad(item, e.target.value)}
-                  className="w-14 rounded-md border border-line bg-paper px-1 py-1.5 text-center text-sm font-medium outline-none focus:border-steel"
+                  className="w-16 rounded-lg border px-1 text-center text-xl font-bold outline-none"
                 />
                 <button
                   onClick={() => cambiarCantidad(item, 1)}
-                  className="flex h-9 w-9 items-center justify-center rounded-md border border-line hover:bg-hair"
-                  aria-label="Sumar"
+                  className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-line bg-card hover:bg-hair"
+                  aria-label="Uno más"
                 >
-                  <Plus size={16} />
+                  <Plus size={22} />
                 </button>
                 <button
                   onClick={() => quitarDelCarrito(item)}
-                  className="flex h-9 w-9 items-center justify-center rounded-md text-danger hover:bg-hair"
-                  aria-label="Quitar"
+                  className="ml-auto inline-flex min-h-12 items-center gap-1 rounded-lg px-3 font-semibold text-danger hover:bg-hair"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={20} aria-hidden /> Quitar
                 </button>
               </div>
             </div>
@@ -229,17 +234,28 @@ export function Venta() {
 
       {/* Zona fija inferior (thumb zone): total + metodo de pago + cobrar */}
       {carrito.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-hair bg-paper p-4 shadow-lg md:sticky md:bottom-4 md:rounded-lg md:border">
+        // En el celular queda justo encima de la barra del menu (4.75rem)
+        <div className="fixed inset-x-0 bottom-[4.75rem] z-20 border-t-2 border-hair bg-card p-4 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] md:sticky md:bottom-4 md:rounded-xl md:border-2">
           <div className="mx-auto flex max-w-xl flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-sub">Total</span>
-              <span className="font-heading text-3xl font-bold text-steel-dark">{formatearSoles(total)}</span>
+            <div className="flex items-baseline justify-between">
+              <span className="text-lg font-semibold text-sub">Total</span>
+              <span className="font-heading text-4xl font-bold text-steel-dark">{formatearSoles(total)}</span>
             </div>
-            <div className="flex gap-2 overflow-x-auto">
+            {/* ¿Cómo paga? Botones grandes en una fila, el elegido bien marcado */}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="¿Cómo paga?">
               {METODOS.map((m) => (
-                <Chip key={m} activo={metodoPago === m} onClick={() => setMetodoPago(m)}>
+                <button
+                  key={m}
+                  type="button"
+                  role="radio"
+                  aria-checked={metodoPago === m}
+                  onClick={() => setMetodoPago(m)}
+                  className={`min-h-12 rounded-lg border-2 px-1 text-base font-bold ${
+                    metodoPago === m ? 'border-steel-dark bg-steel-dark text-white' : 'border-line bg-card text-ink'
+                  }`}
+                >
                   {ETIQUETA_METODO_PAGO[m]}
-                </Chip>
+                </button>
               ))}
             </div>
 
@@ -249,10 +265,10 @@ export function Venta() {
                 <div className="grid grid-cols-2 gap-2">
                   {METODOS_EN_USO.map((m) => (
                     // Etiqueta visible: el placeholder desaparece al escribir y no se sabria que campo es cual
-                    <label key={m} className="flex flex-col gap-1 text-xs text-sub">
+                    <label key={m} className="flex flex-col gap-1 text-sm font-semibold">
                       {ETIQUETA_METODO_PAGO[m]} (S/)
                       <input
-                        type="number" step="0.01" min="0"
+                        type="number" step="0.01" min="0" inputMode="decimal"
                         value={desglose[m]}
                         onChange={(e) => setDesglose((d) => ({ ...d, [m]: e.target.value }))}
                         placeholder="0.00"
@@ -267,9 +283,9 @@ export function Venta() {
               </div>
             )}
 
-            {error && <p className="text-sm text-danger">{error}</p>}
-            <Button onClick={handleCobrar} disabled={procesando || !puedeCobrar} className="w-full text-base">
-              {procesando ? 'Procesando…' : 'Cobrar'}
+            {error && <p className="text-base font-semibold text-danger">{error}</p>}
+            <Button tamano="lg" onClick={handleCobrar} disabled={procesando || !puedeCobrar} className="w-full text-xl">
+              {procesando ? 'Cobrando…' : `Cobrar ${formatearSoles(total)}`}
             </Button>
           </div>
         </div>
@@ -277,11 +293,15 @@ export function Venta() {
 
       <DuplicadoLlave
         abierto={mostrarDuplicado}
-        onCerrar={() => setMostrarDuplicado(false)}
+        onCerrar={() => {
+          setMostrarDuplicado(false)
+          if (params.has('duplicado')) setParams({}, { replace: true })
+        }}
         onAgregar={(producto, cantidad) => {
           agregarAlCarrito(producto, cantidad, true)
           setMostrarDuplicado(false)
-          notificar(`${cantidad} duplicado(s) de ${producto.nombre} al carrito`)
+          if (params.has('duplicado')) setParams({}, { replace: true })
+          notificar(`${cantidad === 1 ? '1 duplicado' : `${cantidad} duplicados`} de ${producto.nombre} agregado${cantidad === 1 ? '' : 's'}`)
         }}
       />
     </div>
@@ -332,56 +352,65 @@ function DuplicadoLlave({
         <div className="flex flex-col gap-3">
           <SearchInput placeholder="Buscar llave (ej. KW1, Yale)…" onBuscar={setTermino} debounceMs={0} />
           {visibles.length === 0 ? (
-            <p className="text-sm text-sub">
+            <p className="text-base text-sub">
               {termino
                 ? 'No hay llaves con ese nombre.'
                 : 'Ninguna llave tiene precio de duplicado. Ponlo en su ficha, en Inventario.'}
             </p>
           ) : (
-            <div className="flex max-h-80 flex-col gap-2 overflow-y-auto">
+            <div className="flex max-h-[55vh] flex-col gap-2 overflow-y-auto">
               {visibles.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => setElegida(p)}
-                  className="panel-cepillado flex items-center justify-between rounded-lg p-3 text-left"
+                  className="panel-cepillado flex min-h-16 items-center justify-between gap-3 rounded-lg p-4 text-left hover:border-steel"
                 >
-                  <div>
-                    <p className="text-sm font-medium">{p.nombre}</p>
-                    <p className="text-xs text-sub">{p.codigo} · Stock: {p.cantidadStock}</p>
+                  <div className="min-w-0">
+                    <p className="text-lg font-semibold">{p.nombre}</p>
+                    <p className="text-sm text-sub">{p.codigo} · Quedan {p.cantidadStock}</p>
                   </div>
-                  <span className="font-heading font-semibold text-steel-dark">{formatearSoles(p.precioDuplicado)}</span>
+                  <span className="shrink-0 font-heading text-xl font-bold text-steel-dark">{formatearSoles(p.precioDuplicado)}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
       ) : (
-        <div className="flex flex-col gap-3 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="font-medium">{elegida.nombre}</span>
-            <button onClick={() => setElegida(null)} className="text-xs text-steel underline">Cambiar</button>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xl font-bold">{elegida.nombre}</span>
+            <Button variant="secondary" onClick={() => setElegida(null)}>Otra llave</Button>
           </div>
-          <label className="flex flex-col gap-1">
-            <span className="font-medium">¿Cuántas copias?</span>
-            <input
-              type="number" inputMode="numeric" min="1" step="1" value={cantidad}
-              onChange={(e) => setCantidad(e.target.value)}
-              className="rounded-md border border-line bg-paper px-3 py-2.5 text-lg outline-none focus:border-steel"
-            />
-          </label>
-          <div className="flex gap-2">
-            {[1, 2, 3, 5].map((c) => (
-              <Chip key={c} activo={cantidad === String(c)} onClick={() => setCantidad(String(c))}>{c}</Chip>
+          {/* Un toque y listo: cada boton agrega esa cantidad al carrito */}
+          <span className="text-lg font-semibold">¿Cuántas copias?</span>
+          <div className="grid grid-cols-2 gap-2">
+            {[1, 2, 3, 4].map((c) => (
+              <button
+                key={c}
+                type="button"
+                disabled={c > elegida.cantidadStock}
+                onClick={() => onAgregar(elegida, c)}
+                className="flex min-h-20 flex-col items-center justify-center rounded-xl border-2 border-steel-dark bg-tint-sky text-steel-dark disabled:opacity-40"
+              >
+                <span className="font-heading text-3xl font-bold leading-none">{c}</span>
+                <span className="text-sm font-semibold">{formatearSoles(precio * c)}</span>
+              </button>
             ))}
           </div>
-          <p className="text-sub">
-            {formatearSoles(precio)} c/u
-            {cantidadValida && <> · total <span className="font-semibold text-ink">{formatearSoles(precio * n)}</span></>}
-          </p>
-          {sinStock && <p className="text-danger">Solo quedan {elegida.cantidadStock} en stock.</p>}
-          <Button disabled={!cantidadValida || sinStock} onClick={() => onAgregar(elegida, n)}>
-            Agregar al carrito
-          </Button>
+          <label className="flex flex-col gap-1 text-base font-semibold">
+            Otra cantidad
+            <div className="flex gap-2">
+              <input
+                type="number" inputMode="numeric" min="1" step="1" value={cantidad}
+                onChange={(e) => setCantidad(e.target.value)}
+                className="w-28 rounded-lg border px-3 text-center text-xl font-bold outline-none"
+              />
+              <Button disabled={!cantidadValida || sinStock} onClick={() => onAgregar(elegida, n)} className="flex-1">
+                Agregar {cantidadValida ? formatearSoles(precio * n) : ''}
+              </Button>
+            </div>
+          </label>
+          {sinStock && <p className="text-base font-semibold text-danger">Solo quedan {elegida.cantidadStock}.</p>}
         </div>
       )}
     </BottomSheet>

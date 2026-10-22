@@ -16,13 +16,17 @@
    */
   --color-ink: #14171a;
   --color-sub: #4f565d;
-  --color-line: #b9c2cc;
+  /* Borde de campos y botones: 3.4:1 o mas contra el fondo (WCAG 1.4.11),
+     para que se vea donde se escribe. El anterior (#b9c2cc) tenia 1.8:1. */
+  --color-line: #7b8794;
   --color-hair: #dde2e8;
 
   --color-steel: #0b5cad;
   --color-steel-dark: #0a3d73;
 
-  --color-paper: #f7f8fa;
+  --color-paper: #f3f5f7;
+  /* Fondo de tarjetas y hojas: blanco sobre el gris del fondo, sin degradados */
+  --color-card: #ffffff;
 
   --color-success: #00745a; /* verde azulado */
   --color-warning: #9a4a00; /* naranja */
@@ -33,8 +37,17 @@
   --color-tint-lilac: #e9e2f6;
   --color-tint-peach: #ffe7c7;
 
-  --font-heading: "Barlow Condensed", system-ui, sans-serif;
-  --font-body: "Barlow", system-ui, sans-serif;
+  /* Atkinson Hyperlegible: disenada por el Braille Institute para baja vision,
+     con letras que no se confunden (I l 1, O 0, rn m). Sin letra condensada. */
+  --font-heading: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, sans-serif;
+
+  /* Los textos chicos de Tailwind suben un escalon: con la letra "grande"
+     (18 px de base) text-xs queda en 14.6 px y text-sm en 16.9 px. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.45;
 }
 
 /* Modo oscuro (RNF-06): se activa agregando la clase .dark al <html> */
@@ -42,10 +55,11 @@
 
 .dark {
   --color-paper: #121518;
+  --color-card: #1a1f23;
   --color-ink: #f2f4f6;
   --color-sub: #a9b1b8;
-  --color-line: #2c3236;
-  --color-hair: #23282c;
+  --color-line: #6b7680;
+  --color-hair: #2c3236;
 
   /* Versiones claras de los estados para que se lean sobre fondo oscuro */
   --color-steel: #5aa9f0;
@@ -69,30 +83,35 @@
   color: #cfe5fb;
 }
 
+/*
+ * Tamano de letra elegido en Ajustes (TamanoLetraContext). Todo esta en rem,
+ * asi que cambiar la base agranda textos, campos y botones a la vez.
+ */
+html { font-size: 112.5%; }
+html.letra-normal { font-size: 100%; }
+html.letra-muy-grande { font-size: 125%; }
+
 body {
   font-family: var(--font-body);
   background-color: var(--color-paper);
   color: var(--color-ink);
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
 }
 
 h1, h2, h3, h4, .font-heading {
   font-family: var(--font-heading);
 }
 
-/* Panel "cepillado" (variante B elegida en Fase 7 §3.1.1) */
+/* Tarjeta: plana y blanca sobre el fondo gris, con borde suave. Sin
+   degradados ni brillos: menos ruido visual. */
 .panel-cepillado {
-  background: linear-gradient(180deg, #fbfbfc 0%, #eef0f1 100%);
+  background: var(--color-card);
   border: 1px solid var(--color-hair);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    0 1px 3px rgba(25, 27, 28, 0.08);
+  box-shadow: 0 1px 2px rgba(20, 23, 26, 0.06);
 }
 .dark .panel-cepillado {
-  background: linear-gradient(180deg, #1c2124 0%, #14181b 100%);
-  border-color: var(--color-line);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
 }
 
 /* Tarjeta "plano tecnico" (variante A, reportes/analitica) */
@@ -118,3 +137,63 @@ h1, h2, h3, h4, .font-heading {
 .dark .text-white.bg-ink {
   color: #121518;
 }
+
+/*
+ * Campos de formulario grandes en toda la app (capa base: cada pantalla puede
+ * agrandarlos mas con text-lg, text-2xl...).
+ * - 1rem: legible, y el iPhone no hace zoom al tocar el campo.
+ * - 3rem de alto: se acierta con el dedo sin precision.
+ * - Borde de 1.5px con 3.4:1 de contraste: se ve donde se escribe.
+ */
+@layer base {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]),
+  select,
+  textarea {
+    font-size: 1rem;
+    min-height: 3rem;
+    border-width: 1.5px;
+    border-color: var(--color-line);
+    background-color: var(--color-card);
+    color: var(--color-ink);
+  }
+  textarea { min-height: 5rem; }
+}
+/* Ademas, ninguna pantalla los deja con borde fino o con el gris claro viejo */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]),
+select,
+textarea {
+  border-width: 1.5px;
+  border-color: var(--color-line);
+  background-color: var(--color-card);
+  min-height: 3rem;
+}
+textarea { min-height: 5rem; }
+input::placeholder, textarea::placeholder { color: var(--color-sub); opacity: 0.85; }
+
+/* Casillas grandes y con el color de la marca */
+input[type="checkbox"], input[type="radio"] {
+  width: 1.5rem;
+  height: 1.5rem;
+  accent-color: var(--color-steel-dark);
+  flex-shrink: 0;
+}
+.dark input[type="checkbox"], .dark input[type="radio"] { accent-color: var(--color-steel); }
+
+/* Foco bien visible para quien usa teclado (Tab) en la PC del mostrador */
+:focus-visible {
+  outline: 3px solid var(--color-steel);
+  outline-offset: 2px;
+}
+/* Mismo selector que la regla de borde de arriba, para ganarle al enfocar */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]):focus,
+select:focus,
+textarea:focus { border-color: var(--color-steel); }
+
+/* Sin flechitas en los campos numericos: se escribe el numero (el teclado
+   numerico ya aparece en el celular) y no se cambia por error con la rueda. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+/* El buscador nativo trae su propia "x" chica: usamos la nuestra, mas grande */
+input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
