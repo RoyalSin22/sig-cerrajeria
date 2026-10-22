@@ -301,7 +301,6 @@ export function Venta() {
           agregarAlCarrito(producto, cantidad, true)
           setMostrarDuplicado(false)
           if (params.has('duplicado')) setParams({}, { replace: true })
-          notificar(`${cantidad === 1 ? '1 duplicado' : `${cantidad} duplicados`} de ${producto.nombre} agregado${cantidad === 1 ? '' : 's'}`)
         }}
       />
     </div>

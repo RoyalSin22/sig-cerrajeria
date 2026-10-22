@@ -86,6 +86,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* pb-28 en el celular: el contenido no queda debajo de la barra inferior */}
+        {import.meta.env.VITE_DEMO === '1' && (
+          <p className="bg-tint-peach px-4 py-2 text-center text-sm font-semibold text-warning">
+            Demostración con datos de ejemplo: se puede tocar todo, nada se guarda.
+          </p>
+        )}
         <main className="flex-1 px-4 pb-28 pt-4 md:px-8 md:pb-8">
           <div className="mx-auto w-full max-w-5xl">{children}</div>
         </main>

@@ -3,11 +3,15 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
+// Modo demo (npm run build:demo): datos de ejemplo en el navegador, sin backend.
+// Rutas relativas para poder publicarlo en cualquier carpeta, y sin service
+// worker (no es una app para instalar).
+export default defineConfig(({ mode }) => ({
+  base: mode === 'demo' ? './' : '/',
   plugins: [
     react(),
     tailwindcss(),
-    VitePWA({
+    mode !== 'demo' && VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
@@ -53,4 +57,4 @@ export default defineConfig({
   server: {
     port: 5173,
   },
-})
+}))
