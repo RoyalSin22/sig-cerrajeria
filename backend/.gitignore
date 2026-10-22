@@ -7,3 +7,6 @@ target/
 .env
 /uploads/
 /backups/
+
+# Pagina con el codigo QR para el celular (la genera SIG-Cerrajeria.exe)
+/celular.html

@@ -18,6 +18,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    # Vuelve solo cuando Docker arranca (al prender la PC), sin abrir nada
+    restart: unless-stopped
     networks:
       - sig-network
 
@@ -76,6 +78,7 @@ services:
       WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
     volumes:
       - uploads:/app/uploads
+    restart: unless-stopped
     # Solo en esta PC: el navegador y el celular entran por nginx (8081), que
     # llega al backend por la red interna de Docker.
     ports:
@@ -92,6 +95,7 @@ services:
     container_name: sig-cerrajeria-frontend
     depends_on:
       - backend
+    restart: unless-stopped
     ports:
       - "8081:80"
     networks:

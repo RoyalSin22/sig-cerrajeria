@@ -63,6 +63,21 @@ func asegurarEnv(dir string) (creado bool, err error) {
 	return true, nil
 }
 
+// leerEnv devuelve el valor de una variable de backend/.env ("" si no esta).
+func leerEnv(dir, clave string) string {
+	datos, err := os.ReadFile(filepath.Join(dir, ".env"))
+	if err != nil {
+		return ""
+	}
+	for _, l := range strings.Split(strings.ReplaceAll(string(datos), "\r\n", "\n"), "\n") {
+		l = strings.TrimSpace(l)
+		if valor, ok := strings.CutPrefix(l, clave+"="); ok {
+			return strings.Trim(strings.TrimSpace(valor), `"'`)
+		}
+	}
+	return ""
+}
+
 func existe(ruta string) bool {
 	_, err := os.Stat(ruta)
 	return err == nil
