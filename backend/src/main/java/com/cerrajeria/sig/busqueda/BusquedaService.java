@@ -48,6 +48,6 @@ public class BusquedaService {
             o.getProblema(), o.getDiagnostico(), o.getPrecioTotal(), o.getMontoPagado(),
             o.getSaldoPendiente(), o.getEstado().name(), o.getFechaIngreso(), o.getFechaPrometida(),
             o.getFechaEntrega(), o.getObservaciones(), o.getMotivoCancelacion(), o.isGarantia(),
-            o.getOrdenOrigen() == null ? null : o.getOrdenOrigen().getNumeroOrden());
+            o.getOrdenOrigen() == null ? null : o.getOrdenOrigen().getNumeroOrden(), o.getCliente().getTelefono());
     }
 }

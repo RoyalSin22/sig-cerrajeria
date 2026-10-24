@@ -9,3 +9,6 @@ Thumbs.db
 
 # Lanzador compilado (se descarga de GitHub Releases, no se versiona)
 /SIG-Cerrajeria.exe
+
+# Binario de "go build" en Linux (pruebas locales)
+/launcher/launcher

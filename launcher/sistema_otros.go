@@ -21,3 +21,10 @@ func abrirNavegador(url string) error {
 }
 
 func ocultarVentana(*exec.Cmd) {}
+
+// En Linux (desarrollo y CI) no hay carpeta Inicio de Windows ni powercfg.
+func registrarInicioAutomatico(string) (bool, error) {
+	return false, errors.New("el arranque automatico solo se configura en Windows")
+}
+
+func evitarSuspension() error { return nil }

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"os/exec"
 	"time"
 )
@@ -41,11 +40,18 @@ func dockerListo() bool {
 	return cmd.Run() == nil
 }
 
-func composeUp(dir string) error {
-	cmd := exec.Command("docker", "compose", "up", "-d")
+// composeUp levanta los servicios. Con construir, rehace las imagenes con el
+// codigo actual (despues de una actualizacion).
+func composeUp(dir string, construir bool) error {
+	args := []string{"compose", "up", "-d"}
+	if construir {
+		args = append(args, "--build")
+	}
+	cmd := exec.Command("docker", args...)
 	cmd.Dir = dir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = salida
+	cmd.Stderr = salida
+	ocultarVentana(cmd)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("no se pudieron iniciar los servicios (%v).\n"+
 			"Si es la primera vez, revisa que haya conexion a internet: Docker descarga lo necesario", err)

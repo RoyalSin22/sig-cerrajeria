@@ -21,8 +21,11 @@ export const METODOS_SIMPLES: MetodoPagoSimple[] = ['EFECTIVO', 'YAPE', 'PLIN', 
  */
 export const METODOS_EN_USO: MetodoPagoSimple[] = ['EFECTIVO', 'YAPE', 'PLIN']
 
+/** Un producto del inventario, o un servicio rapido sin producto (descripcion + precio). */
 export interface ItemVentaRequest {
-  productoId: number
+  productoId?: number
+  descripcion?: string
+  precio?: number
   cantidad: number
   /** Cobra el precio de duplicado de la llave en vez del de la llave sola. */
   duplicado?: boolean
@@ -47,7 +50,8 @@ export interface VentaCreateRequest {
 }
 
 export interface DetalleVentaResponse {
-  productoId: number
+  /** null en un servicio rapido */
+  productoId: number | null
   nombreProducto: string
   cantidad: number
   precioUnitario: number

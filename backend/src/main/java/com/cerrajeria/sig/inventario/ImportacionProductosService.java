@@ -108,6 +108,10 @@ public class ImportacionProductosService {
         ALIAS_TIPOS.put("llaveros", TipoProducto.LLAVERO);
         ALIAS_TIPOS.put("argollas", TipoProducto.ARGOLLA);
         ALIAS_TIPOS.put("accesorios", TipoProducto.ACCESORIO);
+        ALIAS_TIPOS.put("repuesto", TipoProducto.REPUESTO_LICUADORA);
+        ALIAS_TIPOS.put("repuestos", TipoProducto.REPUESTO_LICUADORA);
+        ALIAS_TIPOS.put("repuesto_de_licuadora", TipoProducto.REPUESTO_LICUADORA);
+        ALIAS_TIPOS.put("licuadora", TipoProducto.REPUESTO_LICUADORA);
     }
 
     /**

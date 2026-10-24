@@ -10,7 +10,9 @@ public enum TipoProducto {
     CANDADO,
     LLAVERO,
     ARGOLLA,
-    ACCESORIO;
+    ACCESORIO,
+    /** Cuchillas, vasos, empaques de licuadora (Oster): la cerrajeria tambien las repara (V12). */
+    REPUESTO_LICUADORA;
 
     /** Las llaves se pueden vender como duplicado, con su propio precio. */
     public boolean esLlave() {

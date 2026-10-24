@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
 import { useCaja } from '../context/useCaja'
+import { useNegocio } from '../hooks/useNegocio'
 import { AsistenteChat } from '../components/AsistenteChat'
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; end?: boolean; corto?: string }
@@ -31,6 +32,7 @@ const EN_MAS = MENU.slice(4)
 export function AppLayout({ children }: { children: ReactNode }) {
   const [masAbierto, setMasAbierto] = useState(false)
   const { usuario, logout } = useAuth()
+  const negocio = useNegocio()
   const { cajaAbierta, cargando } = useCaja()
   const navigate = useNavigate()
 
@@ -43,7 +45,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen bg-paper">
       {/* PC: menu lateral siempre visible, sin tener que abrir nada */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-1 overflow-y-auto border-r border-hair bg-card p-3 md:flex">
-        <span className="px-3 pb-3 pt-1 font-heading text-xl font-bold text-steel-dark">Cerrajería</span>
+        <span className="px-3 pb-3 pt-1 font-heading text-xl font-bold leading-tight text-steel-dark">{negocio.nombre}</span>
         {MENU.map((item) => (
           <EnlaceMenu key={item.to} item={item} />
         ))}
@@ -86,6 +88,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* pb-28 en el celular: el contenido no queda debajo de la barra inferior */}
+        {import.meta.env.VITE_DEMO === '1' && (
+          <p className="bg-tint-peach px-4 py-2 text-center text-sm font-semibold text-warning">
+            Demostración con datos de ejemplo: se puede tocar todo, nada se guarda.
+          </p>
+        )}
         <main className="flex-1 px-4 pb-28 pt-4 md:px-8 md:pb-8">
           <div className="mx-auto w-full max-w-5xl">{children}</div>
         </main>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { extraerMensajeError } from '../api/axiosClient'
 import { Button } from '../components/ui/Button'
+import { useNegocio } from '../hooks/useNegocio'
 
 export function Login() {
   const { login } = useAuth()
@@ -10,6 +11,7 @@ export function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [verPassword, setVerPassword] = useState(false)
+  const negocio = useNegocio()
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
 
@@ -30,7 +32,7 @@ export function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-paper px-4">
       <div className="w-full max-w-sm">
-        <h1 className="font-heading mb-1 text-center text-4xl font-bold text-steel-dark">Cerrajería</h1>
+        <h1 className="font-heading mb-1 text-center text-4xl font-bold text-steel-dark">{negocio.nombre}</h1>
         <p className="mb-8 text-center text-lg text-sub">Escribe tu usuario y tu contraseña</p>
 
         <form onSubmit={handleSubmit} className="panel-cepillado flex flex-col gap-4 rounded-lg p-6">

@@ -4,76 +4,61 @@ Dos caminos. Si solo quieres **usar** el sistema (no modificar código), ve dire
 
 ---
 
-## Opción A: instalación simple (Docker, recomendada para usar el sistema)
+## Opción A: instalación simple (para usar el sistema)
 
-### Lo único que necesitas instalar
+El sistema vive en **una PC** (la de casa, por ejemplo) que queda prendida mientras el local atiende. En el local solo se usan los celulares, que entran a esa PC por **Tailscale**, una red privada y cifrada entre tus propios equipos: funciona con wifi o con datos móviles, y el sistema **no** queda publicado en internet. El plan personal de Tailscale es gratis.
 
-**Docker Desktop** — https://www.docker.com/products/docker-desktop. Solo eso. No necesitas Java, Node, ni nada más para esta opción: todo corre dentro de contenedores.
+### Una sola vez, en la PC (unos 20 minutos)
 
-### Pasos
-
-1. Clona el repo:
-   ```bash
-   git clone https://github.com/TU-USUARIO/sig-cerrajeria.git
-   cd sig-cerrajeria/backend
+1. **Instala tres programas** (siguiente, siguiente, aceptar):
+   - **Docker Desktop**: https://www.docker.com/products/docker-desktop
+   - **Git**: https://git-scm.com/download/win
+   - **Tailscale**: https://tailscale.com/download/windows. Entra con una cuenta de la cerrajería (mejor un correo del negocio que uno personal).
+2. **Ajusta Tailscale** (evita que se desconecte solo):
+   - Ícono de Tailscale junto al reloj → **Preferences** → activa **Run unattended**.
+   - En https://login.tailscale.com/admin/machines, en la fila de esta PC → **⋯** → **Disable key expiry**. Sin esto, cada 180 días hay que volver a iniciar sesión y los celulares dejan de entrar.
+3. **Baja el sistema**: abre la carpeta Documentos, clic derecho → *Abrir en Terminal*, y escribe:
    ```
-
-2. Copia `.env.example` a `.env`:
-   ```bash
-   cp .env.example .env
+   git clone https://github.com/RoyalSin22/sig-cerrajeria.git
    ```
-   Ábrelo y cambia `JWT_SECRET` por algo aleatorio de 32+ caracteres (por ejemplo, corriendo `openssl rand -base64 32` en la terminal y pegando el resultado).
+4. **Baja el lanzador** [SIG-Cerrajeria.exe](https://github.com/RoyalSin22/sig-cerrajeria/releases/latest/download/SIG-Cerrajeria.exe) y ponlo dentro de la carpeta `sig-cerrajeria`.
+5. **Doble clic en `SIG-Cerrajeria.exe`.** Windows puede decir "Windows protegió su PC" (el programa no está firmado): **Más información → Ejecutar de todas formas**. La primera vez tarda unos minutos, porque descarga y arma todo. El lanzador deja configurado:
+   - el sistema, funcionando;
+   - que **arranque solo cada vez que prendas la PC** (sin abrir nada);
+   - que la PC **no se suspenda** mientras está enchufada;
+   - el acceso desde el celular por Tailscale;
+   - una página con un **código QR** para el celular (también queda en `backend\celular.html`, para abrirla cuando haga falta).
+6. Entra con usuario `admin` y contraseña `admin123`, y **cámbiala de inmediato** en Ajustes → Contraseña: esa contraseña está publicada en este repositorio.
 
-3. Desde `sig-cerrajeria/backend/`, **doble clic en `actualizar.bat`** — la primera vez construye todo (tarda unos minutos: descarga imágenes, compila el backend, arma el frontend).
+### Una sola vez, en cada celular
 
-4. Abre **http://localhost:8081** en el navegador.
+La página `backend\celular.html` lo explica con el código QR:
 
-5. Entra con usuario `admin` y contraseña `admin123`. **Cámbiala de inmediato** desde Ajustes → Contraseña: esa contraseña está publicada en este repositorio.
+1. Instala **Tailscale** desde Play Store y entra con **la misma cuenta** que en la PC.
+2. En los Ajustes del celular busca **VPN** → **Tailscale** → activa **VPN siempre activa**, para no tener que abrir Tailscale cada vez.
+3. Escanea el código QR con la cámara (o escribe la dirección en Chrome) y entra con tu usuario del sistema.
+4. En Chrome: **⋮ → Instalar aplicación**. Desde ahí, solo se toca el ícono de la llave.
 
-### Abrir el sistema con doble clic: `SIG-Cerrajeria.exe`
+### El día a día: nada
 
-1. Descarga **SIG-Cerrajeria.exe** desde la página del repositorio en GitHub → **Releases** (o directo: https://github.com/RoyalSin22/sig-cerrajeria/releases/latest/download/SIG-Cerrajeria.exe).
-2. Cópialo dentro de la carpeta `sig-cerrajeria` (la que tiene adentro la carpeta `backend`).
-3. Clic derecho sobre él → *Enviar a* → *Escritorio (crear acceso directo)*.
-
-Desde ahí, abrir el sistema es un doble clic: si Docker Desktop está cerrado lo abre, espera a que todo esté listo y recién entonces abre el navegador. Si algo falla, te dice qué pasó y no cierra la ventana. La primera vez también crea `backend\.env` con una clave de seguridad aleatoria si no existe (el paso 2 de arriba).
-
-La primera vez que lo abras, Windows puede mostrar **"Windows protegió su PC"**, porque el programa no está firmado digitalmente: toca **Más información → Ejecutar de todas formas**. Solo pasa la primera vez.
-
-### Los botones del día a día
+- La PC arranca el sistema sola al iniciar sesión en Windows. Si Windows se reinicia por una actualización, basta con iniciar sesión.
+- **Actualizaciones:** al prender la PC, el sistema busca una versión nueva en GitHub. Si la hay, hace un respaldo, la instala y sigue funcionando mientras tanto. Para no actualizar solo, agrega `AUTO_ACTUALIZAR=no` en `backend\.env`. Para actualizar en el momento: `backend\actualizar.bat`.
+- **Respaldos:** automáticos al arrancar y cada 6 horas (ver [DEPLOYMENT.md](./DEPLOYMENT.md) para guardarlos en Google Drive).
+- Lo que hizo el arranque automático queda en `backend\lanzador.log`, por si algo no funciona.
 
 | Archivo | Cuándo usarlo |
 |---|---|
-| `SIG-Cerrajeria.exe` (o `backend\iniciar.bat`) | Todos los días, al abrir el local |
-| `backend\detener.bat` | Al cerrar el local: además de apagar el sistema, hace el **respaldo de cierre del día** |
-| `backend\respaldar.bat` | Cuando quieras un respaldo en el momento (por ejemplo, antes de actualizar) |
+| `SIG-Cerrajeria.exe` | La primera vez, o para abrir el sistema en esta PC |
+| `backend\celular.html` | Para conectar un celular nuevo (código QR) |
+| `backend\actualizar.bat` | Para instalar una versión nueva en el momento |
+| `backend\respaldar.bat` | Un respaldo en el momento |
 | `backend\restaurar.bat` | Solo si necesitas volver a un respaldo anterior |
-| `backend\actualizar.bat` | Solo cuando alguien te entregue una versión nueva del sistema |
-| `backend\celular.bat` | Una sola vez, para usar el sistema desde el celular (ver abajo) |
-
-### Usar el sistema desde el celular (Tailscale)
-
-El sistema sigue corriendo en la PC del local; el celular se conecta a ella por **Tailscale**, una red privada y cifrada entre tus propios equipos. Funciona en el local (wifi) y fuera de él (datos móviles), con HTTPS, así que la sesión se mantiene sola y la app se puede instalar con ícono. El sistema **no** queda publicado en internet: solo lo alcanzan los equipos conectados a tu cuenta de Tailscale. El plan personal de Tailscale es gratuito.
-
-**Una sola vez, en la PC del local:**
-
-1. Crea una cuenta en https://tailscale.com (recomendado: con un correo de la cerrajería, no uno personal) e instala Tailscale para Windows desde https://tailscale.com/download/windows. Inicia sesión con esa cuenta.
-2. En el ícono de Tailscale junto al reloj → **Preferences** → activa **Run unattended** (sigue conectado aunque se cierre la sesión de Windows).
-3. En https://login.tailscale.com/admin/machines, en la fila de esta PC → menú **⋯** → **Disable key expiry**. Sin esto, cada 180 días Tailscale le pide a la PC volver a iniciar sesión y los celulares dejan de conectarse.
-4. Con el sistema iniciado, doble clic en **`backend\celular.bat`**. La primera vez puede mostrar un enlace para activar HTTPS en tu cuenta: ábrelo y acéptalo. Al final muestra la dirección del sistema, del tipo `https://nombre-pc.tu-red.ts.net`. Anótala.
-
-**En cada celular Android (administrador y empleado):**
-
-1. Instala **Tailscale** desde Play Store e inicia sesión **con la misma cuenta de la cerrajería**. Acepta el permiso de VPN que pide Android.
-2. Abre Chrome y entra a la dirección que mostró `celular.bat`. Inicia sesión en el sistema con tu usuario de siempre (cada uno con el suyo: el permiso de administrador o empleado lo da el usuario del sistema, no Tailscale).
-3. Toca los tres puntos → **Instalar aplicación**. Queda el ícono de la llave en el celular.
-
-Cada vez que uses la app, Tailscale debe estar conectado en el celular (en Android puedes dejarlo siempre activo: Ajustes → Redes e Internet → VPN → engranaje de Tailscale → **VPN siempre activa**; el camino exacto cambia según la marca del celular).
+| `backend\detener.bat` | Apaga el sistema (con respaldo de cierre). Los celulares no podrán entrar hasta volver a abrirlo |
 
 Bueno saber:
-- **La PC del local tiene que estar prendida y con el sistema iniciado.** Si al cerrar ejecutas `detener.bat`, el sistema se apaga y el celular no podrá entrar hasta el día siguiente. Si quieres usarlo fuera de horario, no lo detengas: el respaldo automático igual se hace cada 6 horas.
-- Si un celular se pierde o el empleado deja de trabajar contigo: en https://login.tailscale.com/admin/machines quita ese celular (**⋯ → Remove**) y, en el sistema, desactiva su usuario.
-- Para desactivar el acceso desde el celular en la PC: `tailscale serve reset` en una ventana de comandos.
+- **La PC tiene que estar prendida y con la sesión de Windows iniciada.** Si quieres que inicie sesión sola tras un reinicio, configura el inicio de sesión automático de Windows (opcional).
+- Si un celular se pierde o un empleado deja de trabajar contigo: en https://login.tailscale.com/admin/machines quita ese celular (**⋯ → Remove**) y, en el sistema, desactiva su usuario.
+- Para que no arranque solo al prender la PC, borra `SIG-Cerrajeria.cmd` de la carpeta Inicio de Windows (tecla Windows + R → `shell:startup`).
 
 ---
 

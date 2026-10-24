@@ -9,3 +9,4 @@ dist-ssr/
 
 # Cache incremental de tsc -b
 *.tsbuildinfo
+dist-demo/

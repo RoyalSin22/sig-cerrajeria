@@ -21,7 +21,7 @@ import {
   type ResultadoPlanilla, type ModoPlanilla,
 } from '../types/productos'
 
-type Filtro = 'TODAS' | 'STOCK_BAJO'
+type Filtro = 'TODAS' | 'STOCK_BAJO' | 'LICUADORA'
 
 export function Inventario() {
   const { notificar } = useToast()
@@ -37,7 +37,7 @@ export function Inventario() {
   const [pagina, setPagina] = useState(0)
   const [hayMas, setHayMas] = useState(false)
 
-  const explorando = filtro === 'TODAS' && termino.trim().length < 2
+  const explorando = filtro !== 'STOCK_BAJO' && termino.trim().length < 2
 
   async function cargar(paginaSolicitada = 0, acumular = false) {
     setCargando(true)
@@ -50,7 +50,7 @@ export function Inventario() {
         setHayMas(false)
       } else {
         // Explorar el catalogo completo, paginado (RF: paginacion + Fase 7 grid de categorias)
-        const res = await productosApi.listar(paginaSolicitada)
+        const res = await productosApi.listar(paginaSolicitada, filtro === 'LICUADORA' ? 'REPUESTO_LICUADORA' : undefined)
         setProductos((prev) => (acumular ? [...prev, ...res.content] : res.content))
         setPagina(res.page.number)
         setHayMas(res.page.number + 1 < res.page.totalPages)
@@ -90,6 +90,7 @@ export function Inventario() {
       <div className="flex gap-2 overflow-x-auto">
         <Chip activo={filtro === 'TODAS'} onClick={() => setFiltro('TODAS')}>Todas</Chip>
         <Chip activo={filtro === 'STOCK_BAJO'} onClick={() => setFiltro('STOCK_BAJO')}>Stock bajo</Chip>
+        <Chip activo={filtro === 'LICUADORA'} onClick={() => setFiltro('LICUADORA')}>Licuadora</Chip>
       </div>
 
       {cargando && productos.length === 0 ? (
@@ -481,6 +482,7 @@ function FichaProducto({
 
 const TIPOS_PRODUCTO: TipoProducto[] = [
   'LLAVE_VIRGEN', 'LLAVE_COLOR', 'LLAVE_DISENO', 'CHAPA', 'CILINDRO', 'CANDADO', 'LLAVERO', 'ARGOLLA', 'ACCESORIO',
+  'REPUESTO_LICUADORA',
 ]
 
 const CAMPO_INICIAL: ProductoCreateRequest = {

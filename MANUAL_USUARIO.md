@@ -38,9 +38,7 @@ Entra a **Caja** (tocando "Caja cerrada" arriba, o desde el menú), pon el monto
 
 Ve a **Vender**. Busca el producto por nombre o código (por ejemplo "KW1" o "chapa yale") y tócalo para agregarlo. Puedes sumar o restar cantidad con los botones `+` y `−` o escribirla directamente (por ejemplo `25`), o quitarlo con **Quitar**.
 
-Abajo ves el total. Toca cómo te pagan (**Efectivo**, **Yape**, **Plin** o **Mixto**) y el botón grande **Cobrar**, que muestra el monto a cobrar.
-
-Abajo aparece el total. Elige cómo te pagan (Efectivo, Yape, Plin, Tarjeta, o Mixto si es una combinación) y toca **Cobrar**.
+Abajo aparece el total. Elige cómo te pagan (**Efectivo**, **Yape**, **Plin**, **Tarjeta**, o **Mixto** si es una combinación) y toca el botón grande **Cobrar**, que muestra el monto a cobrar.
 
 Si eliges **Mixto**, el sistema te pide cuánto pagaron en cada método — por ejemplo `S/ 20.00` en efectivo y `S/ 15.00` en Yape — y no te deja cobrar hasta que la suma cuadre exactamente con el total.
 
@@ -65,6 +63,10 @@ El **precio de compra** (S/ 0.90 en el ejemplo, lo que te cuesta el material) es
 
 Si te equivocaste en una venta, un Administrador puede anularla desde **Historial de ventas** (el link está arriba de la pantalla de Venta). Eso devuelve el stock y descuenta el dinero de la caja, siempre que la caja de esa venta siga abierta.
 
+### Servicio sin producto (abrir un candado, afilar, etc.)
+
+Para cobrar un trabajo que no saca nada del inventario, toca **Servicio** (al lado de Duplicado de llave). Elige uno de los comunes (Abrir candado, Abrir puerta, Cambio de combinación, Instalación de chapa, Reparación de licuadora, Afilar cuchilla) o escribe otro, pon el precio y toca **Agregar**. Se cobra junto con lo demás del carrito, entra a la caja como cualquier venta y no mueve el stock. En el carrito se ve como "Servicio · Abrir candado".
+
 ## Recibir una reparación (Taller)
 
 Ve a **Taller** y toca **Nueva orden**. Busca al cliente (o créalo ahí mismo si es nuevo), describe qué trajo y cuál es el problema, y pon el precio total del trabajo. Si te deja un adelanto, anótalo ahí mismo — el sistema calcula solo el saldo pendiente.
@@ -80,6 +82,8 @@ Las órdenes se ven organizadas en columnas según su estado: Recibido, En repar
 Una orden cancelada ya no se puede cobrar ni cambiar de estado, y aparece en su propia columna "Cancelado".
 
 **Material usado.** En una orden en curso, en **Material usado**, busca la pieza del inventario (un cilindro, un resorte), pon la cantidad y toca **Usar**: sale del stock y queda en el Kárdex con el número de la orden. Esto no cambia el precio de la orden: el precio lo pones tú al crearla.
+
+**Avisar por WhatsApp.** En el detalle de una orden hay dos botones que abren WhatsApp con el mensaje ya escrito al teléfono del cliente: **Enviar comprobante** (qué dejó, número de orden y saldo pendiente) y, cuando la orden está en **Listo**, **Avisar que ya está listo**. Solo tienes que tocar Enviar en WhatsApp. Si el cliente no tiene un celular válido (9 dígitos), te avisa en vez de mostrar los botones. Al crear una orden, su detalle se abre solo para que mandes el comprobante enseguida.
 
 **Garantía.** Si el cliente vuelve porque el trabajo falló, abre la orden original (columna **Entregado**) y toca **Garantía**. Escribe qué falló y se crea una orden nueva **sin cobro**, marcada "Garantía de OT-…", que sigue el mismo camino (en reparación, listo, entregado). No pide caja ni mueve dinero. Si usas una pieza, regístrala en **Material usado** para que salga del stock.
 
@@ -142,6 +146,10 @@ Bueno saber:
 - El stock que cargues queda en el Kárdex de cada producto como "Stock inicial importado desde archivo".
 - Las columnas que el sistema no reconoce (por ejemplo una de "notas") se ignoran y te avisa cuáles fueron.
 
+### Repuestos de licuadora
+
+Las cuchillas, vasos, empaques y demás repuestos se cargan con el tipo **Repuesto de licuadora** (en el Excel de importación vale escribir "repuesto" o "licuadora"). El chip **Licuadora** de Inventario muestra solo esos.
+
 ### Colores
 
 Los colores de la app están elegidos para leerse bien también con daltonismo (paleta Okabe-Ito en los gráficos y contraste alto en textos y avisos). Los avisos no dependen solo del color: el stock bajo, por ejemplo, lleva un ícono de alerta y la palabra "bajo".
@@ -195,6 +203,10 @@ Si te pide una acción con dinero (como registrar una venta) y no tienes la caja
 En **Ajustes → Contraseña**, toca **Cambiar**, escribe tu contraseña actual y la nueva dos veces. Al guardarla se cierra tu sesión (y cualquier otra que tuvieras abierta, por ejemplo en el celular): vuelve a entrar con la nueva.
 
 Si un empleado olvida su contraseña, el Administrador entra a **Ajustes → Usuarios**, toca **Restablecer contraseña** junto a su nombre y le pone una temporal. Después el empleado la cambia por una propia.
+
+## Datos de la cerrajería
+
+En **Ajustes → Datos de la cerrajería** (solo el Administrador) se ponen el nombre, el teléfono/WhatsApp y la dirección. Salen en la pantalla de entrada, en el menú y en los mensajes de WhatsApp a los clientes.
 
 ## Administrador vs. Empleado
 

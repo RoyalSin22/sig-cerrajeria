@@ -1,8 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { MessageCircle } from 'lucide-react'
 import { ordenesApi } from '../api/ordenes'
 import { clientesApi } from '../api/clientes'
 import { productosApi } from '../api/productos'
+import { useNegocio } from '../hooks/useNegocio'
+import { enlaceWhatsApp } from '../utils/whatsapp'
 import { extraerMensajeError } from '../api/axiosClient'
 import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
@@ -113,6 +116,7 @@ export function Taller() {
           notificar('Orden creada: ' + o.numeroOrden)
           setOrdenes((prev) => [o, ...prev])
           setMostrarAlta(false)
+          setSeleccionada(o) // queda a mano el boton para mandarle el comprobante por WhatsApp
         }}
       />
 
@@ -361,6 +365,8 @@ function FichaOrden({
           <div><span className="text-sub">Motivo de la cancelación</span><p>{orden.motivoCancelacion}</p></div>
         )}
 
+        {orden.estado !== 'CANCELADO' && <AvisosWhatsApp orden={orden} />}
+
         <MaterialesOrden ordenId={orden.id} editable={orden.estado !== 'ENTREGADO' && orden.estado !== 'CANCELADO'} />
 
         {error && <p className="text-base font-semibold text-danger">{error}</p>}
@@ -536,6 +542,58 @@ function MaterialesOrden({ ordenId, editable }: { ordenId: number; editable: boo
         )
       )}
       {error && <p className="text-xs text-danger">{error}</p>}
+    </div>
+  )
+}
+
+/**
+ * Mensajes al cliente por WhatsApp, ya escritos con los datos del negocio: el
+ * comprobante de lo que dejo y, cuando esta listo, el aviso para que venga.
+ * Abre el WhatsApp del celular (o WhatsApp Web en la PC); se envia desde ahi.
+ */
+function AvisosWhatsApp({ orden }: { orden: OrdenTrabajoResponse }) {
+  const negocio = useNegocio()
+  const contacto = `${negocio.nombre}\n${negocio.direccion}\nTel. ${negocio.telefono}`
+  const debe = orden.saldoPendiente > 0 ? `Saldo: ${formatearSoles(orden.saldoPendiente)}.` : 'Ya está pagado.'
+
+  const comprobante = [
+    `Hola ${orden.cliente}, este es su comprobante de ${negocio.nombre}.`,
+    `Orden ${orden.numeroOrden}: ${orden.productoRecibido}`,
+    `Problema: ${orden.problema}`,
+    orden.garantia
+      ? `Es garantía de la orden ${orden.numeroOrdenOrigen}: sin costo.`
+      : `Precio: ${formatearSoles(orden.precioTotal)} · Dejó: ${formatearSoles(orden.montoPagado)} · ${debe}`,
+    'Le avisamos por aquí cuando esté listo.',
+    '',
+    contacto,
+  ].join('\n')
+
+  const listo = [
+    `Hola ${orden.cliente}, ya está listo su trabajo: ${orden.productoRecibido} (orden ${orden.numeroOrden}).`,
+    orden.garantia ? 'Es garantía: sin costo.' : debe,
+    'Puede pasar a recogerlo.',
+    '',
+    contacto,
+  ].join('\n')
+
+  const enlaceComprobante = enlaceWhatsApp(orden.telefonoCliente, comprobante)
+  const enlaceListo = enlaceWhatsApp(orden.telefonoCliente, listo)
+  if (!enlaceComprobante || !enlaceListo) {
+    return <p className="text-sm text-sub">Para avisarle por WhatsApp, corrige el teléfono del cliente en Clientes.</p>
+  }
+
+  const clase = 'inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-4 text-base font-semibold'
+  return (
+    <div className="flex flex-col gap-2 border-t border-hair pt-3">
+      <span className="font-medium">WhatsApp a {orden.cliente}</span>
+      {orden.estado === 'LISTO' && (
+        <a href={enlaceListo} target="_blank" rel="noopener noreferrer" className={`${clase} bg-steel-dark text-white`}>
+          <MessageCircle size={20} aria-hidden /> Avisar que ya está listo
+        </a>
+      )}
+      <a href={enlaceComprobante} target="_blank" rel="noopener noreferrer" className={`${clase} border-2 border-line bg-card`}>
+        <MessageCircle size={20} aria-hidden /> Enviar comprobante
+      </a>
     </div>
   )
 }

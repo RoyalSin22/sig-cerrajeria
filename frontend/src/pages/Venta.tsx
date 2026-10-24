@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { KeyRound, Minus, Plus, Trash2, Wallet } from 'lucide-react'
+import { KeyRound, Minus, Plus, Trash2, Wallet, Wrench } from 'lucide-react'
 import { productosApi } from '../api/productos'
 import { ventasApi } from '../api/ventas'
 import { extraerMensajeError } from '../api/axiosClient'
 import { SearchInput } from '../components/ui/SearchInput'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Button } from '../components/ui/Button'
+import { Campo } from '../components/ui/Campo'
 import { BottomSheet } from '../components/ui/BottomSheet'
 import { useCaja } from '../context/useCaja'
 import { useToast } from '../context/useToast'
@@ -14,16 +15,26 @@ import { formatearSoles } from '../utils/format'
 import { ETIQUETA_METODO_PAGO, METODOS_EN_USO, type MetodoPago, type MetodoPagoSimple } from '../types/ventas'
 import type { ProductoResponse } from '../types/productos'
 
+/** Un producto del inventario, o un servicio rapido (sin producto: abrir un candado, afilar). */
 interface ItemCarrito {
-  producto: ProductoResponse
+  producto?: ProductoResponse
+  servicio?: { descripcion: string; precio: number }
   cantidad: number
   /** Duplicado (material + corte) o la llave/producto solo: la misma llave puede estar dos veces. */
   duplicado: boolean
 }
 
-const clave = (i: ItemCarrito) => `${i.producto.id}-${i.duplicado ? 'dup' : 'sola'}`
+const clave = (i: ItemCarrito) =>
+  i.servicio ? `servicio-${i.servicio.descripcion}-${i.servicio.precio}` : `${i.producto!.id}-${i.duplicado ? 'dup' : 'sola'}`
 const precioUnitario = (i: ItemCarrito) =>
-  i.duplicado ? i.producto.precioDuplicado ?? i.producto.precioVenta : i.producto.precioVenta
+  i.servicio ? i.servicio.precio
+    : i.duplicado ? i.producto!.precioDuplicado ?? i.producto!.precioVenta : i.producto!.precioVenta
+const nombre = (i: ItemCarrito) => (i.servicio ? i.servicio.descripcion : i.producto!.nombre)
+
+/** Los servicios de siempre, para no escribirlos: solo se pone el precio. */
+const SERVICIOS_COMUNES = [
+  'Abrir candado', 'Abrir puerta', 'Cambio de combinación', 'Instalación de chapa', 'Reparación de licuadora', 'Afilar cuchilla',
+]
 
 const METODOS: MetodoPago[] = [...METODOS_EN_USO, 'MIXTO']
 
@@ -43,6 +54,7 @@ export function Venta() {
   // Desde Inicio, "Duplicado de llave" llega con ?duplicado=1 y abre la hoja directo
   const [params, setParams] = useSearchParams()
   const [mostrarDuplicado, setMostrarDuplicado] = useState(params.get('duplicado') === '1')
+  const [mostrarServicio, setMostrarServicio] = useState(false)
 
   async function handleBuscar(termino: string) {
     if (termino.trim().length < 2) {
@@ -57,7 +69,11 @@ export function Venta() {
   }
 
   function agregarAlCarrito(producto: ProductoResponse, cantidad = 1, duplicado = false) {
-    const nuevo: ItemCarrito = { producto, cantidad, duplicado }
+    agregarItem({ producto, cantidad, duplicado })
+  }
+
+  function agregarItem(nuevo: ItemCarrito) {
+    const cantidad = nuevo.cantidad
     setCarrito((prev) => {
       const existente = prev.find((i) => clave(i) === clave(nuevo))
       if (existente) {
@@ -98,7 +114,9 @@ export function Venta() {
     try {
       await ventasApi.crear({
         metodoPago,
-        items: carrito.map((i) => ({ productoId: i.producto.id, cantidad: i.cantidad, duplicado: i.duplicado })),
+        items: carrito.map((i) => (i.servicio
+          ? { descripcion: i.servicio.descripcion, precio: i.servicio.precio, cantidad: i.cantidad }
+          : { productoId: i.producto!.id, cantidad: i.cantidad, duplicado: i.duplicado })),
         desglosePago: metodoPago === 'MIXTO'
           ? METODOS_EN_USO
               .filter((m) => Number(desglose[m]) > 0)
@@ -136,10 +154,15 @@ export function Venta() {
         <Button variant="secondary" onClick={() => navigate('/venta/historial')}>Ventas de hoy</Button>
       </div>
 
-      {/* Lo mas comun en el mostrador: un boton grande, un toque */}
-      <Button tamano="lg" onClick={() => setMostrarDuplicado(true)} className="min-h-16 w-full text-xl">
-        <KeyRound size={26} aria-hidden /> Duplicado de llave
-      </Button>
+      {/* Lo mas comun en el mostrador: botones grandes, un toque */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[2fr_1fr]">
+        <Button tamano="lg" onClick={() => setMostrarDuplicado(true)} className="min-h-16 w-full text-xl">
+          <KeyRound size={26} aria-hidden /> Duplicado de llave
+        </Button>
+        <Button tamano="lg" variant="secondary" onClick={() => setMostrarServicio(true)} className="min-h-16 w-full text-xl">
+          <Wrench size={24} aria-hidden /> Servicio
+        </Button>
+      </div>
 
       <SearchInput placeholder="Buscar otro producto…" onBuscar={handleBuscar} />
 
@@ -182,14 +205,15 @@ export function Venta() {
       <div className="flex flex-col gap-2">
         <span className="font-heading text-2xl font-bold">Lo que se lleva</span>
         {carrito.length === 0 ? (
-          <EmptyState mensaje="Toca «Duplicado de llave» o busca un producto." />
+          <EmptyState mensaje="Toca «Duplicado de llave», «Servicio» o busca un producto." />
         ) : (
           carrito.map((item) => (
             <div key={clave(item)} className="panel-cepillado flex flex-col gap-2 rounded-lg p-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
                 <p className="text-lg font-semibold">
                   {item.duplicado && <span className="text-steel-dark">Duplicado · </span>}
-                  {item.producto.nombre}
+                  {item.servicio && <span className="text-steel-dark">Servicio · </span>}
+                  {nombre(item)}
                 </p>
                 <p className="text-sm text-sub">
                   {formatearSoles(precioUnitario(item))} c/u · <b className="text-ink">{formatearSoles(precioUnitario(item) * item.cantidad)}</b>
@@ -208,7 +232,7 @@ export function Venta() {
                   inputMode="numeric"
                   min="1"
                   step="1"
-                  aria-label={`Cantidad de ${item.producto.nombre}`}
+                  aria-label={`Cantidad de ${nombre(item)}`}
                   value={item.cantidad}
                   onChange={(e) => fijarCantidad(item, e.target.value)}
                   className="w-16 rounded-lg border px-1 text-center text-xl font-bold outline-none"
@@ -291,6 +315,15 @@ export function Venta() {
         </div>
       )}
 
+      <ServicioRapido
+        abierto={mostrarServicio}
+        onCerrar={() => setMostrarServicio(false)}
+        onAgregar={(descripcion, precio) => {
+          agregarItem({ servicio: { descripcion, precio }, cantidad: 1, duplicado: false })
+          setMostrarServicio(false)
+        }}
+      />
+
       <DuplicadoLlave
         abierto={mostrarDuplicado}
         onCerrar={() => {
@@ -301,7 +334,6 @@ export function Venta() {
           agregarAlCarrito(producto, cantidad, true)
           setMostrarDuplicado(false)
           if (params.has('duplicado')) setParams({}, { replace: true })
-          notificar(`${cantidad === 1 ? '1 duplicado' : `${cantidad} duplicados`} de ${producto.nombre} agregado${cantidad === 1 ? '' : 's'}`)
         }}
       />
     </div>
@@ -417,3 +449,59 @@ function DuplicadoLlave({
   )
 }
 
+
+/**
+ * Servicio rapido: algo que se cobra en el mostrador sin producto del
+ * inventario (abrir un candado, afilar una cuchilla). No mueve stock. Se toca
+ * uno de los comunes (o se escribe) y se pone el precio.
+ */
+function ServicioRapido({
+  abierto, onCerrar, onAgregar,
+}: { abierto: boolean; onCerrar: () => void; onAgregar: (descripcion: string, precio: number) => void }) {
+  const [descripcion, setDescripcion] = useState('')
+  const [precio, setPrecio] = useState('')
+
+  useEffect(() => {
+    if (abierto) {
+      setDescripcion('')
+      setPrecio('')
+    }
+  }, [abierto])
+
+  const monto = Number(precio)
+  const valido = descripcion.trim().length > 0 && monto > 0
+
+  return (
+    <BottomSheet abierto={abierto} onCerrar={onCerrar} titulo="Cobrar un servicio">
+      <div className="flex flex-col gap-4">
+        <span className="text-lg font-semibold">¿Qué se hizo?</span>
+        <div className="grid grid-cols-2 gap-2">
+          {SERVICIOS_COMUNES.map((s) => (
+            <button
+              key={s}
+              type="button"
+              aria-pressed={descripcion === s}
+              onClick={() => setDescripcion(s)}
+              className={`min-h-14 rounded-xl border-2 px-2 text-base font-semibold ${
+                descripcion === s ? 'border-steel-dark bg-tint-sky text-steel-dark' : 'border-hair bg-card'
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <Campo etiqueta="U otro">
+          <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={150}
+            autoCapitalize="sentences" placeholder="Ej.: copia de llave de auto" className="rounded-lg border px-3 outline-none" />
+        </Campo>
+        <Campo etiqueta="Precio (S/)">
+          <input type="number" inputMode="decimal" step="0.01" min="0" value={precio}
+            onChange={(e) => setPrecio(e.target.value)} className="rounded-lg border px-3 text-2xl font-bold outline-none" />
+        </Campo>
+        <Button tamano="lg" disabled={!valido} onClick={() => onAgregar(descripcion.trim(), monto)}>
+          Agregar {valido ? formatearSoles(monto) : ''}
+        </Button>
+      </div>
+    </BottomSheet>
+  )
+}
