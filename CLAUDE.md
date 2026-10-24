@@ -30,6 +30,15 @@ Lanzador de Windows (`launcher/`, Go): `SIG-Cerrajeria.exe`, se publica solo en 
 
 CI (`.github/workflows/ci.yml`) corre en cada PR: `./mvnw verify`, `npm ci` + `lint` + `test` + `build`, tests y build del lanzador, y valida `docker-compose.yml` y `backup.sh`. Si agregas un paso de verificación nuevo, súmalo ahí.
 
+## Antes de implementar algo que no conoces
+
+Si una funcionalidad es nueva para ti (un protocolo, una integración, un algoritmo, un patrón que este repo todavía no usa), no la escribas desde cero de entrada:
+
+1. Busca en GitHub proyectos de código abierto parecidos, **mantenidos activamente** (commits e issues recientes) y con **licencia clara** (MIT, Apache-2.0, BSD).
+2. Compara cómo lo resuelven: enfoque, dependencias que suman y problemas conocidos en sus issues.
+3. Adopta el diseño que ya está validado y adáptalo a las convenciones de este repo. Si suma una dependencia, que sea mantenida y con licencia compatible, como `rsc.io/qr` en el lanzador.
+4. No copies código de origen desconocido ni con licencia incompatible (GPL/AGPL en este repo, o sin licencia). Si te basas en un proyecto, cítalo en un comentario o en el PR.
+
 ## Las 3 reglas de negocio (no las rompas sin darte cuenta)
 
 1. **Caja abierta obligatoria**: ninguna operación con dinero (venta, adelanto de orden, compra pagada de caja) se procesa sin que `CajaService.obtenerCajaAbiertaEntidad()` encuentre una caja `ABIERTA` para el usuario en sesión. Si agregas una operación nueva que mueve dinero, llama a este método primero, y registra el ingreso/egreso con su `MetodoPago` (`sumarIngresoACajaActiva(caja, monto, metodo)`): el cierre se cuadra contra `efectivoEsperado()`, que descuenta Yape, Plin y tarjeta porque no están en el cajón. Un pago `MIXTO` se registra línea por línea según su desglose. El cobro de un servicio a domicilio (`ServicioDomicilioService.realizar`) va a la caja de quien lo realiza, y la devolución al cancelar una orden sale de la caja de quien la devuelve.
