@@ -55,6 +55,12 @@ export function Venta() {
   const [params, setParams] = useSearchParams()
   const [mostrarDuplicado, setMostrarDuplicado] = useState(params.get('duplicado') === '1')
   const [mostrarServicio, setMostrarServicio] = useState(false)
+  // "Venta rapida": lo de todos los dias a un toque (como los Favoritos de los POS de mostrador)
+  const [rapidos, setRapidos] = useState<ProductoResponse[]>([])
+
+  useEffect(() => {
+    productosApi.ventaRapida().then(setRapidos).catch(() => setRapidos([]))
+  }, [])
 
   async function handleBuscar(termino: string) {
     if (termino.trim().length < 2) {
@@ -164,6 +170,42 @@ export function Venta() {
         </Button>
       </div>
 
+      {rapidos.length > 0 && (
+        <section aria-labelledby="titulo-rapida" className="flex flex-col gap-2">
+          <h2 id="titulo-rapida" className="font-heading text-xl font-bold">
+            Venta rápida <span className="text-base font-normal text-sub">· un toque y se agrega</span>
+          </h2>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            {rapidos.map((p) => {
+              // Una llave con precio de duplicado se vende casi siempre como duplicado
+              const duplicado = p.precioDuplicado != null
+              const enCarrito = carrito.find((i) => i.producto?.id === p.id && i.duplicado === duplicado)?.cantidad ?? 0
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => agregarAlCarrito(p, 1, duplicado)}
+                  className={`flex min-h-20 flex-col items-start justify-between gap-1 rounded-xl border-2 p-3 text-left ${
+                    enCarrito > 0 ? 'border-steel-dark bg-tint-sky' : 'border-hair bg-card hover:border-steel'
+                  }`}
+                >
+                  <span className="font-semibold leading-tight">
+                    {duplicado && <span className="text-steel-dark">Duplicado · </span>}
+                    {p.nombre}
+                  </span>
+                  <span className="flex w-full items-baseline justify-between gap-1">
+                    <b className="font-heading text-lg text-steel-dark">
+                      {formatearSoles(duplicado ? p.precioDuplicado! : p.precioVenta)}
+                    </b>
+                    {enCarrito > 0 && <span className="text-sm font-bold text-ink">× {enCarrito}</span>}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
       <SearchInput placeholder="Buscar otro producto…" onBuscar={handleBuscar} />
 
       {resultados.length > 0 && (
@@ -205,7 +247,7 @@ export function Venta() {
       <div className="flex flex-col gap-2">
         <span className="font-heading text-2xl font-bold">Lo que se lleva</span>
         {carrito.length === 0 ? (
-          <EmptyState mensaje="Toca «Duplicado de llave», «Servicio» o busca un producto." />
+          <EmptyState mensaje="Toca un botón de arriba o busca un producto." />
         ) : (
           carrito.map((item) => (
             <div key={clave(item)} className="panel-cepillado flex flex-col gap-2 rounded-lg p-3 sm:flex-row sm:items-center sm:justify-between">

@@ -27,6 +27,18 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     List<Producto> findByActivoTrueAndPrecioDuplicadoIsNotNullOrderByNombreAsc();
 
+    List<Producto> findByActivoTrueAndVentaRapidaTrueOrderByNombreAsc();
+
+    /** Lo mas vendido desde una fecha (ventas no anuladas), para "Venta rapida" sin botones elegidos. */
+    @Query("""
+        SELECT p FROM DetalleVenta dv JOIN dv.producto p
+        WHERE p.activo = true AND dv.venta.anulada = false AND dv.venta.fechaHora >= :desde
+        GROUP BY p
+        ORDER BY SUM(dv.cantidad) DESC, p.nombre
+        """)
+    List<Producto> masVendidosDesde(@org.springframework.data.repository.query.Param("desde") java.time.LocalDateTime desde,
+                                    Pageable pageable);
+
     List<Producto> findByCodigoIn(java.util.Collection<String> codigos);
 
     /**

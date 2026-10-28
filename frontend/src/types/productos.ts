@@ -43,6 +43,8 @@ export interface ProductoResponse {
   productoMaterial: string | null
   activo: boolean
   stockBajo: boolean
+  /** Tiene su botón en "Venta rápida" (Vender). */
+  ventaRapida: boolean
 }
 
 export interface ProductoCreateRequest {

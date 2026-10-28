@@ -107,6 +107,19 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.listarDuplicables());
     }
 
+    @GetMapping("/venta-rapida")
+    @Operation(summary = "Botones de Venta rápida: los elegidos, o lo más vendido del último mes")
+    public ResponseEntity<List<ProductoResponse>> ventaRapida() {
+        return ResponseEntity.ok(productoService.listarVentaRapida());
+    }
+
+    @PutMapping("/{id}/venta-rapida")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Poner o quitar un producto de los botones de Venta rápida")
+    public ResponseEntity<ProductoResponse> marcarVentaRapida(@PathVariable Long id, @RequestParam boolean activo) {
+        return ResponseEntity.ok(productoService.marcarVentaRapida(id, activo));
+    }
+
     @PostMapping(value = "/{id}/imagen", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Subir o reemplazar la fotografía de un producto (RF-16)")

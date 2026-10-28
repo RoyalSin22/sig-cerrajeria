@@ -28,6 +28,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductoService {
 
+    /** Botones automaticos: pocos y grandes, que entren en una pantalla de celular. */
+    static final int MAX_VENTA_RAPIDA_AUTOMATICA = 8;
     private static final String MOTIVO_STOCK_INICIAL = "Stock inicial al crear el producto";
 
     private final ProductoRepository productoRepository;
@@ -107,6 +109,33 @@ public class ProductoService {
     @Transactional(readOnly = true)
     public List<ProductoResponse> listarDuplicables() {
         return productoMapper.toResponseList(productoRepository.findByActivoTrueAndPrecioDuplicadoIsNotNullOrderByNombreAsc());
+    }
+
+    /**
+     * Los botones de "Venta rapida": los que eligio el Administrador o, si no
+     * eligio ninguno, lo mas vendido de los ultimos 30 dias (asi sirve desde el
+     * primer mes sin configurar nada).
+     */
+    @Transactional(readOnly = true)
+    public List<ProductoResponse> listarVentaRapida() {
+        List<Producto> elegidos = productoRepository.findByActivoTrueAndVentaRapidaTrueOrderByNombreAsc();
+        if (!elegidos.isEmpty()) {
+            return productoMapper.toResponseList(elegidos);
+        }
+        return productoMapper.toResponseList(productoRepository.masVendidosDesde(
+            java.time.LocalDateTime.now().minusDays(30), org.springframework.data.domain.PageRequest.of(0, MAX_VENTA_RAPIDA_AUTOMATICA)));
+    }
+
+    @Transactional
+    public ProductoResponse marcarVentaRapida(Long id, boolean ventaRapida) {
+        Producto producto = buscarPorId(id);
+        if (!producto.getVentaRapida().equals(ventaRapida)) {
+            auditLogService.registrar(usuarioActual(), AuditAccion.EDITAR, "Producto", producto.getId(),
+                DetalleAuditoria.de("Venta rápida: " + producto.getCodigo())
+                    .cambio("ventaRapida", producto.getVentaRapida(), ventaRapida));
+            producto.setVentaRapida(ventaRapida);
+        }
+        return productoMapper.toResponse(productoRepository.save(producto));
     }
 
     @Transactional(readOnly = true)

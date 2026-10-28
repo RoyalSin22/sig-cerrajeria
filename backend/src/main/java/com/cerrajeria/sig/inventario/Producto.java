@@ -79,6 +79,10 @@ public class Producto extends BaseAuditable {
     @Column(nullable = false)
     private Boolean activo = true;
 
+    /** Tiene su boton en "Venta rapida" (Vender): un toque y queda en el carrito. */
+    @Column(name = "venta_rapida", nullable = false)
+    private Boolean ventaRapida = false;
+
     /** Regla de negocio 2 (Fase 1): alerta cuando el stock alcanza el minimo. */
     public boolean tieneBajoStock() {
         return this.cantidadStock <= this.stockMinimo;

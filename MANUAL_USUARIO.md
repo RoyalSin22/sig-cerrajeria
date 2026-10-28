@@ -42,6 +42,14 @@ Abajo aparece el total. Elige cómo te pagan (**Efectivo**, **Yape**, **Plin**, 
 
 Si eliges **Mixto**, el sistema te pide cuánto pagaron en cada método — por ejemplo `S/ 20.00` en efectivo y `S/ 15.00` en Yape — y no te deja cobrar hasta que la suma cuadre exactamente con el total.
 
+### Venta rápida (lo de todos los días, un toque)
+
+En **Vender**, debajo de Duplicado y Servicio, están los botones de **Venta rápida**: cada toque agrega uno al carrito (el botón muestra cuántos van, por ejemplo "× 2"). Una llave con precio de duplicado se agrega como duplicado. Después, **Cobrar**: una venta suelta (un llavero, una argolla) son **dos toques**.
+
+Qué botones aparecen:
+- Los que elija el Administrador: en **Inventario**, toca el producto y **Poner en Venta rápida** (o **Quitar de Venta rápida**). Conviene no pasar de 8, para que entren en la pantalla del celular.
+- Si todavía no eligió ninguno, salen solos los 8 productos más vendidos del último mes.
+
 ### Duplicado de llave (sin datos del cliente)
 
 Para un duplicado no hace falta registrar a nadie. Son tres toques:
