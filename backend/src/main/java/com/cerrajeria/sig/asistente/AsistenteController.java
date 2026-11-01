@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.GetMapping;
 
 /**
  * Chat con el asistente de IA dentro de la app (Fase 12). A diferencia del
@@ -32,7 +35,7 @@ public class AsistenteController {
     private final AsistenteIAService asistenteIAService;
     private final UsuarioRepository usuarioRepository;
 
-    @org.springframework.beans.factory.annotation.Value("${sig.anthropic.api-key:}")
+    @Value("${sig.anthropic.api-key:}")
     private String apiKey;
 
     /**
@@ -40,10 +43,10 @@ public class AsistenteController {
      * app no muestra el boton del chat: un boton que solo responde con errores
      * confunde mas de lo que ayuda.
      */
-    @org.springframework.web.bind.annotation.GetMapping("/estado")
+    @GetMapping("/estado")
     @Operation(summary = "Indica si el asistente de IA está disponible (hay clave configurada)")
-    public ResponseEntity<java.util.Map<String, Boolean>> estado() {
-        return ResponseEntity.ok(java.util.Map.of("disponible", apiKey != null && !apiKey.isBlank()));
+    public ResponseEntity<Map<String, Boolean>> estado() {
+        return ResponseEntity.ok(Map.of("disponible", apiKey != null && !apiKey.isBlank()));
     }
 
     @PostMapping("/mensaje")

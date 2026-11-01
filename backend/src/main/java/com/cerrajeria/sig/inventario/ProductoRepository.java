@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.Collection;
 
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
@@ -15,7 +17,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     /** Codigos de la lista que ya estan en uso, incluso por productos dados de baja (la columna es UNIQUE). */
     @Query("SELECT p.codigo FROM Producto p WHERE p.codigo IN :codigos")
-    List<String> findCodigosExistentes(@Param("codigos") java.util.Collection<String> codigos);
+    List<String> findCodigosExistentes(@Param("codigos") Collection<String> codigos);
 
     /** Listado paginado del catálogo completo (sin buscar), usado para explorar por categoría. */
     Page<Producto> findByActivoTrueOrderByNombreAsc(Pageable pageable);
@@ -36,10 +38,10 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
         GROUP BY p
         ORDER BY SUM(dv.cantidad) DESC, p.nombre
         """)
-    List<Producto> masVendidosDesde(@org.springframework.data.repository.query.Param("desde") java.time.LocalDateTime desde,
+    List<Producto> masVendidosDesde(@Param("desde") LocalDateTime desde,
                                     Pageable pageable);
 
-    List<Producto> findByCodigoIn(java.util.Collection<String> codigos);
+    List<Producto> findByCodigoIn(Collection<String> codigos);
 
     /**
      * Busqueda instantanea (RF-46), aprovechando los indices GIN + pg_trgm

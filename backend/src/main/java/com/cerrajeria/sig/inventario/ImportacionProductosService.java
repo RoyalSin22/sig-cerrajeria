@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Carga inicial (o masiva) del inventario desde un CSV exportado de Excel.
@@ -254,7 +255,7 @@ public class ImportacionProductosService {
             if (tipo == null) {
                 problemas.add("Tipo desconocido \"" + tipoTexto + "\". Usa uno de: " + Arrays.stream(TipoProducto.values())
                     .map(t -> t.name().toLowerCase(Locale.ROOT).replace('_', ' '))
-                    .collect(java.util.stream.Collectors.joining(", ")));
+                    .collect(Collectors.joining(", ")));
             }
         }
         Integer stock = entero(v.get(Columna.STOCK), "stock", problemas).orElse(0);

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /** Gestion de usuarios (ADMIN/EMPLOYEE). Solo un ADMIN puede crear o desactivar usuarios. */
 @Service
@@ -55,7 +56,7 @@ public class UsuarioService {
     }
 
     private Usuario usuarioEnSesion() {
-        String username = org.springframework.security.core.context.SecurityContextHolder.getContext()
+        String username = SecurityContextHolder.getContext()
             .getAuthentication().getName();
         return usuarioRepository.findByUsername(username)
             .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + username));

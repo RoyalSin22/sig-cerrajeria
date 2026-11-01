@@ -25,6 +25,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.io.IOException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/productos")
@@ -43,12 +50,12 @@ public class ProductoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(productoService.crear(request));
     }
 
-    @PostMapping(value = "/importar", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/importar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Importar productos nuevos desde un CSV (revisar con confirmar=false, crear con true)")
     public ResponseEntity<ImportacionResultado> importar(
-            @RequestParam("archivo") org.springframework.web.multipart.MultipartFile archivo,
-            @RequestParam(defaultValue = "false") boolean confirmar) throws java.io.IOException {
+            @RequestParam("archivo") MultipartFile archivo,
+            @RequestParam(defaultValue = "false") boolean confirmar) throws IOException {
         return ResponseEntity.ok(importacionProductosService.importar(archivo.getBytes(), confirmar));
     }
 
@@ -56,27 +63,27 @@ public class ProductoController {
     @Operation(summary = "Descargar el inventario como planilla CSV para Excel, con la columna cantidad vacía")
     public ResponseEntity<byte[]> descargarPlanilla() {
         return ResponseEntity.ok()
-            .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+            .header(HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=\"inventario-" + java.time.LocalDate.now() + ".csv\"")
-            .contentType(org.springframework.http.MediaType.parseMediaType("text/csv; charset=windows-1252"))
+            .contentType(MediaType.parseMediaType("text/csv; charset=windows-1252"))
             .body(planillaStockService.exportar());
     }
 
-    @PostMapping(value = "/planilla", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/planilla", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Actualizar stock y precios desde la planilla: en la cantidad CONTEO reemplaza, ENTRADA suma (revisar con confirmar=false)")
     public ResponseEntity<ResultadoPlanilla> subirPlanilla(
-            @RequestParam("archivo") org.springframework.web.multipart.MultipartFile archivo,
+            @RequestParam("archivo") MultipartFile archivo,
             @RequestParam PlanillaStockService.Modo modo,
-            @RequestParam(defaultValue = "false") boolean confirmar) throws java.io.IOException {
+            @RequestParam(defaultValue = "false") boolean confirmar) throws IOException {
         return ResponseEntity.ok(planillaStockService.actualizar(archivo.getBytes(), modo, confirmar));
     }
 
     @GetMapping
     @Operation(summary = "Listado paginado del catálogo completo, opcionalmente filtrado por tipo")
-    public ResponseEntity<org.springframework.data.domain.Page<ProductoResponse>> listar(
+    public ResponseEntity<Page<ProductoResponse>> listar(
             @RequestParam(required = false) TipoProducto tipoProducto,
-            @org.springframework.data.web.PageableDefault(size = 20) org.springframework.data.domain.Pageable pageable) {
+            @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(productoService.listar(tipoProducto, pageable));
     }
 
@@ -120,12 +127,12 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.marcarVentaRapida(id, activo));
     }
 
-    @PostMapping(value = "/{id}/imagen", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/{id}/imagen", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Subir o reemplazar la fotografía de un producto (RF-16)")
     public ResponseEntity<ProductoResponse> subirImagen(
             @PathVariable Long id,
-            @RequestParam("archivo") org.springframework.web.multipart.MultipartFile archivo) {
+            @RequestParam("archivo") MultipartFile archivo) {
         return ResponseEntity.ok(productoService.actualizarImagen(id, archivo));
     }
 

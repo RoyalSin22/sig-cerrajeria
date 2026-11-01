@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.math.RoundingMode;
 
 /**
  * Que paso, ademas de quien y cuando: una descripcion legible, el motivo si lo
@@ -65,7 +66,7 @@ public final class DetalleAuditoria {
 
     private static String texto(Object valor) {
         if (valor == null) return null;
-        if (valor instanceof BigDecimal monto) return monto.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+        if (valor instanceof BigDecimal monto) return monto.setScale(2, RoundingMode.HALF_UP).toPlainString();
         return valor.toString();
     }
 }

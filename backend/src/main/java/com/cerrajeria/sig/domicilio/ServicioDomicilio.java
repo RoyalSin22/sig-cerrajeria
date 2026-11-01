@@ -10,6 +10,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "servicios_domicilio")
@@ -54,7 +55,7 @@ public class ServicioDomicilio {
 
     /** Cobro al marcar REALIZADO (V9). null mientras no se realiza; 0 = sin cobro. */
     @Column(name = "monto_cobrado", precision = 12, scale = 2)
-    private java.math.BigDecimal montoCobrado;
+    private BigDecimal montoCobrado;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "metodo_pago", length = 20)

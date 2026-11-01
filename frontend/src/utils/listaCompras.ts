@@ -34,7 +34,7 @@ export function guardarLista(items: ItemListaCompras[]) {
 }
 
 /** Lo que falta para llegar al doble del minimo; al menos 1. */
-export function cantidadSugerida(p: ProductoResponse): number {
+function cantidadSugerida(p: ProductoResponse): number {
   return Math.max(1, p.stockMinimo * 2 - p.cantidadStock)
 }
 

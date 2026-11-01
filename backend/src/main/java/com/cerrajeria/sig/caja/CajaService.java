@@ -22,6 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import java.math.RoundingMode;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Nucleo de la regla de negocio 1 (Fase 1): ninguna operacion monetaria puede
@@ -38,7 +43,7 @@ public class CajaService {
     private final UsuarioRepository usuarioRepository;
     private final CajaMapper cajaMapper;
     private final AuditLogService auditLogService;
-    private final jakarta.persistence.EntityManager entityManager;
+    private final EntityManager entityManager;
 
     @Transactional
     public CajaDiariaResponse abrir(AperturaCajaRequest request) {
@@ -103,7 +108,7 @@ public class CajaService {
         movimiento = movimientoCajaRepository.save(movimiento);
         auditLogService.registrar(movimiento.getUsuario(), AuditAccion.MOVIMIENTO_CAJA, "CajaDiaria", caja.getId(),
             DetalleAuditoria.de((tipo == TipoMovimientoCaja.INGRESO ? "Ingreso" : "Egreso") + " manual de S/ "
-                    + request.monto().setScale(2, java.math.RoundingMode.HALF_UP))
+                    + request.monto().setScale(2, RoundingMode.HALF_UP))
                 .motivo(request.motivo())
                 .cambio("efectivoEsperado", efectivoAntes, caja.efectivoEsperado()));
         return cajaMapper.toResponse(movimiento);
@@ -138,7 +143,7 @@ public class CajaService {
         String observacion = request.observacion() == null ? null : request.observacion().trim();
         if (diferencia.signum() != 0 && (observacion == null || observacion.isEmpty())) {
             throw new IllegalArgumentException("El cajón no cuadra (" + (diferencia.signum() > 0 ? "sobran" : "faltan")
-                + " S/ " + diferencia.abs().setScale(2, java.math.RoundingMode.HALF_UP)
+                + " S/ " + diferencia.abs().setScale(2, RoundingMode.HALF_UP)
                 + "): escribe qué pasó antes de cerrar");
         }
 
@@ -151,7 +156,7 @@ public class CajaService {
 
         auditLogService.registrar(caja.getUsuario(), AuditAccion.CIERRE_CAJA, "CajaDiaria", caja.getId(),
             DetalleAuditoria.de(diferencia.signum() == 0 ? "Cierre de caja: cuadra"
-                    : "Cierre de caja con diferencia de S/ " + diferencia.setScale(2, java.math.RoundingMode.HALF_UP))
+                    : "Cierre de caja con diferencia de S/ " + diferencia.setScale(2, RoundingMode.HALF_UP))
                 .motivo(caja.getObservacionCierre())
                 .cambio("efectivoEsperado", null, esperado)
                 .cambio("efectivoContado", null, request.montoContado()));
@@ -167,7 +172,7 @@ public class CajaService {
      */
     private void bloquear(CajaDiaria caja) {
         entityManager.flush();
-        entityManager.refresh(caja, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        entityManager.refresh(caja, LockModeType.PESSIMISTIC_WRITE);
         if (caja.getEstado() != EstadoCaja.ABIERTA) {
             throw new CajaNoAbiertaException("La caja ya se cerró. Abre una nueva para continuar.");
         }
@@ -181,8 +186,8 @@ public class CajaService {
     }
 
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<CajaDiariaResponse> historialPaginado(
-            org.springframework.data.domain.Pageable pageable) {
+    public Page<CajaDiariaResponse> historialPaginado(
+            Pageable pageable) {
         return cajaDiariaRepository
             .findByUsuarioUsernameOrderByFechaAperturaDesc(usernameActual(), pageable)
             .map(cajaMapper::toResponse);

@@ -2,6 +2,7 @@ package com.cerrajeria.sig.domicilio.dto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.math.BigDecimal;
 
 public record ServicioDomicilioResponse(
     Long id,
@@ -13,7 +14,7 @@ public record ServicioDomicilioResponse(
     String tipoServicio,
     String observaciones,
     String estado,
-    java.math.BigDecimal montoCobrado,
+    BigDecimal montoCobrado,
     String metodoPago,
     String realizadoPor
 ) {

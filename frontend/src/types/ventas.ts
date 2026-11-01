@@ -12,8 +12,6 @@ export const ETIQUETA_METODO_PAGO: Record<MetodoPago, string> = {
   MIXTO: 'Mixto',
 }
 
-export const METODOS_SIMPLES: MetodoPagoSimple[] = ['EFECTIVO', 'YAPE', 'PLIN', 'TARJETA']
-
 /**
  * Metodos que se ofrecen al cobrar. La cerrajeria no cobra con tarjeta: el
  * backend lo sigue aceptando (y ETIQUETA_METODO_PAGO lo muestra en ventas

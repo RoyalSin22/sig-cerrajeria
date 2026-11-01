@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Optional;
 
 /**
  * Webhook de la WhatsApp Business Cloud API de Meta.
@@ -71,24 +72,24 @@ public class WhatsAppWebhookController {
         return ResponseEntity.ok().build();
     }
 
-    private java.util.Optional<MensajeEntrante> extraerMensaje(JsonNode payload) {
+    private Optional<MensajeEntrante> extraerMensaje(JsonNode payload) {
         JsonNode mensajes = payload
             .path("entry").path(0)
             .path("changes").path(0)
             .path("value").path("messages");
 
         if (!mensajes.isArray() || mensajes.isEmpty()) {
-            return java.util.Optional.empty(); // ej. una confirmacion de "leido", no un mensaje nuevo
+            return Optional.empty(); // ej. una confirmacion de "leido", no un mensaje nuevo
         }
 
         JsonNode primero = mensajes.path(0);
         if (!"text".equals(primero.path("type").asString())) {
-            return java.util.Optional.empty(); // por ahora solo se procesan mensajes de texto
+            return Optional.empty(); // por ahora solo se procesan mensajes de texto
         }
 
         String telefono = primero.path("from").asString();
         String texto = primero.path("text").path("body").asString();
-        return java.util.Optional.of(new MensajeEntrante(telefono, texto));
+        return Optional.of(new MensajeEntrante(telefono, texto));
     }
 
     private record MensajeEntrante(String telefono, String texto) {

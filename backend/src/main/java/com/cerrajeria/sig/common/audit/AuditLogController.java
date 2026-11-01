@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.data.domain.PageImpl;
 
 @RestController
 @RequestMapping("/api/v1/auditoria")
@@ -34,7 +35,7 @@ public class AuditLogController {
             List<AuditLogResponse> items = auditLogRepository
                 .findByEntidadAndEntidadIdOrderByFechaHoraDesc(entidad, entidadId)
                 .stream().map(this::toResponse).toList();
-            return ResponseEntity.ok(new org.springframework.data.domain.PageImpl<>(items, pageable, items.size()));
+            return ResponseEntity.ok(new PageImpl<>(items, pageable, items.size()));
         }
 
         return ResponseEntity.ok(auditLogRepository.findAllByOrderByFechaHoraDesc(pageable).map(this::toResponse));

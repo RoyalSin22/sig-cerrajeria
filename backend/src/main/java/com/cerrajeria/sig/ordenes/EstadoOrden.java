@@ -1,5 +1,8 @@
 package com.cerrajeria.sig.ordenes;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 public enum EstadoOrden {
     RECIBIDO,
     EN_REPARACION,
@@ -10,7 +13,7 @@ public enum EstadoOrden {
     CANCELADO;
 
     /** Estados en los que la orden ya no se trabaja ni admite pagos. */
-    public static final java.util.Set<EstadoOrden> FINALES = java.util.EnumSet.of(ENTREGADO, CANCELADO);
+    public static final Set<EstadoOrden> FINALES = EnumSet.of(ENTREGADO, CANCELADO);
 
     public boolean esFinal() {
         return FINALES.contains(this);

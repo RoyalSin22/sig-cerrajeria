@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { negocioApi, type Negocio } from '../api/negocio'
 
 // Mientras carga (o si falla), lo de la tarjeta de presentacion
-export const NEGOCIO_POR_DEFECTO: Negocio = {
+const NEGOCIO_POR_DEFECTO: Negocio = {
   nombre: 'Cerrajería Barrera',
   telefono: '982616709',
   direccion: 'Av. Alfonso Ugarte N° 115, frente al Mercado N° 2, Surco',

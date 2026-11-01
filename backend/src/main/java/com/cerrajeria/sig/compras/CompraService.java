@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /** RF-27 a RF-29: toda compra actualiza el inventario y genera Kardex (regla de negocio 2). */
 @Service
@@ -80,7 +82,7 @@ public class CompraService {
 
     /** Listado paginado de compras. */
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<CompraResponse> listar(org.springframework.data.domain.Pageable pageable) {
+    public Page<CompraResponse> listar(Pageable pageable) {
         return compraRepository.findAllByOrderByFechaDesc(pageable)
             .map(c -> toResponse(c, c.getProveedor().getNombre(), c.getProducto().getNombre(),
                 c.getPrecioUnitario().multiply(BigDecimal.valueOf(c.getCantidad()))));
