@@ -6,7 +6,7 @@ Archivos que se usan:
 - `cerrajeria-datos.xlsx`: el que descarga el sistema (**Reportes → Descargar Excel**, solo Administrador). Para practicar sirve `cerrajeria-datos-FICTICIOS.xlsx`, que tiene las mismas hojas y columnas.
 - [`powerbi/tema-cerrajeria.json`](powerbi/tema-cerrajeria.json): colores que se distinguen con daltonismo y letra más grande.
 
-> **Guarda el Excel siempre en la misma carpeta y con el mismo nombre.** Para actualizar el tablero solo se reemplaza el archivo y se pulsa **Actualizar**. Para pasar de los datos ficticios a los reales, renombra el real como el ficticio, o cambia el origen en **Transformar datos → Configuración de origen de datos → Cambiar origen**.
+> **Guarda el Excel siempre en la misma carpeta y con el mismo nombre.** Para actualizar el tablero solo se reemplaza el archivo y se pulsa **Actualizar**. Para pasar de los datos ficticios a los reales, cambia el valor del parámetro `RutaExcel` (paso 1).
 
 ---
 
@@ -16,24 +16,28 @@ Archivos que se usan:
 
 Aplica el tema: **Vista → Temas → Examinar temas** → `tema-cerrajeria.json`.
 
-## Paso 1 — Cargar el Excel
+## Paso 1 — Cargar el Excel (con los tipos fijos)
 
-1. **Inicio → Obtener datos → Libro de Excel** → elige el archivo.
-2. En el Navegador marca las **hojas** (ícono de hoja, no el de tabla): Ventas, Cobros, Taller, Domicilio, Productos, Kardex, Compras, Cajas y MovimientosCaja. Una hoja sin datos igual existe, así actualizar nunca falla.
-3. Pulsa **Transformar datos**, no "Cargar".
+Si dejas que Power BI adivine los tipos, se equivoca con las hojas que todavía no tienen datos: **Taller** sin órdenes sale como `Column1, Column2…`, y `Cierre` de una caja abierta sale como texto. Por eso las consultas de [`powerbi/consultas-power-query.m`](powerbi/consultas-power-query.m) dicen el tipo de cada columna, y así funcionan igual con hojas vacías y cuando después lleguen datos.
 
-## Paso 2 — Que las fechas sean fechas (Power Query)
+**A. Crear el parámetro con la ruta del Excel**
+1. **Inicio → Transformar datos** (se abre Power Query).
+2. **Inicio → Administrar parámetros → Nuevo parámetro**.
+3. Nombre: `RutaExcel`. Tipo: **Texto**. Valor actual: la ruta completa del archivo, por ejemplo `C:\Users\TuNombre\Documents\cerrajeria-datos.xlsx` (en el Explorador: clic derecho en el archivo → **Copiar como ruta de acceso**; quita las comillas).
 
-Excel guarda las fechas con hora (00:00), y la relación con el calendario necesita fecha sola. En cada consulta de la izquierda, selecciona la columna, luego **Transformar → Tipo de datos → Fecha**:
+Para pasar de los datos ficticios a los reales, solo cambias el valor de este parámetro.
 
-| Consulta | Columnas |
-|---|---|
-| Ventas, Cobros, Kardex, Compras, Cajas, Domicilio, MovimientosCaja | `Fecha` |
-| Taller | `Fecha ingreso` y `Fecha entrega` |
+**B. Crear las 9 consultas**
+Si ya habías cargado hojas con **Obtener datos**, bórralas (clic derecho → Eliminar). Luego, para **cada una de las 9 hojas** (Ventas, Cobros, Taller, Domicilio, Productos, Kardex, Compras, Cajas, MovimientosCaja):
+1. **Inicio → Nuevo origen → Consulta en blanco**.
+2. **Inicio → Editor avanzado**: borra todo y pega el bloque de esa hoja de `consultas-power-query.m` (desde `let` hasta `Tipos`).
+3. **Listo**, y cambia el nombre de la consulta a la hoja (`Ventas`, `Taller`…), con exactamente ese nombre: las relaciones y las medidas lo usan.
 
-Si pregunta **"¿Reemplazar paso actual?"**, elige **Reemplazar actual**. Revisa también que `Hora` y `Cantidad` sean **Número entero** y los montos **Número decimal**: normalmente ya vienen así.
+Si algo sale con error, mira el paso que falló: lo más común es que `RutaExcel` tenga comillas o una letra mal puesta.
 
-**Inicio → Cerrar y aplicar.**
+## Paso 2 — Cerrar y aplicar
+
+Con esas consultas **no hace falta convertir las fechas a mano**: ya vienen como Fecha, Fecha y hora o Número. Revisa que las columnas `Fecha` muestren el ícono de calendario, y pulsa **Inicio → Cerrar y aplicar**. Si te pide permiso para leer el archivo, elige **Archivo** y **Usar credenciales actuales / Conectar**.
 
 ## Paso 3 — Tabla de calendario
 
