@@ -84,6 +84,10 @@ Abre la **Vista de modelo** (ícono de las tres cajitas, a la izquierda). Arrast
 
 Si ves otras líneas que no están en la tabla, clic derecho → **Eliminar**.
 
+> **Muy importante: la dirección del filtro es «Única» en todas.** Al crear cada relación, en la ventana *Nueva relación*, revisa **Dirección de filtro cruzado**: si dice **Ambas**, cámbiala a **Única**. Con «Ambas» aparece el error *«There are ambiguous paths between 'Ventas' and 'Compras'…»* (hay dos caminos entre las tablas, por Calendario y por Productos). Si ya te pasó: **Vista de modelo → doble clic en cada línea** y ponla en «Única». Deja sin marcar «Aplicar filtro de seguridad en ambas direcciones».
+>
+> Si al unir por `Código` la vista previa de la tabla de abajo muestra los **títulos como primera fila** (por ejemplo `Código`, `Cantidad`…), esa consulta está mal: pasa con las hojas sin datos. Bórrala y créala de nuevo con su bloque de `consultas-power-query.m` (paso 1B).
+
 ## Paso 5 — Medidas
 
 En el panel **Datos**, clic derecho en la tabla indicada → **Nueva medida**, y pega una por una. Al terminar cada una, dale formato en **Herramientas de medición → Formato**: **Moneda** con `S/ Español (Perú)` y 2 decimales para los soles, y **Porcentaje** para los `%`.
