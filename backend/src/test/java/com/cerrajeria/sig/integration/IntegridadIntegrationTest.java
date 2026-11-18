@@ -253,4 +253,36 @@ class IntegridadIntegrationTest {
             status().isOk());
         assertThat(cambiado.get("telefono").asString()).isEqualTo("982616709");
     }
+
+    @Test
+    void ventaRapida_loMasVendidoOLoElegido() throws Exception {
+        String token = usuarioConCaja("cajero_rapida", "0");
+        long llavero = llamar(token, post("/api/v1/productos"), """
+            {"codigo":"RAP-LLAVERO","nombre":"Llavero rápido","tipoProducto":"ACCESORIO",
+             "cantidadStock":100000,"precioCompra":1,"precioVenta":3}
+            """, status().isCreated()).get("id").asLong();
+        long candado = llamar(token, post("/api/v1/productos"), """
+            {"codigo":"RAP-CANDADO","nombre":"Candado rápido","tipoProducto":"CANDADO",
+             "cantidadStock":5,"precioCompra":10,"precioVenta":20}
+            """, status().isCreated()).get("id").asLong();
+        llamar(token, post("/api/v1/ventas"), """
+            {"metodoPago":"EFECTIVO","items":[{"productoId":%d,"cantidad":50000}]}
+            """.formatted(llavero), status().isCreated());
+
+        // Sin botones elegidos: lo mas vendido del mes, el llavero primero
+        JsonNode automaticos = llamar(token, get("/api/v1/productos/venta-rapida"), null, status().isOk());
+        assertThat(automaticos.get(0).get("id").asLong()).isEqualTo(llavero);
+        assertThat(automaticos.size()).isLessThanOrEqualTo(8);
+
+        // Con uno elegido por el administrador, se ven solo los elegidos
+        assertThat(llamar(token, put("/api/v1/productos/" + candado + "/venta-rapida?activo=true"), null, status().isOk())
+            .get("ventaRapida").asBoolean()).isTrue();
+        JsonNode elegidos = llamar(token, get("/api/v1/productos/venta-rapida"), null, status().isOk());
+        assertThat(elegidos.size()).isEqualTo(1);
+        assertThat(elegidos.get(0).get("id").asLong()).isEqualTo(candado);
+
+        llamar(token, put("/api/v1/productos/" + candado + "/venta-rapida?activo=false"), null, status().isOk());
+        assertThat(llamar(token, get("/api/v1/productos/venta-rapida"), null, status().isOk())
+            .get(0).get("id").asLong()).isEqualTo(llavero);
+    }
 }

@@ -42,6 +42,14 @@ Abajo aparece el total. Elige cómo te pagan (**Efectivo**, **Yape**, **Plin**, 
 
 Si eliges **Mixto**, el sistema te pide cuánto pagaron en cada método — por ejemplo `S/ 20.00` en efectivo y `S/ 15.00` en Yape — y no te deja cobrar hasta que la suma cuadre exactamente con el total.
 
+### Venta rápida (lo de todos los días, un toque)
+
+En **Vender**, debajo de Duplicado y Servicio, están los botones de **Venta rápida**: cada toque agrega uno al carrito (el botón muestra cuántos van, por ejemplo "× 2"). Una llave con precio de duplicado se agrega como duplicado. Después, **Cobrar**: una venta suelta (un llavero, una argolla) son **dos toques**.
+
+Qué botones aparecen:
+- Los que elija el Administrador: en **Inventario**, toca el producto y **Poner en Venta rápida** (o **Quitar de Venta rápida**). Conviene no pasar de 8, para que entren en la pantalla del celular.
+- Si todavía no eligió ninguno, salen solos los 8 productos más vendidos del último mes.
+
 ### Duplicado de llave (sin datos del cliente)
 
 Para un duplicado no hace falta registrar a nadie. Son tres toques:
@@ -186,6 +194,17 @@ Desde el menú ☰, entra a **Reportes**. Elige un rango de fechas y consulta:
 - Las ventas por método de pago, los productos más vendidos y el valor total de tu inventario.
 - **Servicios realizados**: cuántos domicilios se hicieron y cuánto se cobró, separados por tipo de trabajo y por técnico, más las órdenes del taller recibidas, entregadas y las que siguen abiertas.
 - **Clientes que más dejaron**: un ranking que suma lo que cada cliente gastó en compras, taller y domicilio. Las ventas de mostrador sin cliente no entran, porque no se sabe de quién son.
+
+### Datos para Power BI (solo Administrador)
+
+Abajo en **Reportes**, **Descargar Excel** baja un archivo con las fechas elegidas arriba: ventas, cobros, taller, domicilio, productos, kárdex, compras y cajas, cada uno en su hoja. Sirve para armar tableros en Power BI; los pasos y fórmulas están en `POWER_BI.md`.
+
+**Ventas de antes del sistema.** Si tienes ventas anotadas de antes (cuaderno o Excel), súbelas en la misma pantalla para que el historial empiece antes:
+
+1. **Descarga la plantilla** o usa tu Excel con las columnas `fecha`, `producto`, `cantidad` y `precio` (o `total`). `codigo` y `metodo_pago` son opcionales: si el código o el nombre coincide con un producto del inventario, se enlaza (sale con ✓).
+2. Guárdalo como CSV y elígelo. Primero ves lo que se entendió; nada se guarda hasta tocar **Cargar**. Si una fila tiene un error, no se carga nada y te dice cuál es.
+
+Estas ventas quedan **aparte**: no cambian la caja ni el stock (ese dinero y esa mercadería ya se contaron al empezar). Si te equivocaste, **Borrar las ventas anteriores** y súbelas de nuevo.
 
 ## El asistente
 

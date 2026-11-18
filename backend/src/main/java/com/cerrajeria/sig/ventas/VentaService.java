@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -200,7 +201,7 @@ public class VentaService {
             DetalleAuditoria.de("Venta #" + venta.getId() + " anulada: S/ " + venta.getMontoTotal() + " ("
                 + venta.getMetodoPago().name().toLowerCase() + "), "
                 + venta.getDetalles().stream().map(d -> d.getCantidad() + " × " + d.nombreLinea())
-                    .collect(java.util.stream.Collectors.joining(", "))));
+                    .collect(Collectors.joining(", "))));
 
         return mapearAResponse(venta);
     }

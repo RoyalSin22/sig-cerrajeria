@@ -15,6 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/v1/clientes")
@@ -34,8 +37,8 @@ public class ClienteController {
 
     @GetMapping
     @Operation(summary = "Listado paginado de todos los clientes")
-    public ResponseEntity<org.springframework.data.domain.Page<ClienteResponse>> listar(
-            @org.springframework.data.web.PageableDefault(size = 20) org.springframework.data.domain.Pageable pageable) {
+    public ResponseEntity<Page<ClienteResponse>> listar(
+            @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(clienteService.listar(pageable));
     }
 

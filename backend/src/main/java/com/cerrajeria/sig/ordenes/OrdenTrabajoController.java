@@ -13,6 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/v1/ordenes")
@@ -41,9 +44,9 @@ public class OrdenTrabajoController {
 
     @GetMapping("/paginado")
     @Operation(summary = "Listado paginado de órdenes, opcionalmente filtrado por estado")
-    public ResponseEntity<org.springframework.data.domain.Page<OrdenTrabajoResponse>> listarPaginado(
+    public ResponseEntity<Page<OrdenTrabajoResponse>> listarPaginado(
             @RequestParam(required = false) String estado,
-            @org.springframework.data.web.PageableDefault(size = 20) org.springframework.data.domain.Pageable pageable) {
+            @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ordenTrabajoService.listarPaginado(estado, pageable));
     }
 
@@ -72,7 +75,7 @@ public class OrdenTrabajoController {
     @Operation(summary = "Abrir una garantía (orden sin cobro) sobre una orden entregada")
     public ResponseEntity<OrdenTrabajoResponse> garantia(
             @PathVariable Long id, @Valid @RequestBody com.cerrajeria.sig.ordenes.dto.GarantiaRequest request) {
-        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+        return ResponseEntity.status(HttpStatus.CREATED)
             .body(ordenTrabajoService.abrirGarantia(id, request));
     }
 

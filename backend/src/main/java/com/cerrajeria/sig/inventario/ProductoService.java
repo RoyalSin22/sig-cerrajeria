@@ -18,6 +18,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Logica de negocio del modulo de inventario (RF-11 a RF-16, HU-06/07/08).
@@ -28,6 +40,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductoService {
 
+    /** Botones automaticos: pocos y grandes, que entren en una pantalla de celular. */
+    static final int MAX_VENTA_RAPIDA_AUTOMATICA = 8;
     private static final String MOTIVO_STOCK_INICIAL = "Stock inicial al crear el producto";
 
     private final ProductoRepository productoRepository;
@@ -36,9 +50,9 @@ public class ProductoService {
     private final ProductoMapper productoMapper;
     private final MovimientoInventarioMapper movimientoInventarioMapper;
     private final AuditLogService auditLogService;
-    private final jakarta.persistence.EntityManager entityManager;
+    private final EntityManager entityManager;
 
-    @org.springframework.beans.factory.annotation.Value("${sig.uploads-dir}")
+    @Value("${sig.uploads-dir}")
     private String uploadsDir;
 
     @Transactional
@@ -90,8 +104,8 @@ public class ProductoService {
 
     /** Listado paginado del catálogo completo (explorar sin buscar), opcionalmente filtrado por tipo. */
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<ProductoResponse> listar(
-            TipoProducto tipoProducto, org.springframework.data.domain.Pageable pageable) {
+    public Page<ProductoResponse> listar(
+            TipoProducto tipoProducto, Pageable pageable) {
         var pagina = tipoProducto != null
             ? productoRepository.findByActivoTrueAndTipoProductoOrderByNombreAsc(tipoProducto, pageable)
             : productoRepository.findByActivoTrueOrderByNombreAsc(pageable);
@@ -107,6 +121,33 @@ public class ProductoService {
     @Transactional(readOnly = true)
     public List<ProductoResponse> listarDuplicables() {
         return productoMapper.toResponseList(productoRepository.findByActivoTrueAndPrecioDuplicadoIsNotNullOrderByNombreAsc());
+    }
+
+    /**
+     * Los botones de "Venta rapida": los que eligio el Administrador o, si no
+     * eligio ninguno, lo mas vendido de los ultimos 30 dias (asi sirve desde el
+     * primer mes sin configurar nada).
+     */
+    @Transactional(readOnly = true)
+    public List<ProductoResponse> listarVentaRapida() {
+        List<Producto> elegidos = productoRepository.findByActivoTrueAndVentaRapidaTrueOrderByNombreAsc();
+        if (!elegidos.isEmpty()) {
+            return productoMapper.toResponseList(elegidos);
+        }
+        return productoMapper.toResponseList(productoRepository.masVendidosDesde(
+            LocalDateTime.now().minusDays(30), PageRequest.of(0, MAX_VENTA_RAPIDA_AUTOMATICA)));
+    }
+
+    @Transactional
+    public ProductoResponse marcarVentaRapida(Long id, boolean ventaRapida) {
+        Producto producto = buscarPorId(id);
+        if (!producto.getVentaRapida().equals(ventaRapida)) {
+            auditLogService.registrar(usuarioActual(), AuditAccion.EDITAR, "Producto", producto.getId(),
+                DetalleAuditoria.de("Venta rápida: " + producto.getCodigo())
+                    .cambio("ventaRapida", producto.getVentaRapida(), ventaRapida));
+            producto.setVentaRapida(ventaRapida);
+        }
+        return productoMapper.toResponse(productoRepository.save(producto));
     }
 
     @Transactional(readOnly = true)
@@ -187,8 +228,8 @@ public class ProductoService {
      * El precio de duplicado solo aplica a llaves.
      */
     @Transactional
-    public void actualizarPrecios(Long id, java.math.BigDecimal precioCompra, java.math.BigDecimal precioVenta,
-                                  java.math.BigDecimal precioDuplicado, String motivo) {
+    public void actualizarPrecios(Long id, BigDecimal precioCompra, BigDecimal precioVenta,
+                                  BigDecimal precioDuplicado, String motivo) {
         Producto producto = buscarPorId(id);
         DetalleAuditoria detalle = DetalleAuditoria.de("Precios cambiados: " + producto.getCodigo() + " · " + producto.getNombre())
             .motivo(motivo);
@@ -251,7 +292,7 @@ public class ProductoService {
      * en application.yml) y actualiza su imagenUrl. RF-16.
      */
     @Transactional
-    public ProductoResponse actualizarImagen(Long id, org.springframework.web.multipart.MultipartFile archivo) {
+    public ProductoResponse actualizarImagen(Long id, MultipartFile archivo) {
         if (archivo.isEmpty()) {
             throw new IllegalArgumentException("El archivo está vacío");
         }
@@ -263,8 +304,8 @@ public class ProductoService {
         Producto producto = buscarPorId(id);
 
         try {
-            java.nio.file.Path carpeta = java.nio.file.Path.of(uploadsDir, "productos");
-            java.nio.file.Files.createDirectories(carpeta);
+            Path carpeta = Path.of(uploadsDir, "productos");
+            Files.createDirectories(carpeta);
 
             String extension = switch (contentType) {
                 case "image/png" -> ".png";
@@ -272,14 +313,14 @@ public class ProductoService {
                 default -> ".jpg";
             };
             String nombreArchivo = "producto-" + id + extension;
-            java.nio.file.Path destino = carpeta.resolve(nombreArchivo);
+            Path destino = carpeta.resolve(nombreArchivo);
             archivo.transferTo(destino);
 
             // Cache-busting simple: query param con el timestamp para que el navegador
             // no muestre la foto vieja en cache tras reemplazarla.
             producto.setImagenUrl("/uploads/productos/" + nombreArchivo + "?v=" + System.currentTimeMillis());
             productoRepository.save(producto);
-        } catch (java.io.IOException ex) {
+        } catch (IOException ex) {
             throw new RuntimeException("No se pudo guardar la imagen: " + ex.getMessage(), ex);
         }
 
@@ -298,7 +339,7 @@ public class ProductoService {
 
     private void aplicarCamposComunes(
             Producto producto, String nombre, TipoProducto tipoProducto, String marca,
-            Integer stockMinimo, java.math.BigDecimal precioCompra, java.math.BigDecimal precioVenta,
+            Integer stockMinimo, BigDecimal precioCompra, BigDecimal precioVenta,
             String imagenUrl, String llavePerfil, String llaveColor, String llaveDisenoTematica,
             String productoModelo, String productoTamano, String productoMaterial
     ) {
@@ -354,7 +395,7 @@ public class ProductoService {
     private Producto bloquearParaStock(Long id) {
         Producto producto = buscarPorId(id);
         entityManager.flush();
-        entityManager.refresh(producto, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        entityManager.refresh(producto, LockModeType.PESSIMISTIC_WRITE);
         return producto;
     }
 

@@ -21,6 +21,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import java.time.Instant;
 import java.util.stream.Collectors;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * Manejo centralizado de excepciones (Fase 5, seccion 2.4). Todas las
@@ -93,7 +94,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @Override
     protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
-            org.springframework.web.multipart.MaxUploadSizeExceededException ex,
+            MaxUploadSizeExceededException ex,
             HttpHeaders headers,
             HttpStatusCode status,
             WebRequest request

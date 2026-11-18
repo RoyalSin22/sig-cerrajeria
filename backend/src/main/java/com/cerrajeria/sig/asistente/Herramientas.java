@@ -3,6 +3,7 @@ package com.cerrajeria.sig.asistente;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
+import java.util.function.Consumer;
 
 /**
  * Catalogo de acciones que el asistente de WhatsApp puede ejecutar. Cubre
@@ -67,7 +68,7 @@ class Herramientas {
 
     private static ObjectNode herramienta(
             ObjectMapper om, String nombre, String descripcion,
-            java.util.function.Consumer<ObjectNode> propiedades, String... requeridos
+            Consumer<ObjectNode> propiedades, String... requeridos
     ) {
         ObjectNode tool = om.createObjectNode();
         tool.put("name", nombre);

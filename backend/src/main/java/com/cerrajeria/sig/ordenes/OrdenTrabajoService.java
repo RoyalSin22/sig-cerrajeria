@@ -29,6 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Logica de negocio de ordenes de trabajo (RF-20 a RF-24, HU-12 a HU-14).
@@ -92,8 +96,8 @@ public class OrdenTrabajoService {
      * necesita todas las ordenes agrupadas por estado y no se pagina).
      */
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<OrdenTrabajoResponse> listarPaginado(
-            String estado, org.springframework.data.domain.Pageable pageable) {
+    public Page<OrdenTrabajoResponse> listarPaginado(
+            String estado, Pageable pageable) {
         var pagina = (estado == null || estado.isBlank())
             ? ordenTrabajoRepository.findAllByOrderByFechaIngresoDesc(pageable)
             : ordenTrabajoRepository.findByEstadoOrderByFechaIngresoDesc(parseEstado(estado), pageable);
@@ -129,7 +133,7 @@ public class OrdenTrabajoService {
         EstadoOrden anterior = orden.getEstado();
         orden.setEstado(nuevoEstado);
         if (nuevoEstado == EstadoOrden.ENTREGADO) {
-            orden.setFechaEntrega(java.time.LocalDateTime.now());
+            orden.setFechaEntrega(LocalDateTime.now());
         }
         orden = ordenTrabajoRepository.save(orden);
         auditLogService.registrar(usuarioActual(), AuditAccion.CAMBIO_ESTADO, "OrdenTrabajo", orden.getId(),
@@ -169,7 +173,7 @@ public class OrdenTrabajoService {
 
         EstadoOrden anterior = orden.getEstado();
         orden.setEstado(EstadoOrden.ENTREGADO);
-        orden.setFechaEntrega(java.time.LocalDateTime.now());
+        orden.setFechaEntrega(LocalDateTime.now());
         orden = ordenTrabajoRepository.save(orden);
         auditLogService.registrar(usuarioActual(), AuditAccion.CAMBIO_ESTADO, "OrdenTrabajo", orden.getId(),
             DetalleAuditoria.de("Orden " + orden.getNumeroOrden() + " entregada"
@@ -247,9 +251,9 @@ public class OrdenTrabajoService {
         garantia.setUsuario(usuarioActual());
         garantia = ordenTrabajoRepository.save(garantia);
 
-        long dias = java.time.temporal.ChronoUnit.DAYS.between(
+        long dias = ChronoUnit.DAYS.between(
             original.getFechaEntrega() != null ? original.getFechaEntrega() : original.getFechaIngreso(),
-            java.time.LocalDateTime.now());
+            LocalDateTime.now());
         auditLogService.registrar(garantia.getUsuario(), AuditAccion.GARANTIA, "OrdenTrabajo", garantia.getId(),
             DetalleAuditoria.de("Garantía " + garantia.getNumeroOrden() + " de la orden " + original.getNumeroOrden()
                 + ", entregada hace " + dias + (dias == 1 ? " día" : " días")).motivo(garantia.getProblema()));

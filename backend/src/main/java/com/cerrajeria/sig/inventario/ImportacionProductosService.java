@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Carga inicial (o masiva) del inventario desde un CSV exportado de Excel.
@@ -254,7 +255,7 @@ public class ImportacionProductosService {
             if (tipo == null) {
                 problemas.add("Tipo desconocido \"" + tipoTexto + "\". Usa uno de: " + Arrays.stream(TipoProducto.values())
                     .map(t -> t.name().toLowerCase(Locale.ROOT).replace('_', ' '))
-                    .collect(java.util.stream.Collectors.joining(", ")));
+                    .collect(Collectors.joining(", ")));
             }
         }
         Integer stock = entero(v.get(Columna.STOCK), "stock", problemas).orElse(0);
@@ -322,7 +323,7 @@ public class ImportacionProductosService {
      * Una sola coma se toma como decimal: Excel con configuracion regional que
      * usa coma decimal guarda "12,5".
      */
-    static BigDecimal numero(String texto) {
+    public static BigDecimal numero(String texto) {
         String s = texto.replaceAll("(?i)s/\\.?", "").replaceAll("[\\s\\u00A0]", "");
         int ultimaComa = s.lastIndexOf(',');
         int ultimoPunto = s.lastIndexOf('.');

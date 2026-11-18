@@ -11,6 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/v1/compras")
@@ -30,14 +34,14 @@ public class CompraController {
     @PostMapping("/lote")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Registrar varios productos comprados al mismo proveedor, todos o ninguno")
-    public ResponseEntity<java.util.List<CompraResponse>> crearLote(@Valid @RequestBody CompraLoteRequest request) {
+    public ResponseEntity<List<CompraResponse>> crearLote(@Valid @RequestBody CompraLoteRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(compraService.crearLote(request));
     }
 
     @GetMapping
     @Operation(summary = "Listado paginado de compras")
-    public ResponseEntity<org.springframework.data.domain.Page<CompraResponse>> listar(
-            @org.springframework.data.web.PageableDefault(size = 20) org.springframework.data.domain.Pageable pageable) {
+    public ResponseEntity<Page<CompraResponse>> listar(
+            @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(compraService.listar(pageable));
     }
 }

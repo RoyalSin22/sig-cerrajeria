@@ -22,6 +22,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Arrays;
+import java.util.stream.Stream;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.ProviderManager;
 
 /**
  * Seguridad stateless con JWT (RNF-02). El claim "role" del token (ej.
@@ -69,7 +73,7 @@ public class SecurityConfig {
                     "/api/v1/whatsapp/webhook"
                 ).permitAll()
                 // Nombre del negocio para la pantalla de ingreso (datos de la tarjeta, no privados)
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/negocio").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/negocio").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
@@ -82,8 +86,8 @@ public class SecurityConfig {
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         // Patrones (no origenes exactos) para admitir "https://*.ts.net"
-        config.setAllowedOriginPatterns(java.util.stream.Stream.of(frontendOrigin, origenesCelular)
-            .flatMap(lista -> java.util.Arrays.stream(lista.split(",")))
+        config.setAllowedOriginPatterns(Stream.of(frontendOrigin, origenesCelular)
+            .flatMap(lista -> Arrays.stream(lista.split(",")))
             .map(String::trim)
             .filter(origen -> !origen.isEmpty())
             .toList());
@@ -122,6 +126,6 @@ public class SecurityConfig {
     ) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
-        return new org.springframework.security.authentication.ProviderManager(provider);
+        return new ProviderManager(provider);
     }
 }

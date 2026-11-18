@@ -21,6 +21,7 @@ public record ProductoResponse(
     String productoTamano,
     String productoMaterial,
     Boolean activo,
-    Boolean stockBajo
+    Boolean stockBajo,
+    Boolean ventaRapida
 ) {
 }

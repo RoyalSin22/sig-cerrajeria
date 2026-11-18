@@ -15,6 +15,10 @@ export const productosApi = {
   obtener: (id: number) => axiosClient.get<ProductoResponse>(`/productos/${id}`).then(r => r.data),
   /** Llaves con precio de duplicado, para el boton "Duplicado de llave". */
   duplicables: () => axiosClient.get<ProductoResponse[]>('/productos/duplicables').then(r => r.data),
+  /** Botones de "Venta rápida": los elegidos, o lo más vendido del último mes si no hay elegidos. */
+  ventaRapida: () => axiosClient.get<ProductoResponse[]>('/productos/venta-rapida').then(r => r.data),
+  marcarVentaRapida: (id: number, activo: boolean) =>
+    axiosClient.put<ProductoResponse>(`/productos/${id}/venta-rapida`, null, { params: { activo } }).then(r => r.data),
   stockBajo: () => axiosClient.get<ProductoResponse[]>('/productos/stock-bajo').then(r => r.data),
   crear: (body: ProductoCreateRequest) => axiosClient.post<ProductoResponse>('/productos', body).then(r => r.data),
   actualizar: (id: number, body: ProductoUpdateRequest) =>

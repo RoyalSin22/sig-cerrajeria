@@ -16,10 +16,6 @@ export function setAccessToken(token: string | null) {
   accessToken = token
 }
 
-export function getAccessToken() {
-  return accessToken
-}
-
 export const axiosClient = axios.create({
   baseURL: BASE_URL,
   withCredentials: true, // envia/recibe la cookie refresh_token

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
-import { AlertTriangle, Minus, Plus } from 'lucide-react'
+import { AlertTriangle, Minus, Plus, Zap } from 'lucide-react'
 import { productosApi } from '../api/productos'
 import { extraerMensajeError } from '../api/axiosClient'
 import { SearchInput } from '../components/ui/SearchInput'
@@ -279,6 +279,20 @@ function FichaProducto({
     }
   }
 
+  async function alternarVentaRapida() {
+    setGuardando(true)
+    setError(null)
+    try {
+      const actualizado = await productosApi.marcarVentaRapida(producto!.id, !producto!.ventaRapida)
+      notificar(actualizado.ventaRapida ? 'Ya tiene su botón en Vender' : 'Se quitó el botón de Vender')
+      onActualizado(actualizado)
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setGuardando(false)
+    }
+  }
+
   async function handleSubirImagen(e: ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0]
     e.target.value = '' // permite volver a elegir el mismo archivo si hace falta
@@ -376,7 +390,14 @@ function FichaProducto({
             )}
             <div><span className="text-sub">Stock mínimo</span><p>{producto.stockMinimo}</p></div>
             {esAdmin && (
-              <Button variant="secondary" onClick={() => setEditando(true)} className="col-span-2">Editar</Button>
+              <>
+                <Button variant="secondary" onClick={() => setEditando(true)} className="col-span-2">Editar</Button>
+                {/* Los botones grandes de "Venta rápida" en Vender: lo que se vende todo el día */}
+                <Button variant="secondary" onClick={alternarVentaRapida} disabled={guardando} className="col-span-2">
+                  <Zap size={20} aria-hidden />
+                  {producto.ventaRapida ? 'Quitar de Venta rápida' : 'Poner en Venta rápida'}
+                </Button>
+              </>
             )}
           </div>
         )}

@@ -10,6 +10,11 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +48,7 @@ public class ReporteService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<ProductoMasVendidoResponse> productosMasVendidos(LocalDate desde, LocalDate hasta) {
+    public List<ProductoMasVendidoResponse> productosMasVendidos(LocalDate desde, LocalDate hasta) {
         var desdeDateTime = desde.atStartOfDay();
         var hastaDateTime = hasta.atTime(LocalTime.MAX);
 
@@ -91,8 +96,8 @@ public class ReporteService {
         var taller = porClave(pagoOrdenRepository.pagadoPorCliente(inicio, fin));
         var domicilio = porClave(servicioDomicilioRepository.cobradoPorCliente(inicio, fin));
 
-        var nombres = new java.util.HashMap<Long, String>();
-        java.util.stream.Stream.of(ventas, taller, domicilio)
+        var nombres = new HashMap<Long, String>();
+        Stream.of(ventas, taller, domicilio)
             .flatMap(m -> m.values().stream())
             .forEach(f -> nombres.putIfAbsent(f.getClave(), f.getNombre()));
 
@@ -104,7 +109,7 @@ public class ReporteService {
                 return new ReporteClientesResponse.Cliente(e.getKey(), e.getValue(), v, t, d,
                     v.total().add(t.total()).add(d.total()));
             })
-            .sorted(java.util.Comparator.comparing(ReporteClientesResponse.Cliente::total).reversed()
+            .sorted(Comparator.comparing(ReporteClientesResponse.Cliente::total).reversed()
                 .thenComparing(ReporteClientesResponse.Cliente::nombre))
             .toList();
 
@@ -113,14 +118,14 @@ public class ReporteService {
             ranking.stream().limit(Math.max(1, limite)).toList());
     }
 
-    private static java.util.List<ReporteServiciosResponse.Grupo> grupos(java.util.List<TotalAgrupadoProjection> filas) {
+    private static List<ReporteServiciosResponse.Grupo> grupos(List<TotalAgrupadoProjection> filas) {
         return filas.stream()
             .map(f -> new ReporteServiciosResponse.Grupo(f.getNombre(), f.getCantidad(), f.getTotal()))
             .toList();
     }
 
-    private static java.util.Map<Long, TotalAgrupadoProjection> porClave(java.util.List<TotalAgrupadoProjection> filas) {
-        var mapa = new java.util.HashMap<Long, TotalAgrupadoProjection>();
+    private static Map<Long, TotalAgrupadoProjection> porClave(List<TotalAgrupadoProjection> filas) {
+        var mapa = new HashMap<Long, TotalAgrupadoProjection>();
         filas.forEach(f -> mapa.put(f.getClave(), f));
         return mapa;
     }

@@ -133,7 +133,7 @@ class ProductoServiceTest {
         when(productoMapper.toResponse(producto)).thenReturn(
             new ProductoResponse(1L, "KW1-001", "Llave virgen KW1", "LLAVE_VIRGEN", null,
                 15, 5, new BigDecimal("1.50"), new BigDecimal("3.00"), null, null, null, null, null, null, null, null,
-                true, false));
+                true, false, false));
 
         var request = new AjusteStockRequest(5, "Ingreso no facturado");
         ProductoResponse respuesta = productoService.ajustarStock(1L, request);
