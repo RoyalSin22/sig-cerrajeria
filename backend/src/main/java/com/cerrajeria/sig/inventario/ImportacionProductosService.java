@@ -323,7 +323,7 @@ public class ImportacionProductosService {
      * Una sola coma se toma como decimal: Excel con configuracion regional que
      * usa coma decimal guarda "12,5".
      */
-    static BigDecimal numero(String texto) {
+    public static BigDecimal numero(String texto) {
         String s = texto.replaceAll("(?i)s/\\.?", "").replaceAll("[\\s\\u00A0]", "");
         int ultimaComa = s.lastIndexOf(',');
         int ultimoPunto = s.lastIndexOf('.');

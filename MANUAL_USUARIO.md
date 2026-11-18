@@ -195,6 +195,17 @@ Desde el menú ☰, entra a **Reportes**. Elige un rango de fechas y consulta:
 - **Servicios realizados**: cuántos domicilios se hicieron y cuánto se cobró, separados por tipo de trabajo y por técnico, más las órdenes del taller recibidas, entregadas y las que siguen abiertas.
 - **Clientes que más dejaron**: un ranking que suma lo que cada cliente gastó en compras, taller y domicilio. Las ventas de mostrador sin cliente no entran, porque no se sabe de quién son.
 
+### Datos para Power BI (solo Administrador)
+
+Abajo en **Reportes**, **Descargar Excel** baja un archivo con las fechas elegidas arriba: ventas, cobros, taller, domicilio, productos, kárdex, compras y cajas, cada uno en su hoja. Sirve para armar tableros en Power BI; los pasos y fórmulas están en `POWER_BI.md`.
+
+**Ventas de antes del sistema.** Si tienes ventas anotadas de antes (cuaderno o Excel), súbelas en la misma pantalla para que el historial empiece antes:
+
+1. **Descarga la plantilla** o usa tu Excel con las columnas `fecha`, `producto`, `cantidad` y `precio` (o `total`). `codigo` y `metodo_pago` son opcionales: si el código o el nombre coincide con un producto del inventario, se enlaza (sale con ✓).
+2. Guárdalo como CSV y elígelo. Primero ves lo que se entendió; nada se guarda hasta tocar **Cargar**. Si una fila tiene un error, no se carga nada y te dice cuál es.
+
+Estas ventas quedan **aparte**: no cambian la caja ni el stock (ese dinero y esa mercadería ya se contaron al empezar). Si te equivocaste, **Borrar las ventas anteriores** y súbelas de nuevo.
+
 ## El asistente
 
 En la esquina inferior derecha hay un botón redondo (ícono de robot). Ábrelo y pregúntale en lenguaje normal — entiende cosas como:

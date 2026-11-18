@@ -433,6 +433,10 @@ const rutas: [string, RegExp, Manejador][] = [
     { productoId: 5, nombre: 'Llave de candado', cantidadVendida: 60, totalVendido: 150 },
     { productoId: 8, nombre: 'Candado Forte 40 mm', cantidadVendida: 7, totalVendido: 210 },
   ]],
+  // Power BI y ventas anteriores: en la demo no hay base de datos de verdad que exportar
+  ['GET', /^\/analisis\/ventas-anteriores$/, () => ({ filas: 0, total: 0, desde: null, hasta: null })],
+  ['GET', /^\/analisis\/power-bi$/, () => fallar('En la demostración no se descarga el Excel: con el sistema instalado sí.')],
+  ['POST', /^\/analisis\/ventas-anteriores$/, () => fallar('En la demostración no se cargan archivos: con el sistema instalado sí.')],
   ['GET', /^\/reportes\/inventario$/, () => {
     const items = productos.filter((p) => p.activo).map((p) => ({ codigo: p.codigo, nombre: p.nombre, tipoProducto: p.tipoProducto,
       cantidadStock: p.cantidadStock, precioVenta: p.precioVenta, valorLinea: p.cantidadStock * p.precioCompra, stockBajo: p.stockBajo }))

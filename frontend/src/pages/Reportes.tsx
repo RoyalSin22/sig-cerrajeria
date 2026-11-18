@@ -1,15 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
+import { BarChart3, Download, Upload } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { reportesApi } from '../api/reportes'
+import { analisisApi } from '../api/analisis'
+import { useAuth } from '../context/useAuth'
 import { extraerMensajeError } from '../api/axiosClient'
 import { Card, StatCard } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
-import { formatearSoles } from '../utils/format'
+import { formatearFecha, formatearSoles } from '../utils/format'
 import { hoyISO, inicioMesISO } from '../utils/fecha'
 import type {
   ReporteVentasResponse, ProductoMasVendidoResponse, ReporteInventarioResponse,
   ReporteServiciosResponse, ReporteClientesResponse, GrupoServicios,
 } from '../types/reportes'
+import type { ResultadoVentasAnteriores, ResumenVentasAnteriores } from '../types/analisis'
 
 // Okabe-Ito: colores que se distinguen entre si con los daltonismos comunes
 const COLORES = ['#0072B2', '#E69F00', '#009E73', '#CC79A7', '#56B4E9', '#D55E00']
@@ -25,6 +29,8 @@ export function Reportes() {
   const [clientes, setClientes] = useState<ReporteClientesResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
+  const { usuario } = useAuth()
+  const esAdmin = usuario?.role === 'ROLE_ADMIN'
 
   // Al abrir la pantalla se muestra el mes en curso, sin esperar a "Consultar"
   useEffect(() => {
@@ -201,6 +207,10 @@ export function Reportes() {
           </div>
         </Card>
       )}
+
+      {/* Para el dueño: los datos completos del negocio, para armar tableros en Power BI */}
+      {esAdmin && <DatosPowerBi desde={desde} hasta={hasta} />}
+      {esAdmin && <VentasAnteriores />}
     </div>
   )
 }
@@ -225,5 +235,218 @@ function TablaGrupos({ titulo, grupos }: { titulo: string; grupos: GrupoServicio
         </table>
       )}
     </div>
+  )
+}
+
+function descargarBlob(blob: Blob, nombre: string) {
+  const url = URL.createObjectURL(blob)
+  const enlace = document.createElement('a')
+  enlace.href = url
+  enlace.download = nombre
+  enlace.click()
+  URL.revokeObjectURL(url)
+}
+
+/** Un Excel con una tabla por tema; siempre con el mismo nombre para reemplazarlo en Power BI. */
+function DatosPowerBi({ desde, hasta }: { desde: string; hasta: string }) {
+  const [descargando, setDescargando] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function descargar() {
+    setError(null)
+    setDescargando(true)
+    try {
+      descargarBlob(await analisisApi.powerBi(desde, hasta), 'cerrajeria-datos.xlsx')
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setDescargando(false)
+    }
+  }
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <span className="flex items-center gap-2 text-lg font-semibold">
+        <BarChart3 size={22} aria-hidden /> Datos para Power BI
+      </span>
+      <p className="text-sm text-sub">
+        Un Excel con las fechas de arriba ({formatearFecha(desde)} al {formatearFecha(hasta)}): ventas (con las
+        anteriores), cobros, taller, domicilio, productos, kárdex, compras y cajas, cada uno en su hoja.
+      </p>
+      <Button onClick={descargar} disabled={descargando} className="self-start">
+        <Download size={20} aria-hidden /> {descargando ? 'Preparando…' : 'Descargar Excel'}
+      </Button>
+      <p className="text-xs text-sub">
+        En Power BI: Obtener datos → Excel → marca las hojas. Para actualizar el tablero, descarga de nuevo,
+        reemplaza el archivo (se llama siempre igual) y pulsa Actualizar.
+      </p>
+      {error && <p className="text-sm font-semibold text-danger">{error}</p>}
+    </Card>
+  )
+}
+
+const PLANTILLA_VENTAS = '\uFEFFfecha;producto;codigo;cantidad;precio;metodo_pago\r\n'
+  + '15/03/2025;Llave de casa;;10;2.50;efectivo\r\n'
+  + '15/03/2025;Candado Forte 40 mm;CAN-40;1;30;yape\r\n'
+
+/** Ventas de antes del sistema para el historial: no tocan la caja ni el stock. */
+function VentasAnteriores() {
+  const [resumen, setResumen] = useState<ResumenVentasAnteriores | null>(null)
+  const [archivo, setArchivo] = useState<File | null>(null)
+  const [revision, setRevision] = useState<ResultadoVentasAnteriores | null>(null)
+  const [trabajando, setTrabajando] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
+
+  useEffect(() => {
+    analisisApi.resumenVentasAnteriores().then(setResumen).catch(() => setResumen(null))
+  }, [])
+
+  async function elegirArchivo(e: ChangeEvent<HTMLInputElement>) {
+    const elegido = e.target.files?.[0]
+    e.target.value = '' // permite volver a elegir el mismo archivo tras corregirlo
+    if (!elegido) return
+    setArchivo(elegido)
+    setRevision(null)
+    setAviso(null)
+    setError(null)
+    setTrabajando(true)
+    try {
+      setRevision(await analisisApi.cargarVentasAnteriores(elegido, false))
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setTrabajando(false)
+    }
+  }
+
+  async function confirmar() {
+    if (!archivo) return
+    setTrabajando(true)
+    setError(null)
+    try {
+      const r = await analisisApi.cargarVentasAnteriores(archivo, true)
+      if (r.errores.length > 0) {
+        setRevision(r)
+      } else {
+        setArchivo(null)
+        setRevision(null)
+        setAviso(`Listo: se cargaron ${r.cargadas} ventas.`)
+        setResumen(await analisisApi.resumenVentasAnteriores())
+      }
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setTrabajando(false)
+    }
+  }
+
+  async function borrar() {
+    if (!window.confirm('¿Borrar todas las ventas anteriores cargadas? Las ventas del sistema no se tocan.')) return
+    setTrabajando(true)
+    setError(null)
+    try {
+      const { borradas } = await analisisApi.borrarVentasAnteriores()
+      setAviso(`Se borraron ${borradas} ventas anteriores.`)
+      setResumen(await analisisApi.resumenVentasAnteriores())
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setTrabajando(false)
+    }
+  }
+
+  const lista = revision !== null && revision.errores.length === 0 && revision.filasLeidas > 0
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <span className="text-lg font-semibold">Ventas de antes del sistema</span>
+      <p className="text-sm text-sub">
+        Si tienes ventas anotadas en un cuaderno o en Excel, súbelas para que el historial de Power BI empiece
+        antes. Quedan aparte: <b>no cambian la caja ni el stock</b>.
+      </p>
+      {resumen && resumen.filas > 0 ? (
+        <p className="text-sm">
+          Cargadas: <b>{resumen.filas}</b> ventas por <b>{formatearSoles(resumen.total)}</b>, del{' '}
+          {formatearFecha(resumen.desde!)} al {formatearFecha(resumen.hasta!)}.
+        </p>
+      ) : (
+        <p className="text-sm">Todavía no hay ventas anteriores cargadas.</p>
+      )}
+      <ol className="list-decimal space-y-1 pl-5 text-sm text-sub">
+        <li>
+          <button type="button" className="text-steel underline"
+            onClick={() => descargarBlob(new Blob([PLANTILLA_VENTAS], { type: 'text/csv' }), 'ventas-anteriores.csv')}>
+            Descarga la plantilla
+          </button>{' '}
+          o usa tu Excel con las columnas <b>fecha</b>, <b>producto</b>, <b>cantidad</b> y <b>precio</b> (o <b>total</b>);
+          <b> codigo</b> y <b>metodo_pago</b> son opcionales.
+        </li>
+        <li>Guárdalo como CSV y elígelo: primero ves lo que se entendió y nada se guarda hasta que confirmes.</li>
+      </ol>
+      <label className="inline-flex min-h-12 cursor-pointer items-center gap-2 self-start rounded-lg border-2 border-line bg-card px-4 font-semibold hover:bg-hair">
+        <Upload size={20} aria-hidden /> {trabajando ? 'Revisando…' : 'Elegir archivo'}
+        <input type="file" accept=".csv,text/csv" className="sr-only" onChange={elegirArchivo} disabled={trabajando} />
+      </label>
+
+      {revision && (
+        <div className="flex flex-col gap-2 text-sm">
+          <p>
+            {revision.filasLeidas} ventas{revision.desde && <> del {formatearFecha(revision.desde)} al {formatearFecha(revision.hasta!)}</>}
+            {' '}por <b>{formatearSoles(revision.total)}</b>. {revision.enlazadas} coinciden con productos del inventario.
+          </p>
+          {revision.columnasIgnoradas.length > 0 && (
+            <p className="text-sub">Columnas que no se usan: {revision.columnasIgnoradas.join(', ')}.</p>
+          )}
+          {revision.errores.length > 0 && (
+            <div className="rounded-lg bg-tint-peach p-3 text-warning">
+              <p className="font-semibold">Corrige esto en el archivo y vuelve a elegirlo (no se cargó nada):</p>
+              <ul className="list-disc pl-5">
+                {revision.errores.slice(0, 20).map((e, i) => (
+                  <li key={i}>{e.fila > 0 ? `Fila ${e.fila}: ` : ''}{e.mensaje}</li>
+                ))}
+              </ul>
+              {revision.errores.length > 20 && <p>…y {revision.errores.length - 20} más.</p>}
+            </div>
+          )}
+          {revision.muestra.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-sub">
+                  <tr><th className="py-1">Fecha</th><th>Producto</th><th className="text-right">Cant.</th><th className="text-right">Precio</th></tr>
+                </thead>
+                <tbody className="divide-y divide-hair">
+                  {revision.muestra.map((l) => (
+                    <tr key={l.fila}>
+                      <td className="py-1">{formatearFecha(l.fecha)}</td>
+                      <td>{l.producto}{l.enlazada && <span className="text-success"> ✓</span>}</td>
+                      <td className="text-right">{l.cantidad}</td>
+                      <td className="text-right">{formatearSoles(l.precioUnitario)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {revision.filasLeidas > revision.muestra.length && (
+                <p className="text-xs text-sub">Se muestran las primeras {revision.muestra.length}.</p>
+              )}
+            </div>
+          )}
+          {lista && (
+            <Button tamano="lg" onClick={confirmar} disabled={trabajando} className="self-start">
+              Cargar {revision.filasLeidas} ventas
+            </Button>
+          )}
+        </div>
+      )}
+
+      {aviso && <p className="text-sm font-semibold text-success">{aviso}</p>}
+      {error && <p className="text-sm font-semibold text-danger">{error}</p>}
+      {resumen && resumen.filas > 0 && (
+        <button type="button" onClick={borrar} disabled={trabajando}
+          className="self-start text-sm font-semibold text-danger underline">
+          Borrar las ventas anteriores (para subirlas de nuevo)
+        </button>
+      )}
+    </Card>
   )
 }
