@@ -1,0 +1,46 @@
+// Todas las medidas del tablero, para crearlas de una sola vez.
+// Uso (Power BI Desktop): icono "Vista de consulta DAX" (el 4.º de la barra izquierda) → pega TODO este
+// archivo → pulsa "Ejecutar" para comprobar → arriba del bloque aparece "Actualizar modelo: agregar nuevas
+// medidas" (o "Update model with changes") → púlsalo. Después, en Datos, ponles el formato indicado en POWER_BI.md.
+// Requiere las tablas Ventas, Cobros, Productos, Compras y Calendario ya cargadas (pasos 1 a 3 de la guía).
+
+DEFINE
+    // ---------- Ventas
+    MEASURE Ventas[Ventas S/] = CALCULATE ( SUM ( Ventas[Subtotal] ), Ventas[Anulada] = "No" )
+    MEASURE Ventas[Unidades] = CALCULATE ( SUM ( Ventas[Cantidad] ), Ventas[Anulada] = "No" )
+    MEASURE Ventas[Costo S/] =
+        CALCULATE (
+            SUMX ( Ventas, Ventas[Cantidad] * Ventas[Costo unitario] ),
+            Ventas[Anulada] = "No"
+        )
+    MEASURE Ventas[Ganancia aprox. S/] = [Ventas S/] - [Costo S/]
+    MEASURE Ventas[Margen %] = DIVIDE ( [Ganancia aprox. S/], [Ventas S/] )
+    MEASURE Ventas[Tickets] =
+        CALCULATE ( DISTINCTCOUNT ( Ventas[Venta] ), Ventas[Origen] = "Sistema", Ventas[Anulada] = "No" )
+    MEASURE Ventas[Ticket promedio] =
+        DIVIDE ( CALCULATE ( [Ventas S/], Ventas[Origen] = "Sistema" ), [Tickets] )
+    MEASURE Ventas[Ventas del mes a la fecha] = CALCULATE ( [Ventas S/], DATESMTD ( Calendario[Date] ) )
+    MEASURE Ventas[Ventas mismos días mes anterior] =
+        CALCULATE ( [Ventas S/], DATEADD ( DATESMTD ( Calendario[Date] ), -1, MONTH ) )
+    MEASURE Ventas[Este mes vs. anterior] =
+        DIVIDE (
+            [Ventas del mes a la fecha] - [Ventas mismos días mes anterior],
+            [Ventas mismos días mes anterior]
+        )
+    MEASURE Ventas[Venta promedio por día] = AVERAGEX ( VALUES ( Calendario[Date] ), [Ventas S/] + 0 )
+    MEASURE Ventas[Días con ventas del sistema] =
+        CALCULATE ( DISTINCTCOUNT ( Ventas[Fecha] ), Ventas[Origen] = "Sistema", ALL ( Ventas[Hora] ) )
+    MEASURE Ventas[Ventas promedio por hora] = DIVIDE ( [Tickets], [Días con ventas del sistema] )
+    MEASURE Ventas[Unidades últimos 30 días] =
+        CALCULATE ( [Unidades], DATESINPERIOD ( Calendario[Date], MAX ( Calendario[Date] ), -30, DAY ) )
+    // ---------- Cobros
+    MEASURE Cobros[Cobrado S/] = CALCULATE ( SUM ( Cobros[Monto] ), Cobros[Anulada] = "No" )
+    // ---------- Productos
+    MEASURE Productos[Valor del inventario] = SUM ( Productos[Valor del stock] )
+    MEASURE Productos[Productos con stock bajo] =
+        CALCULATE ( COUNTROWS ( Productos ), Productos[Stock bajo] = "Sí", Productos[Activo] = "Sí" )
+    // ---------- Compras
+    MEASURE Compras[Comprado S/] = SUM ( Compras[Total] )
+
+EVALUATE
+ROW ( "Medidas listas", 1 )

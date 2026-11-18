@@ -92,6 +92,13 @@ Si ves otras líneas que no están en la tabla, clic derecho → **Eliminar**.
 
 En el panel **Datos**, clic derecho en la tabla indicada → **Nueva medida**, y pega una por una. Al terminar cada una, dale formato en **Herramientas de medición → Formato**: **Moneda** con `S/ Español (Perú)` y 2 decimales para los soles, y **Porcentaje** para los `%`.
 
+> **Atajo: crearlas todas de una vez.** Abre la **Vista de consulta DAX** (el 4.º ícono de la barra izquierda), pega **todo** el contenido de [`powerbi/medidas.dax`](powerbi/medidas.dax), pulsa **Ejecutar** y luego **Actualizar modelo** (aparece sobre el bloque). Crea las 18 medidas, ya en el orden correcto. Después solo les pones el formato (moneda `S/`, porcentaje) como se explica arriba. Si tu versión no tiene esa vista, usa el método manual de abajo.
+>
+> **Método manual: reglas para que no falle.**
+> - Pega **la línea completa**, con el nombre y el `=` (por ejemplo `Ventas S/ = CALCULATE(...)`). Si pegas solo la fórmula, Power BI la guarda con el nombre **«Medida»**: haz clic en ella y escribe el nombre delante de la fórmula, o bórrala.
+> - Crea las medidas **en el orden de esta guía**: `Ganancia aprox. S/` usa `Ventas S/` y `Costo S/`, y mientras estas no existan, se ve con un triángulo rojo. No hay que volver a crearla: se corrige sola cuando existan.
+> - Si sale *«El nombre … ya se usa en una medida»*, esa medida ya existe: búscala en la lista de campos y edita su fórmula en vez de crear otra.
+
 **En la tabla Ventas:**
 
 ```DAX
