@@ -120,9 +120,9 @@ Para dar de alta un producto nuevo, toca **Nuevo producto** arriba. Los campos q
 
 Para no cambiar producto por producto, el Administrador toca **Cantidades y precios (Excel)** en Inventario:
 
-1. **Descarga el inventario**: baja un archivo con todos los productos (código, nombre, tipo, marca y stock actual), una columna **cantidad** vacía y los precios actuales (**precio_compra**, **precio_venta** y **precio_duplicado**).
-2. Ábrelo en Excel y escribe la cantidad solo en las filas que quieras cambiar (las vacías no se tocan). Corrige los precios que quieras: por ejemplo, para poner el duplicado de todas las llaves de casa a S/ 2.50, escribe `2.50` en la primera y arrastra hacia abajo. El precio de duplicado solo va en llaves.
-3. Guárdalo (Ctrl+S, como CSV) y súbelo eligiendo qué significa el número:
+1. **Descarga el inventario en Excel**: baja un libro con todos los productos. Las columnas **grises** (código, nombre, tipo, marca y stock actual) son solo para leer; la columna **amarilla «Cantidad»** viene vacía para que escribas, y al lado están los precios actuales (**Precio compra**, **Precio venta** y **Precio duplicado**). En la otra pestaña, «Instrucciones», está todo esto explicado.
+2. Escribe la cantidad solo en las filas que quieras cambiar (las vacías no se tocan). Corrige los precios que quieras: por ejemplo, para poner el duplicado de todas las llaves de casa a S/ 2.50, escribe `2.50` en la primera y arrastra hacia abajo. El precio de duplicado solo va en llaves. Excel no te deja escribir letras ni números negativos en esas columnas.
+3. Guárdalo (Ctrl+S) y súbelo tal cual, **sin cambiarlo a CSV**, eligiendo qué significa el número:
    - **Lo que conté (reemplaza)**: el número pasa a ser el stock. Sirve para el inventario físico.
    - **Lo que llegó (se suma)**: el número se suma al stock. Sirve cuando llega mercadería; si además quieres registrar lo que gastaste, usa **Compras** en vez de esto.
 4. Antes de guardar ves cada cambio (por ejemplo `Stock 200 → 1200` o `Duplicado S/ 2.00 → S/ 2.50`). Si hay un problema, como un código que no existe, una cantidad con decimales o un precio de duplicado en algo que no es llave, no se cambia nada hasta que lo corrijas.
@@ -133,20 +133,22 @@ Los precios se cambian tal cual, sin importar si elegiste "conté" o "llegó". C
 
 Si tienes tu inventario en Excel, el Administrador puede cargarlo todo junto con el botón **Importar**:
 
-1. Toca **Importar** y descarga la **plantilla**. Ábrela en Excel y llena una fila por producto (puedes borrar los dos ejemplos).
-2. Guárdala con **Archivo → Guardar como → CSV UTF-8** (no como libro de Excel `.xlsx`).
+1. Toca **Importar** y descarga la **plantilla de Excel**. Tiene dos pestañas: «Productos», donde llenas **una fila por producto** (el tipo se elige de una lista desplegable; las cabeceras azul oscuro son obligatorias y las azul claro, opcionales), e «Instrucciones», con cada columna explicada y ejemplos.
+2. Guárdala (Ctrl+S) y elige ese archivo tal cual: ya **no hace falta cambiarlo a CSV** (un CSV de antes también sirve).
 3. Elige ese archivo. El sistema lo **revisa primero y no guarda nada todavía**: te muestra los productos que leyó, o la lista de problemas con su número de fila (el mismo que ves en Excel).
 4. Si hay problemas, corrígelos en Excel, vuelve a guardar y elige el archivo otra vez. Cuando no hay ninguno, toca **Importar N productos**.
 
 | Columna | ¿Obligatoria? | Ejemplo |
 |---|---|---|
-| `codigo` | Sí — no puede repetirse | `KW1-001` |
-| `nombre` | Sí | `Llave virgen KW1` |
-| `tipo` | Sí | `Llave virgen`, `Llave de color`, `Llave de diseño`, `Chapa`, `Cilindro`, `Candado`, `Llavero`, `Argolla`, `Accesorio` |
-| `precio_compra`, `precio_venta` | Sí | `3.50` o `3,50` (también acepta `S/ 3.50`) |
-| `stock` | No (vacío = 0) | `50` |
-| `stock_minimo` | No (vacío = 5) | `10` |
-| `marca`, `perfil`, `color`, `diseno`, `modelo`, `tamano`, `material` | No | `Kwikset` |
+| Código | Sí — no puede repetirse | `KW1-001` |
+| Nombre | Sí | `Llave virgen KW1` |
+| Tipo | Sí | `Llave virgen`, `Llave de color`, `Llave de diseño`, `Chapa`, `Cilindro`, `Candado`, `Llavero`, `Argolla`, `Accesorio`, `Repuesto de licuadora` |
+| Precio compra, Precio venta | Sí | `3.50` o `3,50` (también acepta `S/ 3.50`) |
+| Stock inicial | No (vacío = 0) | `50` |
+| Stock mínimo | No (vacío = 5) | `10` |
+| Precio duplicado, Marca, Perfil, Color | No | `Kwikset` |
+
+Si usas un CSV, las cabeceras van sin tildes (`codigo`, `nombre`, `tipo`, `precio_compra`, `precio_venta`, `stock`, `stock_minimo`, `precio_duplicado`, `marca`, `perfil`, `color`); la plantilla de Excel ya las trae bien.
 
 Bueno saber:
 - **Es todo o nada**: si una sola fila tiene un error, no se carga ninguna, así nunca queda una carga a medias.
@@ -195,6 +197,19 @@ Desde el menú ☰, entra a **Reportes**. Elige un rango de fechas y consulta:
 - **Servicios realizados**: cuántos domicilios se hicieron y cuánto se cobró, separados por tipo de trabajo y por técnico, más las órdenes del taller recibidas, entregadas y las que siguen abiertas.
 - **Clientes que más dejaron**: un ranking que suma lo que cada cliente gastó en compras, taller y domicilio. Las ventas de mostrador sin cliente no entran, porque no se sabe de quién son.
 
+### Reportes en Excel (solo Administrador)
+
+Más abajo, **Reportes en Excel** baja cuatro libros, con las fechas elegidas arriba. Todos traen una hoja **Resumen** y tablas con **filtros**: el renglón **TOTAL** de arriba de cada tabla se recalcula con lo que dejes a la vista. Están listos para imprimir en A4 (los títulos se repiten en cada página).
+
+| Reporte | Qué trae |
+|---|---|
+| **Resumen del periodo** | Ventas (del sistema y anteriores), costo, ganancia, margen y ticket promedio; luego por día, por método de pago, productos más vendidos, por tipo y clientes |
+| **Cierre de caja** | Cada caja con su efectivo esperado, el contado y la diferencia (las que no cuadraron salen en naranja), más los ingresos y egresos puestos a mano |
+| **Compras y lista de compras** | Lo comprado, por distribuidor, y la **Lista de compras** de hoy: lo que está en el mínimo, con cuánto comprar (lo que falta para el doble del mínimo). Cambia la columna amarilla **A comprar** y el costo se recalcula; marca ✓ lo que ya conseguiste |
+| **Taller y domicilio** | Órdenes con su saldo (las **listas para recoger con saldo por cobrar** salen en naranja), servicios a domicilio y los cobros por técnico |
+
+Detalles útiles: el **costo** y la **ganancia** usan el precio de compra de hoy de cada producto (son aproximados); las ventas **anuladas** no cuentan; lo que cobras por Yape, Plin o tarjeta no entra en el efectivo del cajón.
+
 ### Datos para Power BI (solo Administrador)
 
 Abajo en **Reportes**, **Descargar Excel** baja un archivo con las fechas elegidas arriba: ventas, cobros, taller, domicilio, productos, kárdex, compras y cajas, cada uno en su hoja. Sirve para armar tableros en Power BI; los pasos y fórmulas están en `POWER_BI.md`.
@@ -202,7 +217,7 @@ Abajo en **Reportes**, **Descargar Excel** baja un archivo con las fechas elegid
 **Ventas de antes del sistema.** Si tienes ventas anotadas de antes (cuaderno o Excel), súbelas en la misma pantalla para que el historial empiece antes:
 
 1. **Descarga la plantilla** o usa tu Excel con las columnas `fecha`, `producto`, `cantidad` y `precio` (o `total`). `codigo` y `metodo_pago` son opcionales: si el código o el nombre coincide con un producto del inventario, se enlaza (sale con ✓).
-2. Guárdalo como CSV y elígelo. Primero ves lo que se entendió; nada se guarda hasta tocar **Cargar**. Si una fila tiene un error, no se carga nada y te dice cuál es.
+2. Guárdalo (como Excel `.xlsx` o como CSV) y elígelo. Primero ves lo que se entendió; nada se guarda hasta tocar **Cargar**. Si una fila tiene un error, no se carga nada y te dice cuál es.
 
 Estas ventas quedan **aparte**: no cambian la caja ni el stock (ese dinero y esa mercadería ya se contaron al empezar). Si te equivocaste, **Borrar las ventas anteriores** y súbelas de nuevo.
 

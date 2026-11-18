@@ -42,6 +42,10 @@ public class ProductoController {
     private final ProductoService productoService;
     private final ImportacionProductosService importacionProductosService;
     private final PlanillaStockService planillaStockService;
+    private final PlantillasInventarioService plantillasInventarioService;
+
+    private static final MediaType XLSX =
+        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -52,16 +56,33 @@ public class ProductoController {
 
     @PostMapping(value = "/importar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Importar productos nuevos desde un CSV (revisar con confirmar=false, crear con true)")
+    @Operation(summary = "Importar productos nuevos desde un CSV o un .xlsx (revisar con confirmar=false, crear con true)")
     public ResponseEntity<ImportacionResultado> importar(
             @RequestParam("archivo") MultipartFile archivo,
             @RequestParam(defaultValue = "false") boolean confirmar) throws IOException {
         return ResponseEntity.ok(importacionProductosService.importar(archivo.getBytes(), confirmar));
     }
 
+    @GetMapping("/plantilla-importacion")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Plantilla de Excel (.xlsx) para cargar productos nuevos, con lista de tipos e instrucciones")
+    public ResponseEntity<byte[]> plantillaImportacion() {
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"plantilla-productos.xlsx\"")
+            .contentType(XLSX)
+            .body(plantillasInventarioService.plantillaImportacion());
+    }
+
     @GetMapping("/planilla")
-    @Operation(summary = "Descargar el inventario como planilla CSV para Excel, con la columna cantidad vacía")
-    public ResponseEntity<byte[]> descargarPlanilla() {
+    @Operation(summary = "Descargar el inventario como planilla para Excel, con la columna cantidad vacía (formato xlsx o csv)")
+    public ResponseEntity<byte[]> descargarPlanilla(@RequestParam(defaultValue = "csv") String formato) {
+        if ("xlsx".equalsIgnoreCase(formato)) {
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=\"inventario-" + java.time.LocalDate.now() + ".xlsx\"")
+                .contentType(XLSX)
+                .body(plantillasInventarioService.planillaCantidades());
+        }
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=\"inventario-" + java.time.LocalDate.now() + ".csv\"")
@@ -71,7 +92,7 @@ public class ProductoController {
 
     @PostMapping(value = "/planilla", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Actualizar stock y precios desde la planilla: en la cantidad CONTEO reemplaza, ENTRADA suma (revisar con confirmar=false)")
+    @Operation(summary = "Actualizar stock y precios desde la planilla (CSV o .xlsx): en la cantidad CONTEO reemplaza, ENTRADA suma (revisar con confirmar=false)")
     public ResponseEntity<ResultadoPlanilla> subirPlanilla(
             @RequestParam("archivo") MultipartFile archivo,
             @RequestParam PlanillaStockService.Modo modo,

@@ -40,12 +40,11 @@
             <artifactId>fastexcel</artifactId>
             <version>0.20.2</version>
         </dependency>
-        <!-- Solo en tests: leer el Excel generado como lo haria cualquier cliente -->
+        <!-- Leer .xlsx (importar inventario, planilla de cantidades, ventas anteriores); Apache-2.0, mismo proyecto -->
         <dependency>
             <groupId>org.dhatim</groupId>
             <artifactId>fastexcel-reader</artifactId>
             <version>0.20.2</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>

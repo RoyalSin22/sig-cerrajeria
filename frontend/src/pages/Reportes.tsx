@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
-import { BarChart3, Download, Upload } from 'lucide-react'
+import { BarChart3, Download, FileSpreadsheet, Upload } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { reportesApi } from '../api/reportes'
 import { analisisApi } from '../api/analisis'
@@ -13,7 +13,8 @@ import type {
   ReporteVentasResponse, ProductoMasVendidoResponse, ReporteInventarioResponse,
   ReporteServiciosResponse, ReporteClientesResponse, GrupoServicios,
 } from '../types/reportes'
-import type { ResultadoVentasAnteriores, ResumenVentasAnteriores } from '../types/analisis'
+import type { ReporteExcel, ResultadoVentasAnteriores, ResumenVentasAnteriores } from '../types/analisis'
+import { descargarArchivo } from '../utils/descarga'
 
 // Okabe-Ito: colores que se distinguen entre si con los daltonismos comunes
 const COLORES = ['#0072B2', '#E69F00', '#009E73', '#CC79A7', '#56B4E9', '#D55E00']
@@ -209,6 +210,7 @@ export function Reportes() {
       )}
 
       {/* Para el dueño: los datos completos del negocio, para armar tableros en Power BI */}
+      {esAdmin && <ReportesExcel desde={desde} hasta={hasta} />}
       {esAdmin && <DatosPowerBi desde={desde} hasta={hasta} />}
       {esAdmin && <VentasAnteriores />}
     </div>
@@ -238,13 +240,56 @@ function TablaGrupos({ titulo, grupos }: { titulo: string; grupos: GrupoServicio
   )
 }
 
-function descargarBlob(blob: Blob, nombre: string) {
-  const url = URL.createObjectURL(blob)
-  const enlace = document.createElement('a')
-  enlace.href = url
-  enlace.download = nombre
-  enlace.click()
-  URL.revokeObjectURL(url)
+const REPORTES_EXCEL: { clave: ReporteExcel; titulo: string; detalle: string }[] = [
+  { clave: 'resumen', titulo: 'Resumen del periodo', detalle: 'Ventas, ganancia, métodos de pago, productos y clientes' },
+  { clave: 'caja', titulo: 'Cierre de caja', detalle: 'Cada caja: ingresos, egresos, Yape/Plin y diferencias' },
+  { clave: 'compras', titulo: 'Compras y lista de compras', detalle: 'Lo comprado y lo que falta, lista para llevar al distribuidor' },
+  { clave: 'taller', titulo: 'Taller y domicilio', detalle: 'Órdenes, saldos por cobrar y servicios por técnico' },
+]
+
+/** Cuatro reportes en Excel, listos para filtrar, calcular encima o imprimir en A4. */
+function ReportesExcel({ desde, hasta }: { desde: string; hasta: string }) {
+  const [bajando, setBajando] = useState<ReporteExcel | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  async function descargar(reporte: ReporteExcel) {
+    setError(null)
+    setBajando(reporte)
+    try {
+      descargarArchivo(await analisisApi.reporteExcel(reporte, desde, hasta), `${reporte}_${desde}_a_${hasta}.xlsx`)
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    } finally {
+      setBajando(null)
+    }
+  }
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <span className="flex items-center gap-2 text-lg font-semibold">
+        <FileSpreadsheet size={22} aria-hidden /> Reportes en Excel
+      </span>
+      <p className="text-sm text-sub">
+        Del {formatearFecha(desde)} al {formatearFecha(hasta)} (las fechas de arriba). Traen filtros, totales que se
+        recalculan y están listos para imprimir en A4.
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {REPORTES_EXCEL.map((r) => (
+          <button
+            key={r.clave}
+            type="button"
+            onClick={() => descargar(r.clave)}
+            disabled={bajando !== null}
+            className="flex min-h-16 flex-col items-start justify-center gap-0.5 rounded-lg border-2 border-line bg-card px-4 py-2 text-left hover:bg-hair disabled:opacity-60"
+          >
+            <span className="font-semibold">{bajando === r.clave ? 'Preparando…' : r.titulo}</span>
+            <span className="text-sm text-sub">{r.detalle}</span>
+          </button>
+        ))}
+      </div>
+      {error && <p className="text-sm font-semibold text-danger">{error}</p>}
+    </Card>
+  )
 }
 
 /** Un Excel con una tabla por tema; siempre con el mismo nombre para reemplazarlo en Power BI. */
@@ -256,7 +301,7 @@ function DatosPowerBi({ desde, hasta }: { desde: string; hasta: string }) {
     setError(null)
     setDescargando(true)
     try {
-      descargarBlob(await analisisApi.powerBi(desde, hasta), 'cerrajeria-datos.xlsx')
+      descargarArchivo(await analisisApi.powerBi(desde, hasta), 'cerrajeria-datos.xlsx')
     } catch (err) {
       setError(extraerMensajeError(err))
     } finally {
@@ -376,17 +421,17 @@ function VentasAnteriores() {
       <ol className="list-decimal space-y-1 pl-5 text-sm text-sub">
         <li>
           <button type="button" className="text-steel underline"
-            onClick={() => descargarBlob(new Blob([PLANTILLA_VENTAS], { type: 'text/csv' }), 'ventas-anteriores.csv')}>
+            onClick={() => descargarArchivo(new Blob([PLANTILLA_VENTAS], { type: 'text/csv' }), 'ventas-anteriores.csv')}>
             Descarga la plantilla
           </button>{' '}
           o usa tu Excel con las columnas <b>fecha</b>, <b>producto</b>, <b>cantidad</b> y <b>precio</b> (o <b>total</b>);
           <b> codigo</b> y <b>metodo_pago</b> son opcionales.
         </li>
-        <li>Guárdalo como CSV y elígelo: primero ves lo que se entendió y nada se guarda hasta que confirmes.</li>
+        <li>Guárdalo (como Excel .xlsx o como CSV) y elígelo: primero ves lo que se entendió y nada se guarda hasta que confirmes.</li>
       </ol>
       <label className="inline-flex min-h-12 cursor-pointer items-center gap-2 self-start rounded-lg border-2 border-line bg-card px-4 font-semibold hover:bg-hair">
         <Upload size={20} aria-hidden /> {trabajando ? 'Revisando…' : 'Elegir archivo'}
-        <input type="file" accept=".csv,text/csv" className="sr-only" onChange={elegirArchivo} disabled={trabajando} />
+        <input type="file" accept=".xlsx,.csv,text/csv" className="sr-only" onChange={elegirArchivo} disabled={trabajando} />
       </label>
 
       {revision && (

@@ -43,9 +43,12 @@ export const productosApi = {
       .post<ImportacionResultado>('/productos/importar', formData, { params: { confirmar } })
       .then(r => r.data)
   },
-  /** Todo el inventario como CSV para Excel, con la columna "cantidad" vacia. */
+  /** Todo el inventario en Excel, con la columna "cantidad" vacia y resaltada para escribir. */
   descargarPlanilla: () =>
-    axiosClient.get<Blob>('/productos/planilla', { responseType: 'blob' }).then(r => r.data),
+    axiosClient.get<Blob>('/productos/planilla', { params: { formato: 'xlsx' }, responseType: 'blob' }).then(r => r.data),
+  /** Plantilla de Excel para cargar productos nuevos: lista de tipos, validaciones e instrucciones. */
+  descargarPlantillaImportacion: () =>
+    axiosClient.get<Blob>('/productos/plantilla-importacion', { responseType: 'blob' }).then(r => r.data),
   /** CONTEO reemplaza el stock, ENTRADA lo suma. Con confirmar=false solo revisa. */
   subirPlanilla: (archivo: File, modo: ModoPlanilla, confirmar: boolean) => {
     const formData = new FormData()

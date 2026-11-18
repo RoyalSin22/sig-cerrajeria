@@ -86,7 +86,6 @@ public class VentasAnterioresService {
         if (archivo == null || archivo.length == 0) {
             throw new IllegalArgumentException("El archivo está vacío");
         }
-        LectorCsv.rechazarLibroExcel(archivo);
         List<List<String>> registros = LectorCsv.leer(archivo);
 
         int cabecera = 0;

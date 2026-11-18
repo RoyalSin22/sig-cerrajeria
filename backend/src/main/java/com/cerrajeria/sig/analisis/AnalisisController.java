@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -35,6 +36,7 @@ public class AnalisisController {
 
     private final ExportacionPowerBiService exportacionPowerBiService;
     private final VentasAnterioresService ventasAnterioresService;
+    private final ReportesExcelService reportesExcelService;
 
     @GetMapping("/power-bi")
     @Operation(summary = "Excel con una tabla por tema (ventas, cobros, taller, domicilio, productos, kárdex, compras, cajas)")
@@ -46,6 +48,20 @@ public class AnalisisController {
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"cerrajeria-datos.xlsx\"")
             .contentType(XLSX)
             .body(exportacionPowerBiService.exportar(desde, hasta));
+    }
+
+    @GetMapping("/reportes/{reporte}")
+    @Operation(summary = "Reporte en Excel con tablas y filtros: resumen, caja, compras o taller (del periodo desde–hasta)")
+    public ResponseEntity<byte[]> reporteExcel(
+            @PathVariable String reporte,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        ReportesExcelService.Reporte tipo = ReportesExcelService.Reporte.de(reporte);
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"" + tipo.archivo() + "_" + desde + "_a_" + hasta + ".xlsx\"")
+            .contentType(XLSX)
+            .body(reportesExcelService.generar(tipo, desde, hasta));
     }
 
     @GetMapping("/ventas-anteriores")

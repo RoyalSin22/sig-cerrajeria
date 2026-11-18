@@ -1,5 +1,6 @@
 package com.cerrajeria.sig.analisis;
 
+import com.cerrajeria.sig.common.excel.LibroXlsx;
 import lombok.RequiredArgsConstructor;
 import org.dhatim.fastexcel.Workbook;
 import org.dhatim.fastexcel.Worksheet;
@@ -78,7 +79,7 @@ public class ExportacionPowerBiService {
         } catch (IOException ex) {
             throw new UncheckedIOException("No se pudo armar el Excel", ex);
         }
-        return salida.toByteArray();
+        return LibroXlsx.normalizar(salida.toByteArray());
     }
 
     /** Una fila por linea vendida: del sistema y, aparte, las ventas anteriores cargadas desde archivo. */
@@ -336,7 +337,7 @@ public class ExportacionPowerBiService {
         }
     }
 
-    private static void escribir(Worksheet hoja, int r, int c, Col col, ResultSet rs) throws SQLException {
+    static void escribir(Worksheet hoja, int r, int c, Col col, ResultSet rs) throws SQLException {
         Object valor = rs.getObject(col.columna());
         if (valor == null) {
             return;

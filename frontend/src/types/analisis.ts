@@ -28,3 +28,6 @@ export interface ResultadoVentasAnteriores {
   errores: { fila: number; mensaje: string }[]
   columnasIgnoradas: string[]
 }
+
+/** Los cuatro reportes que se bajan en Excel (Reportes → Reportes en Excel). */
+export type ReporteExcel = 'resumen' | 'caja' | 'compras' | 'taller'

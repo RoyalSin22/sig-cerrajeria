@@ -272,6 +272,7 @@ const rutas: [string, RegExp, Manejador][] = [
   ['PUT', /^\/productos\/(\d+)$/, (m, b) => Object.assign(producto_(Number(m[1])), b)],
   ['DELETE', /^\/productos\/(\d+)$/, (m) => { producto_(Number(m[1])).activo = false; return '' }],
   ['GET', /^\/productos\/planilla$/, () => fallar('En la demo no se descargan archivos', 400)],
+  ['GET', /^\/productos\/plantilla-importacion$/, () => fallar('En la demo no se descargan archivos', 400)],
 
   // Ventas
   ['POST', /^\/ventas$/, (_m, b) => {
@@ -435,6 +436,7 @@ const rutas: [string, RegExp, Manejador][] = [
   ]],
   // Power BI y ventas anteriores: en la demo no hay base de datos de verdad que exportar
   ['GET', /^\/analisis\/ventas-anteriores$/, () => ({ filas: 0, total: 0, desde: null, hasta: null })],
+  ['GET', /^\/analisis\/reportes\/\w+$/, () => fallar('En la demostración no se descargan los reportes: con el sistema instalado sí.')],
   ['GET', /^\/analisis\/power-bi$/, () => fallar('En la demostración no se descarga el Excel: con el sistema instalado sí.')],
   ['POST', /^\/analisis\/ventas-anteriores$/, () => fallar('En la demostración no se cargan archivos: con el sistema instalado sí.')],
   ['GET', /^\/reportes\/inventario$/, () => {

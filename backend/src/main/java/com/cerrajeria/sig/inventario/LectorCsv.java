@@ -26,16 +26,19 @@ public final class LectorCsv {
     private LectorCsv() {
     }
 
-    /** .xlsx/.ods son ZIP: se reconocen por la firma "PK" del inicio. */
-    public static void rechazarLibroExcel(byte[] archivo) {
-        if (archivo.length >= 2 && archivo[0] == 'P' && archivo[1] == 'K') {
-            throw new IllegalArgumentException(
-                "Es un libro de Excel, no un CSV. En Excel usa Archivo → Guardar como → \"CSV UTF-8\" y sube ese archivo.");
-        }
+    /** .xlsx es un ZIP: se reconoce por la firma "PK" del inicio. */
+    static boolean esLibroExcel(byte[] archivo) {
+        return archivo.length >= 2 && archivo[0] == 'P' && archivo[1] == 'K';
     }
 
-    /** Cada registro es una lista de celdas, sin la linea "sep=" si existia. */
+    /**
+     * Cada registro es una lista de celdas. Acepta un CSV (sin la linea "sep="
+     * si existia) o un libro de Excel .xlsx, del que lee la hoja de datos.
+     */
     public static List<List<String>> leer(byte[] bytes) {
+        if (esLibroExcel(bytes)) {
+            return LectorExcel.leer(bytes);
+        }
         String texto = decodificar(bytes);
         char separador;
         int inicio = 0;

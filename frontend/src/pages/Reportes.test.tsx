@@ -23,6 +23,7 @@ vi.mock('../api/reportes', () => ({
 vi.mock('../api/analisis', () => ({
   analisisApi: {
     powerBi: vi.fn(async () => new Blob(['x'])),
+    reporteExcel: vi.fn(async () => new Blob(['x'])),
     resumenVentasAnteriores: vi.fn(async () => ({ filas: 0, total: 0, desde: null, hasta: null })),
     cargarVentasAnteriores: vi.fn(async (_archivo: File, confirmar: boolean) => ({
       filasLeidas: 2, cargadas: confirmar ? 2 : 0, enlazadas: 1, total: 55, desde: '2025-03-15', hasta: '2025-03-16',
@@ -54,11 +55,24 @@ describe('Reportes: Power BI y ventas anteriores', () => {
     expect(await screen.findByText(/se cargaron 2 ventas/)).toBeTruthy()
   })
 
+  it('cada reporte en Excel se baja con las fechas elegidas', async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:x') // jsdom no lo trae
+    URL.revokeObjectURL = vi.fn()
+    render(<Reportes />)
+    for (const [boton, clave] of [['Resumen del periodo', 'resumen'], ['Cierre de caja', 'caja'],
+      ['Compras y lista de compras', 'compras'], ['Taller y domicilio', 'taller']] as const) {
+      fireEvent.click(await screen.findByRole('button', { name: new RegExp(boton) }))
+      await waitFor(() => expect(analisisApi.reporteExcel).toHaveBeenLastCalledWith(clave, expect.any(String), expect.any(String)))
+    }
+    expect(analisisApi.reporteExcel).toHaveBeenCalledTimes(4)
+  })
+
   it('el empleado no ve los datos del negocio', async () => {
     usuario.actual = { nombre: 'Pedro', role: 'ROLE_EMPLOYEE' }
     render(<Reportes />)
     await screen.findByRole('heading', { name: 'Reportes' })
     expect(screen.queryByRole('button', { name: /Descargar Excel/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Cierre de caja/ })).toBeNull()
     expect(screen.queryByText(/Ventas de antes del sistema/)).toBeNull()
   })
 })

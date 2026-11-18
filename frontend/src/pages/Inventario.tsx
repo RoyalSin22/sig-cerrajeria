@@ -15,6 +15,8 @@ import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { useToast } from '../context/useToast'
 import { useAuth } from '../context/useAuth'
 import { formatearSoles, formatearFechaHora, urlImagen } from '../utils/format'
+import { hoyISO } from '../utils/fecha'
+import { descargarArchivo } from '../utils/descarga'
 import {
   ETIQUETA_TIPO_PRODUCTO, esLlave, type ProductoResponse, type MovimientoInventarioResponse,
   type ProductoCreateRequest, type TipoProducto, type ImportacionResultado,
@@ -622,28 +624,6 @@ function FormularioProducto({
   )
 }
 
-/**
- * Plantilla para Excel: "sep=;" hace que Excel la abra en columnas sin
- * importar la configuracion regional de la PC. Sin tildes a proposito: sin BOM
- * Excel la lee como ANSI, y con BOM ignoraria la linea "sep=". Precios enteros
- * en el ejemplo: "1.20" en una PC con coma decimal Excel lo toma como fecha.
- */
-const PLANTILLA_CSV = [
-  'sep=;',
-  'codigo;nombre;tipo;marca;stock;stock_minimo;precio_compra;precio_venta;precio_duplicado',
-  'KW1-001;Llave virgen KW1;Llave virgen;Kwikset;50;10;1;2;3',
-  'CAN-40;Candado 40 mm;Candado;Forte;6;2;18;30;',
-].join('\r\n') + '\r\n'
-
-function descargarPlantilla() {
-  const url = URL.createObjectURL(new Blob([PLANTILLA_CSV], { type: 'text/csv' }))
-  const enlace = document.createElement('a')
-  enlace.href = url
-  enlace.download = 'plantilla-inventario.csv'
-  enlace.click()
-  URL.revokeObjectURL(url)
-}
-
 function ImportarInventario({
   abierto, onCerrar, onImportado,
 }: { abierto: boolean; onCerrar: () => void; onImportado: (creados: number) => void }) {
@@ -651,6 +631,15 @@ function ImportarInventario({
   const [revision, setRevision] = useState<ImportacionResultado | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [trabajando, setTrabajando] = useState(false)
+
+  async function descargarPlantilla() {
+    setError(null)
+    try {
+      descargarArchivo(await productosApi.descargarPlantillaImportacion(), 'plantilla-productos.xlsx')
+    } catch (err) {
+      setError(extraerMensajeError(err))
+    }
+  }
 
   function cerrar() {
     setArchivo(null)
@@ -704,10 +693,10 @@ function ImportarInventario({
         <ol className="list-decimal space-y-1 pl-5 text-sub">
           <li>
             Descarga la{' '}
-            <button type="button" onClick={descargarPlantilla} className="text-steel underline">plantilla</button>{' '}
-            y llénala en Excel (una fila por producto).
+            <button type="button" onClick={descargarPlantilla} className="text-steel underline">plantilla de Excel</button>{' '}
+            y llénala (una fila por producto; el tipo se elige de una lista). Trae las instrucciones en la otra pestaña.
           </li>
-          <li>Guárdala con <b>Archivo → Guardar como → CSV UTF-8</b>.</li>
+          <li>Guárdala (Ctrl+S) y elige el archivo, tal cual: no hace falta cambiarlo a CSV.</li>
           <li>Elige el archivo: primero se revisa, y nada se guarda hasta que confirmes.</li>
         </ol>
         <p className="text-xs text-sub">
@@ -718,9 +707,9 @@ function ImportarInventario({
 
         <label className="cursor-pointer self-start">
           <span className="inline-flex min-h-11 items-center rounded-md border border-line px-4 py-2.5 font-medium hover:bg-hair">
-            {trabajando && !revision ? 'Revisando…' : archivo ? 'Elegir otro archivo' : 'Elegir archivo CSV'}
+            {trabajando && !revision ? 'Revisando…' : archivo ? 'Elegir otro archivo' : 'Elegir archivo'}
           </span>
-          <input type="file" accept=".csv,text/csv" className="hidden" disabled={trabajando} onChange={elegirArchivo} />
+          <input type="file" accept=".xlsx,.csv,text/csv" className="hidden" disabled={trabajando} onChange={elegirArchivo} />
         </label>
         {archivo && <p className="text-xs text-sub">{archivo.name}</p>}
 
@@ -810,13 +799,7 @@ function PlanillaCantidades({
   async function descargar() {
     setError(null)
     try {
-      const blob = await productosApi.descargarPlanilla()
-      const url = URL.createObjectURL(blob)
-      const enlace = document.createElement('a')
-      enlace.href = url
-      enlace.download = 'inventario.csv'
-      enlace.click()
-      URL.revokeObjectURL(url)
+      descargarArchivo(await productosApi.descargarPlanilla(), `inventario-${hoyISO()}.xlsx`)
     } catch (err) {
       setError(extraerMensajeError(err))
     }
@@ -875,14 +858,14 @@ function PlanillaCantidades({
       <div className="flex flex-col gap-4 text-sm">
         <ol className="list-decimal space-y-1 pl-5 text-sub">
           <li>
-            <button type="button" onClick={descargar} className="text-steel underline">Descarga el inventario</button>{' '}
-            y ábrelo en Excel.
+            <button type="button" onClick={descargar} className="text-steel underline">Descarga el inventario en Excel</button>{' '}
+            y ábrelo.
           </li>
           <li>
-            Escribe en <b>cantidad</b> solo lo que quieras cambiar (las vacías no se tocan) y corrige los precios
-            que quieras en <b>precio_compra</b>, <b>precio_venta</b> o <b>precio_duplicado</b> (solo llaves).
+            Escribe en la columna amarilla <b>Cantidad</b> solo lo que quieras cambiar (las vacías no se tocan) y corrige los
+            precios que quieras en <b>Precio compra</b>, <b>Precio venta</b> o <b>Precio duplicado</b> (solo llaves).
           </li>
-          <li>Guarda (Ctrl+S, como CSV) y elige el archivo: primero ves los cambios y nada se guarda hasta que confirmes.</li>
+          <li>Guarda (Ctrl+S) y elige el archivo, tal cual, sin cambiarlo a CSV: primero ves los cambios y nada se guarda hasta que confirmes.</li>
         </ol>
 
         <div className="flex flex-col gap-1">
@@ -900,9 +883,9 @@ function PlanillaCantidades({
 
         <label className="cursor-pointer self-start">
           <span className="inline-flex min-h-11 items-center rounded-md border border-line px-4 py-2.5 font-medium hover:bg-hair">
-            {trabajando && !revision ? 'Revisando…' : archivo ? 'Elegir otro archivo' : 'Elegir archivo CSV'}
+            {trabajando && !revision ? 'Revisando…' : archivo ? 'Elegir otro archivo' : 'Elegir archivo'}
           </span>
-          <input type="file" accept=".csv,text/csv" className="hidden" disabled={trabajando} onChange={elegirArchivo} />
+          <input type="file" accept=".xlsx,.csv,text/csv" className="hidden" disabled={trabajando} onChange={elegirArchivo} />
         </label>
         {archivo && <p className="text-xs text-sub">{archivo.name}</p>}
 
