@@ -167,7 +167,7 @@ public class ReportesExcelService {
         int filaAnteriores = kpi(h, f++, "Ventas anteriores", v[1], EstiloExcel.SOLES, "Cargadas desde archivo (antes del sistema).");
         int filaTotal = kpiFormula(h, f++, "Ventas totales", "B" + filaVentasSistema + "+B" + filaAnteriores, EstiloExcel.SOLES, "");
         int filaCosto = kpi(h, f++, "Costo de lo vendido (aprox.)", v[2], EstiloExcel.SOLES,
-            "Con el precio de compra de hoy de cada producto; los servicios no tienen costo.");
+            "Con el precio de compra de hoy; un servicio no tiene costo.");
         int filaGanancia = kpiFormula(h, f++, "Ganancia aprox.", "B" + filaTotal + "-B" + filaCosto, EstiloExcel.SOLES, "");
         kpiFormula(h, f++, "Margen", "IF(B" + filaTotal + "=0,0,B" + filaGanancia + "/B" + filaTotal + ")", "0%", "");
         int filaTickets = kpi(h, f++, "Ventas realizadas (tickets)", v[3], EstiloExcel.ENTERO, "Solo las del sistema: las anteriores no se cuentan por ticket.");
