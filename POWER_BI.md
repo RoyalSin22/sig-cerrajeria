@@ -1,111 +1,251 @@
-# Tablero en Power BI
+# Tablero en Power BI, paso a paso
 
-El sistema entrega un Excel con todos los datos del negocio para armar tableros en Power BI Desktop. No hace falta conectarse a la base de datos: se descarga el archivo y se carga.
+Cuatro páginas, una por pregunta: **¿Cuánto vendo y gano?**, **¿Qué se vende más?**, **¿Cuándo hay más gente?** y **¿Qué falta comprar?** En [`powerbi/maquetas/`](powerbi/maquetas/) está cómo debe quedar cada una, hecha con datos ficticios. Los menús están en español (Power BI Desktop en español). Se arma en una hora, más o menos.
 
-## 1. Descargar los datos
+Archivos que se usan:
+- `cerrajeria-datos.xlsx`: el que descarga el sistema (**Reportes → Descargar Excel**, solo Administrador). Para practicar sirve `cerrajeria-datos-FICTICIOS.xlsx`, que tiene las mismas hojas y columnas.
+- [`powerbi/tema-cerrajeria.json`](powerbi/tema-cerrajeria.json): colores que se distinguen con daltonismo y letra más grande.
 
-En **Reportes** (solo el Administrador), elige las fechas arriba y toca **Descargar Excel**. El archivo se llama siempre `cerrajeria-datos.xlsx`.
+> **Guarda el Excel siempre en la misma carpeta y con el mismo nombre.** Para actualizar el tablero solo se reemplaza el archivo y se pulsa **Actualizar**. Para pasar de los datos ficticios a los reales, renombra el real como el ficticio, o cambia el origen en **Transformar datos → Configuración de origen de datos → Cambiar origen**.
 
-Para el historial de antes del sistema, en la misma pantalla está **Ventas de antes del sistema**: sube un CSV con `fecha`, `producto`, `cantidad` y `precio` (o `total`); `codigo` y `metodo_pago` son opcionales. Esas ventas quedan aparte: no tocan la caja ni el stock.
+---
 
-## 2. Cargar en Power BI
+## Paso 0 — Antes de cargar nada (1 minuto)
 
-1. **Obtener datos → Libro de Excel** → elige `cerrajeria-datos.xlsx`.
-2. Marca las **hojas** (ícono de hoja, no el de tabla): una hoja sin datos igual existe, así actualizar nunca falla.
-3. **Cargar**. Power BI reconoce solo las fechas y los montos. Si alguna columna `Fecha` aparece con hora (`0:00`), en **Transformar datos** cámbiale el tipo a **Fecha**: la relación con el calendario lo necesita.
+**Archivo → Opciones y configuración → Opciones → Archivo actual → Carga de datos**: desmarca **Detectar automáticamente nuevas relaciones después de cargar los datos**. Si no, Power BI une solas hojas que no deben unirse (por ejemplo, Ventas con Kárdex por el código) y los números salen mal.
 
-Para actualizar: descarga de nuevo, guarda encima del archivo anterior (mismo nombre y carpeta) y pulsa **Actualizar** en Power BI.
+Aplica el tema: **Vista → Temas → Examinar temas** → `tema-cerrajeria.json`.
 
-## 3. Qué trae cada hoja
+## Paso 1 — Cargar el Excel
 
-| Hoja | Una fila por… | Para qué sirve |
-|---|---|---|
-| **Ventas** | línea vendida (y cada venta anterior cargada) | Qué se vende, cuándo, duplicado vs. llave sola vs. servicio |
-| **Cobros** | pago recibido (una venta mixta, en varias filas) | Dinero por método de pago: efectivo, Yape, Plin, tarjeta |
-| **Taller** | orden de trabajo | Trabajos, saldo pendiente, días en el taller, garantías |
-| **Domicilio** | servicio a domicilio | Servicios por tipo y por técnico |
-| **Productos** | producto (catálogo de hoy) | Stock, stock bajo, valor del inventario |
-| **Kardex** | movimiento de stock | Entradas, salidas y ajustes |
-| **Compras** | compra a un distribuidor | Gasto en mercadería |
-| **Cajas** | caja abierta | Cierres y diferencias |
-| **MovimientosCaja** | ingreso o egreso puesto a mano | Gastos y entradas que no son ventas |
+1. **Inicio → Obtener datos → Libro de Excel** → elige el archivo.
+2. En el Navegador marca las **hojas** (ícono de hoja, no el de tabla): Ventas, Cobros, Taller, Domicilio, Productos, Kardex, Compras, Cajas y MovimientosCaja. Una hoja sin datos igual existe, así actualizar nunca falla.
+3. Pulsa **Transformar datos**, no "Cargar".
 
-Cosas a tener en cuenta:
-- **Ventas → Origen**: `Sistema` o `Anterior` (cargada desde archivo, sin hora ni vendedor).
-- **Ventas → Anulada** y **Cobros → Anulada**: las ventas anuladas siguen en el archivo; fíltralas (`Anulada = "No"`).
-- **Ventas → Costo unitario** es el precio de compra **actual** del producto, no el de la fecha de la venta. Los servicios no tienen costo.
-- **Cobros → Monto** negativo: devolución de un adelanto del taller.
-- **Ventas → Hora** es la hora del día (0 a 23), para ver las horas de más venta.
+## Paso 2 — Que las fechas sean fechas (Power Query)
 
-## 4. Modelo (relaciones)
+Excel guarda las fechas con hora (00:00), y la relación con el calendario necesita fecha sola. En cada consulta de la izquierda, selecciona la columna, luego **Transformar → Tipo de datos → Fecha**:
 
-Crea una tabla de fechas (**Modelado → Nueva tabla**):
+| Consulta | Columnas |
+|---|---|
+| Ventas, Cobros, Kardex, Compras, Cajas, Domicilio, MovimientosCaja | `Fecha` |
+| Taller | `Fecha ingreso` y `Fecha entrega` |
+
+Si pregunta **"¿Reemplazar paso actual?"**, elige **Reemplazar actual**. Revisa también que `Hora` y `Cantidad` sean **Número entero** y los montos **Número decimal**: normalmente ya vienen así.
+
+**Inicio → Cerrar y aplicar.**
+
+## Paso 3 — Tabla de calendario
+
+**Modelado → Nueva tabla** y pega:
 
 ```DAX
 Calendario =
-ADDCOLUMNS (
-    CALENDAR ( DATE ( 2024, 1, 1 ), TODAY () ),
-    "Año", YEAR ( [Date] ),
-    "Mes", FORMAT ( [Date], "mmm yyyy" ),
-    "MesNumero", YEAR ( [Date] ) * 100 + MONTH ( [Date] ),
-    "Día de la semana", FORMAT ( [Date], "dddd" ),
-    "DíaNumero", WEEKDAY ( [Date], 2 )
-)
+VAR Inicio = MIN ( Ventas[Fecha] )
+VAR Fin = MAX ( Ventas[Fecha] )
+RETURN
+    ADDCOLUMNS (
+        CALENDAR ( Inicio, Fin ),
+        "Año", YEAR ( [Date] ),
+        "Mes", FORMAT ( [Date], "mmm yyyy" ),
+        "MesNumero", YEAR ( [Date] ) * 100 + MONTH ( [Date] ),
+        "Día de la semana", FORMAT ( [Date], "dddd" ),
+        "DíaNumero", WEEKDAY ( [Date], 2 )
+    )
 ```
 
-Ordena `Mes` por `MesNumero` y `Día de la semana` por `DíaNumero` (**Ordenar por columna**).
+Después:
+- En la vista de **Datos**, selecciona la columna `Mes` → **Herramientas de columna → Ordenar por columna → MesNumero**. Igual con `Día de la semana` → **DíaNumero**. Si no, los meses salen en orden alfabético.
+- **Herramientas de tabla → Marcar como tabla de fechas** → columna `Date`.
 
-Relaciones (una a varias, de la izquierda a la derecha):
+> Si alguna fórmula da error de sintaxis, tu Power BI usa `;` en vez de `,` entre argumentos. Cámbialo en **Archivo → Opciones → Configuración regional → Separadores de DAX**, o reemplaza `,` por `;` en las fórmulas.
 
-| De | A |
+## Paso 4 — Relaciones (vista de modelo)
+
+Abre la **Vista de modelo** (ícono de las tres cajitas, a la izquierda). Arrastra de la columna de la izquierda a la de la derecha. Todas son **de uno a varios (1:*)**, con dirección de filtro **Única**:
+
+| Desde | Hacia |
 |---|---|
-| `Calendario[Date]` | `Ventas[Fecha]`, `Cobros[Fecha]`, `Kardex[Fecha]`, `Compras[Fecha]`, `Cajas[Fecha]`, `Domicilio[Fecha]`, `MovimientosCaja[Fecha]` |
+| `Calendario[Date]` | `Ventas[Fecha]` |
+| `Calendario[Date]` | `Cobros[Fecha]` |
+| `Calendario[Date]` | `Compras[Fecha]` |
+| `Calendario[Date]` | `Kardex[Fecha]` |
+| `Calendario[Date]` | `Cajas[Fecha]` |
+| `Calendario[Date]` | `Domicilio[Fecha]` |
+| `Calendario[Date]` | `MovimientosCaja[Fecha]` |
 | `Calendario[Date]` | `Taller[Fecha ingreso]` |
-| `Productos[Código]` | `Ventas[Código]`, `Kardex[Código]`, `Compras[Código]` |
+| `Productos[Código]` | `Ventas[Código]` |
+| `Productos[Código]` | `Compras[Código]` |
+| `Productos[Código]` | `Kardex[Código]` |
 
-## 5. Medidas listas para copiar
+Si ves otras líneas que no están en la tabla, clic derecho → **Eliminar**.
+
+## Paso 5 — Medidas
+
+En el panel **Datos**, clic derecho en la tabla indicada → **Nueva medida**, y pega una por una. Al terminar cada una, dale formato en **Herramientas de medición → Formato**: **Moneda** con `S/ Español (Perú)` y 2 decimales para los soles, y **Porcentaje** para los `%`.
+
+**En la tabla Ventas:**
 
 ```DAX
 Ventas S/ = CALCULATE ( SUM ( Ventas[Subtotal] ), Ventas[Anulada] = "No" )
-
+```
+```DAX
 Unidades = CALCULATE ( SUM ( Ventas[Cantidad] ), Ventas[Anulada] = "No" )
-
+```
+```DAX
 Costo S/ =
 CALCULATE (
     SUMX ( Ventas, Ventas[Cantidad] * Ventas[Costo unitario] ),
     Ventas[Anulada] = "No"
 )
-
+```
+```DAX
 Ganancia aprox. S/ = [Ventas S/] - [Costo S/]
-
+```
+```DAX
 Margen % = DIVIDE ( [Ganancia aprox. S/], [Ventas S/] )
-
-Ticket promedio =
+```
+```DAX
+Tickets = CALCULATE ( DISTINCTCOUNT ( Ventas[Venta] ), Ventas[Origen] = "Sistema", Ventas[Anulada] = "No" )
+```
+```DAX
+Ticket promedio = DIVIDE ( CALCULATE ( [Ventas S/], Ventas[Origen] = "Sistema" ), [Tickets] )
+```
+```DAX
+Ventas del mes a la fecha = CALCULATE ( [Ventas S/], DATESMTD ( Calendario[Date] ) )
+```
+```DAX
+Ventas mismos días mes anterior =
+CALCULATE ( [Ventas S/], DATEADD ( DATESMTD ( Calendario[Date] ), -1, MONTH ) )
+```
+```DAX
+Este mes vs. anterior =
 DIVIDE (
-    CALCULATE ( SUM ( Ventas[Subtotal] ), Ventas[Origen] = "Sistema", Ventas[Anulada] = "No" ),
-    CALCULATE ( DISTINCTCOUNT ( Ventas[Venta] ), Ventas[Origen] = "Sistema", Ventas[Anulada] = "No" )
+    [Ventas del mes a la fecha] - [Ventas mismos días mes anterior],
+    [Ventas mismos días mes anterior]
 )
-
-Duplicados = CALCULATE ( [Unidades], Ventas[Línea] = "Duplicado" )
-
-Cobrado S/ = CALCULATE ( SUM ( Cobros[Monto] ), Cobros[Anulada] = "No" )
-
-Saldo por cobrar taller = SUM ( Taller[Saldo] )
-
-Valor del inventario = SUM ( Productos[Valor del stock] )
-
-Productos con stock bajo = CALCULATE ( COUNTROWS ( Productos ), Productos[Stock bajo] = "Sí", Productos[Activo] = "Sí" )
-
-Ventas mes anterior = CALCULATE ( [Ventas S/], DATEADD ( Calendario[Date], -1, MONTH ) )
-
-Crecimiento vs. mes anterior = DIVIDE ( [Ventas S/] - [Ventas mes anterior], [Ventas mes anterior] )
+```
+```DAX
+Venta promedio por día = AVERAGEX ( VALUES ( Calendario[Date] ), [Ventas S/] + 0 )
+```
+```DAX
+Días con ventas del sistema =
+CALCULATE ( DISTINCTCOUNT ( Ventas[Fecha] ), Ventas[Origen] = "Sistema", ALL ( Ventas[Hora] ) )
+```
+```DAX
+Ventas promedio por hora = DIVIDE ( [Tickets], [Días con ventas del sistema] )
+```
+```DAX
+Unidades últimos 30 días =
+CALCULATE ( [Unidades], DATESINPERIOD ( Calendario[Date], MAX ( Calendario[Date] ), -30, DAY ) )
 ```
 
-## 6. Tablero sugerido (una página)
+**En la tabla Cobros:**
 
-- **Tarjetas**: Ventas S/, Ganancia aprox. S/, Ticket promedio, Saldo por cobrar taller, Productos con stock bajo.
-- **Columnas**: Ventas S/ por `Calendario[Mes]` (con Crecimiento vs. mes anterior en la información sobre herramientas).
-- **Barras**: los 10 productos con más Unidades (`Ventas[Producto]`, filtro Top N).
-- **Anillo**: Cobrado S/ por `Cobros[Método de pago]`.
-- **Matriz**: `Calendario[Día de la semana]` × `Ventas[Hora]` con Ventas S/ (formato condicional): qué días y horas se vende más.
-- **Segmentadores**: `Calendario[Mes]`, `Ventas[Tipo]`, `Ventas[Línea]`.
+```DAX
+Cobrado S/ = CALCULATE ( SUM ( Cobros[Monto] ), Cobros[Anulada] = "No" )
+```
+
+**En la tabla Productos:**
+
+```DAX
+Valor del inventario = SUM ( Productos[Valor del stock] )
+```
+```DAX
+Productos con stock bajo =
+CALCULATE ( COUNTROWS ( Productos ), Productos[Stock bajo] = "Sí", Productos[Activo] = "Sí" )
+```
+
+Y una **columna** (no medida): en la tabla Productos, **Herramientas de tabla → Nueva columna**:
+
+```DAX
+Sugerido comprar = MAX ( 0, 2 * Productos[Stock mínimo] - Productos[Stock] )
+```
+
+(Lo que falta para llegar al doble del mínimo, igual que la lista de compras de la app.)
+
+**En la tabla Compras:**
+
+```DAX
+Comprado S/ = SUM ( Compras[Total] )
+```
+
+Por qué algunas son así:
+- **Este mes vs. anterior** compara los **mismos días**: del 1 al día de hoy de este mes contra el 1 al mismo día del mes pasado. Comparar un mes a medias contra uno completo siempre daría que se vende menos.
+- **Venta promedio por día** suma `+ 0` para que los días sin ventas cuenten como cero, y no se salten.
+- **Ventas promedio por hora** usa solo las ventas del **sistema**: las anteriores (del cuaderno) no tienen hora.
+- **Ganancia aprox.** usa el precio de compra **de hoy** de cada producto, no el que tenía el día de la venta. Los servicios no tienen costo, así que cuentan completos como ganancia.
+
+## Paso 6 — Las cuatro páginas
+
+En todas las páginas: arriba a la izquierda un **Cuadro de texto** con la pregunta como título, y arriba a la derecha una **Segmentación de datos** con `Calendario[Mes]`, con estilo **Lista desplegable** (en el panel de formato, Configuración de segmentación → Opciones → Estilo). Para que el mes elegido valga en todas las páginas: **Vista → Sincronizar segmentaciones** y marca las cuatro.
+
+Renombra cada página con doble clic en su pestaña de abajo.
+
+### Página 1 — ¿Cuánto vendo y gano?
+
+![Página 1](powerbi/maquetas/pagina1-cuanto-vendo.png)
+
+1. **Cinco tarjetas** en fila (visual **Tarjeta**), una por medida: `Ventas S/`, `Ganancia aprox. S/`, `Margen %`, `Ticket promedio`, `Este mes vs. anterior`.
+2. **Gráfico de columnas agrupadas**: Eje X = `Calendario[Mes]`; Eje Y = `Ventas S/` y `Ganancia aprox. S/`. En formato, activa **Etiquetas de datos**.
+3. **Gráfico de anillos**: Leyenda = `Cobros[Método de pago]`; Valores = `Cobrado S/`. En formato → Etiquetas de detalle → **Categoría, porcentaje del total**.
+
+### Página 2 — ¿Qué se vende más?
+
+![Página 2](powerbi/maquetas/pagina2-que-se-vende.png)
+
+1. **Gráfico de barras agrupadas** (el grande, a la izquierda): Eje Y = `Ventas[Producto]`; Eje X = `Unidades`. En el panel **Filtros** → `Producto` → Tipo de filtro **N superior** → Mostrar elementos **Superior 10** → Por valor: arrastra `Unidades` → **Aplicar filtro**. Activa las etiquetas de datos.
+2. **Gráfico de barras agrupadas**: Eje Y = `Ventas[Tipo]`; Eje X = `Ventas S/`. Las filas sin tipo son servicios y ventas anteriores que no coincidieron con un producto.
+3. **Gráfico de barras 100% apiladas**: Leyenda = `Ventas[Línea]`; Eje X = `Ventas S/`. Muestra cuánto es duplicado, producto, servicio o "sin producto".
+4. Opcional: una **Tabla** con `Ventas[Producto]`, `Unidades`, `Ventas S/` y `Ganancia aprox. S/`, ordenada por Ventas S/.
+
+> Ojo: en las ventas **anteriores** el duplicado no se distingue de la llave sola (salen como "Producto"). La comparación de duplicados vale desde que se usa el sistema.
+
+### Página 3 — ¿Cuándo hay más gente?
+
+![Página 3](powerbi/maquetas/pagina3-cuando-hay-gente.png)
+
+1. **Matriz**: Filas = `Calendario[Día de la semana]`; Columnas = `Ventas[Hora]`; Valores = `Ventas promedio por hora`. Después:
+   - En el panel **Filtros** de este visual: `Ventas[Origen]` = **Sistema**.
+   - Clic derecho en `Ventas promedio por hora` (en Valores) → **Formato condicional → Color de fondo** → Estilo **Escala de colores**, de blanco a azul oscuro.
+   - En formato → **Valores**: 1 decimal. Así se ve de un vistazo qué días y horas se llena el local.
+2. **Gráfico de barras agrupadas**: Eje Y = `Calendario[Día de la semana]`; Eje X = `Venta promedio por día`. Ordénalo por `Día de la semana`: en los tres puntos del visual → **Ordenar eje**.
+
+### Página 4 — ¿Qué falta comprar?
+
+![Página 4](powerbi/maquetas/pagina4-que-comprar.png)
+
+1. **Tres tarjetas**: `Valor del inventario`, `Productos con stock bajo`, `Comprado S/`.
+2. **Tabla** con `Productos[Producto]`, `Productos[Stock]`, `Productos[Stock mínimo]`, `Unidades últimos 30 días` y `Productos[Sugerido comprar]`:
+   - Filtros de este visual: `Productos[Stock bajo]` = **Sí** y `Productos[Activo]` = **Sí**.
+   - Clic derecho en `Stock` → **Formato condicional → Color de fondo**, en tono naranja claro, para que salte a la vista.
+   - Ordena por `Stock` de menor a mayor: así es la lista de compras del día.
+3. **Gráfico de barras agrupadas**: Eje Y = `Compras[Distribuidor]`; Eje X = `Comprado S/`.
+
+> El stock y el valor del inventario son **los de hoy**: el mes elegido arriba no los cambia. Sí cambia lo comprado y las unidades vendidas.
+
+## Paso 7 — Guardar y actualizar
+
+- **Archivo → Guardar como** → `Tablero cerrajería.pbix`, en la misma carpeta que el Excel.
+- Cada vez que quieras ver datos nuevos:
+  1. En el sistema, **Reportes → Descargar Excel** (elige desde la primera fecha hasta hoy).
+  2. Guárdalo encima del anterior, con el mismo nombre y carpeta.
+  3. En Power BI, **Inicio → Actualizar**.
+
+---
+
+## Referencia: qué trae cada hoja
+
+| Hoja | Una fila por… | Columnas clave |
+|---|---|---|
+| **Ventas** | línea vendida (y cada venta anterior cargada) | Fecha, Hora (0–23), Origen (`Sistema`/`Anterior`), Código, Producto, Tipo, Línea (`Duplicado`/`Producto`/`Servicio`/`Sin producto`), Cantidad, Subtotal, Costo unitario, Método de pago, Anulada |
+| **Cobros** | pago recibido (una venta mixta, en varias filas) | Fecha, Origen (`Venta`/`Taller`/`Domicilio`), Método de pago, Monto (negativo = devolución), Anulada |
+| **Taller** | orden de trabajo | Fecha ingreso/entrega, Estado, Precio total, Pagado, Saldo, Garantía, Días en el taller |
+| **Domicilio** | servicio a domicilio | Fecha, Hora, Servicio, Estado, Cobrado, Técnico |
+| **Productos** | producto (catálogo de hoy) | Código, Tipo, Stock, Stock mínimo, Stock bajo, Precio compra/venta, Valor del stock, Activo |
+| **Kardex** | movimiento de stock | Fecha, Código, Movimiento, Cantidad, Saldo anterior/nuevo, Por, Motivo |
+| **Compras** | compra a un distribuidor | Fecha, Distribuidor, Código, Cantidad, Total, Pagado de caja |
+| **Cajas** | caja abierta | Fecha, Usuario, Ingresos, Egresos, Yape, Plin, Tarjeta, Efectivo contado, Diferencia |
+| **MovimientosCaja** | ingreso o egreso puesto a mano | Fecha, Tipo, Monto (negativo = egreso), Motivo |
+
+Las **ventas anteriores** se suben en **Reportes → Ventas de antes del sistema** (CSV con `fecha`, `producto`, `cantidad` y `precio` o `total`; `codigo` y `metodo_pago` opcionales). No tocan la caja ni el stock.
